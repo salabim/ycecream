@@ -7,19 +7,16 @@ ycecream is a fork of the popular IceCream module, by Ansgar Grunseid / grunseid
 
 Main differences with icecream:
 
-* ycecream doesn't depend on ANY external module (i.e. asttokens, six, executing)
+* ycecream doesn't depend on ANY external module (i.e. asttokens, six, executing, pyglets, ...)
 * ycecream is a single source file package, thus easily installed
 * ycecream does not support colouring
 * ycecream can switch on/off time inclusion
 * ycecream introduces delta time that can also be switched on or off
 * ycecream uses PEP8 compatible naming (both in the interface and internal)
-* ycecream uses an even shorter name to print (y versus ic in IceCream)
+* ycecream uses an even shorter name to print (`y` versus `ic` in IceCream)
 * ycecrean runs only under Python 3.6 ++
 
 (c)2021 Ruud van der Ham - rt.van.der.ham@gmail.com
-
-ycecream is well tested, [permissively licensed](LICENSE.txt), and supports
-Python 2, Python 3, PyPy2, and PyPy3.
 
 ### Inspect Variables
 
@@ -318,4 +315,4 @@ or when you want to upgrade,
 $ pip install ycecream
 ```
 
-Alternatively, ycecream.py can be juist copied into you current work directory from GitHub.
+Alternatively, ycecream.py can be juist copied into you current work directory from GitHub (https://github.com/salabim/ycecream).
