@@ -1,5 +1,13 @@
 ### ycecream -- Never use print() to debug again
+```
+ _   _   ___   ___   ___  _ __   ___   __ _  _ __ ___
+| | | | / __| / _ \ / __|| '__| / _ \ / _` || '_ ` _ \
+| |_| || (__ |  __/| (__ | |   |  __/| (_| || | | | | |
+ \__, | \___| \___| \___||_|    \___| \__,_||_| |_| |_|
+ |___/     The Pythonic, no depencency fork of IceCream
 
+See https://github.com/salabim/ycecream/blob/main/readme.md for details
+```
 Do you ever use `print()` or `log()` to debug your code? Of course you
 do. With ycecream, or `y` for short, printing debug information becomes a little smarter.
 
