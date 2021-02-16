@@ -3,23 +3,15 @@
 #  | |_| || (__ |  __/| (__ | |   |  __/| (_| || | | | | |
 #   \__, | \___| \___| \___||_|    \___| \__,_||_| |_| |_|
 #   |___/     The Pythonic, no depencency fork of icecream
+#
+#  See https://github.com/salabim/ycecream/blob/main/readme.md for details
 
-
-__version__ = "0.0.1"
+__version__ = "1.0.0"
 
 """
 
 fork from IceCream - Never use print() to debug again
 Original author: Ansgar Grunseid / grunseid.com / grunseid@gmail.com
-
-Main differences with icecream:
-  icecream_only doesn't depend on ANY external module (i.e. asttokens, six, executing)
-  icecream_only is a single source file package, thus easily installed
-  icecream_only does not support colouring
-  icecream_only can switch on/off time inclusion
-  icecream_only introduces delta time that can also be switched on or off
-  icecream_only uses PEP8 compatible naming (both in the interface and internal)
-
 
 (c)2021 Ruud van der Ham - rt.van.der.ham@gmail.com
 """
