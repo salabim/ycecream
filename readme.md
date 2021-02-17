@@ -11,21 +11,6 @@ See https://github.com/salabim/ycecream/blob/main/readme.md for details
 Do you ever use `print()` or `log()` to debug your code? Of course you
 do. With ycecream, or `y` for short, printing debug information becomes a little smarter.
 
-ycecream is a fork of the popular IceCream module, by Ansgar Grunseid / grunseid.com / grunseid@gmail.com
-
-Main differences with icecream:
-
-* ycecream doesn't depend on ANY external module (i.e. asttokens, six, executing, pyglets, ...)
-* ycecream is a single source file package, thus easily installed
-* ycecream does not support colouring
-* ycecream can switch on/off time inclusion
-* ycecream introduces delta time that can also be switched on or off
-* ycecream uses PEP8 compatible naming (both in the interface and internal)
-* ycecream uses an even shorter name to print (`y` versus `ic` in IceCream)
-* ycecrean runs only under Python 3.6 ++
-
-(c)2021 Ruud van der Ham - rt.van.der.ham@gmail.com
-
 ### Inspect Variables
 
 Have you ever printed variables or expressions to debug your program? If you've
@@ -252,17 +237,12 @@ hello -> 'world'
 
 `output_function`, if provided, is called with `y()`'s output instead of that
 output being written to stderr (the default).
+In the example below, the output is written to stderr.
+```
+from ycecream import y
 
-```pycon
->>> import logging
->>> from ycecream import y
->>>
->>> def warn(s):
->>>     logging.warning(s)
->>>
->>> y.configure(output_function=warn)
->>> y('eep')
-WARNING:root:y| 'eep': 'eep'
+y.configure(output_function=print)
+y('eep')
 ```
 
 `arg_to_string_function`, if provided, is called with argument values to be
@@ -298,6 +278,29 @@ y| example.py:12 in foo()- 'str': 'str'
 ```
 
 `include_context` is False by default. Note that if you call `y` without any arguments, the context is always shown, regardless of the status `include_context`.
+
+### Aknowledgement
+The ycecream pacakage is a fork of the IceCream package.
+Many thanks to the author Ansgar Grunseid / grunseid.com / grunseid@gmail.com
+
+### Main differences with IceCream
+
+* ycecream doesn't depend on ANY external module (i.e. asttokens, six, executing, pyglets, ...)
+* ycecream is a single source file package, thus easily installed
+* ycecream does not support colouring
+* ycecream can switch on/off time inclusion
+* ycecream introduces delta time that can also be switched on or off
+* ycecream uses PEP8 compatible naming (both in the interface and internal)
+* ycecream uses an even shorter name to print (`y` versus `ic` in IceCream)
+* ycecrean runs only under Python 3.6 ++
+
+### Copyright
+(c)2021 Ruud van der Ham - rt.van.der.ham@gmail.com
+
+
+
+
+
 
 ### Compatibility with IceCream
 
