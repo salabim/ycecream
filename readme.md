@@ -199,21 +199,72 @@ except ImportError:
 ```
 
 ### Configuration
+For the configuration, it is important to realize that y is an instance of the icecream.Y class, which has
+a nuumber of configuration attributes:
+* prefix
+* output_function
+* arg_to_string_function
+* include_context
+* include_time
+* include_delta
+* line_wrap_width
+* pair_delimiter=None
+* enabled=None
 
+It is perfectly ok to set/get any of these attributes directly.
+
+But, it is also possible to create a new Y instance from a Y instance, with the given method.
+
+So, it is possible to say
 ```
-    def configure(
-        self,
-        prefix=None,
-        output_function=None,
-        arg_to_string_function=None,
-        include_context=None,
-        include_time=None,
-        include_delta=None,
-        line_wrap_width=None,
-        pair_delimiter=None,
-        enabled=None,
-    ):
+from ycecream import y
+y.given(prefix="==> ")(12)
 ```
+, which will print
+```
+==> 12
+
+Please note that the given method does NOT change the current instance of Y. That means that 
+```
+y.given(prefix="==> ")
+y(12)
+```
+will print
+```
+y| 12
+```
+It is possible to assign the result of given() to y however:
+```
+y = y.given(prefix="==> ")
+y(12)
+```
+will print
+```
+==> 12
+```
+It is however possibly easier to say:
+```
+y.prefix = "==> "
+y(12)
+```
+to print
+```
+==> 12
+```
+Yet another way to configure y by instantiating Y with the reuired configuration:
+```
+y = Y(prefix="==> ")
+y(12)
+```
+will print
+```
+==> 12
+```
+
+
+
+
+
 can be used to adopt a custom output prefix (the default is
 `y| `), change the output function (default is to write to stderr), customize
 how arguments are serialized to strings, and/or include the `y()` call's
