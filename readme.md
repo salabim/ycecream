@@ -1,7 +1,5 @@
 ![logo](./images/logo.png)
 
-the Pythonic, no depencency fork of IceCream
-
 ### ycecream -- Never use print() to debug again
 
 Do you ever use `print()` or `log()` to debug your code? Of course you
