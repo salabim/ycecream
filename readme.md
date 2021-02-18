@@ -254,14 +254,14 @@ In the example below, the output is written to stdout.
 ```
 from ycecream import y
 y.configure(output_function=print)
-y('eep')
+y('hello')
 ```
 With
 ```
 from ycecream import y
 
-y.configure(output_function=print)
-y('eep')
+y.configure(output_function=lambda *args: None)
+y('hello')
 ```
 , all output will be suppressed (this van also be done with disable, see below).
 
@@ -294,20 +294,62 @@ y| 7 , hello: 'world' [len=5], l: [0, 1, 2, 3, 4, 5, 6] [len=7]
 `include_context`, if provided and True, adds the `y()` call's filename, line
 number, and parent function to `y()`'s output.
 
-```pycon
->>> from ycecream import y
->>> y.configure(include_context=True)
->>> 
->>> def foo():
->>>   y('str')
->>> foo()
-y| example.py:12 in foo()- 'str': 'str'
+```from ycecream import y
+y.configure(include_context=True)
+hello="world"
+y(hello)
 ```
-
+prints something like
+```
+y| x.py:4 in <module> ==> hello: 'world'
+```
 `include_context` is False by default. Note that if you call `y` without any arguments, the context is always shown, regardless of the status `include_context`.
 
+`include_time`, if provided and True, adds the current time to `y()`'s output.
+
+```
+from ycecream import y
+y.configure(include_time=True)
+hello="world"
+y(hello)
+```
+prints something like
+```
+y| @ 13:01:47.588 ==> hello: 'world'
+```
+`include_delta`, if provided and True, adds the number of seconds since the start of the program to `y()`'s output.
+```
+from ycecream import y
+import time
+y.configure(include_delta=True)
+hello="world"
+y(hello)
+time.sleep(1)
+y(hello)
+```
+prints something like
+```
+y| Δ 0.021 ==> hello: 'world'
+y| Δ 1.053 ==> hello: 'world'
+```
+Of course, it is possible to use several includes at the same time:
+```
+from ycecream import y
+y.configure(include_context=True, include_time=True, include_delta=True)
+hello="world"
+y(hello)
+```
+, which will print something like
+```
+y| x.py:4 in <module> @ 13:08:46.200 Δ 0.030 ==> hello: 'world'
+```
+
+
+
+
 ### Aknowledgement
-The ycecream pacakage is a fork of the IceCream package.
+The ycecream pacakage is a fork of the IceCream package. See https://github.com/gruns/icecream
+
 Many thanks to the author Ansgar Grunseid / grunseid.com / grunseid@gmail.com
 
 ### Copyright
@@ -318,14 +360,13 @@ Many thanks to the author Ansgar Grunseid / grunseid.com / grunseid@gmail.com
 The ycecream module is a fork of IceCream with a number of differences:
 
 * ycecream can't colourize the output (a nice feature of IceCream)
-* ucecream runs only on Python 3.6 and higher. IceCream runs even on Python 2.7.
+* ycecream runs only on Python 3.6 and higher. (IceCream runs even on Python 2.7).
 * ycecream uses y as the standard interface, whereas IceCream uses ic. To make life easy, ycecream also supports ic!
 * yceceam has no dependencies. IceCream on the other hand has many (asttoken, colorize, pyglets, ...).
 * ycecream is just one .py files, whereas IceCream consits of a number of .py files. That makes it possible to use ycecream without even (pip) installing it. Just copy ycecream.py to your work directory.
 * ycecream has a PEP8 (Pythonic) API. Less important for the user, the actual code is also (more) PEP8 compatible. IceCream does not fillow the PEP8 standard.
-* With ycecream time inclusion can be controlled independently from context
-* A new delta inclusion (time since start of the program) is available in ycecream
-
+* ycecream time inclusion can be controlled independently from context
+* ycecrean has a new delta inclusion (time since start of the program)
 
 ### Installation
 
