@@ -11,48 +11,47 @@ Have you ever printed variables or expressions to debug your program? If you've
 ever typed something like
 
 ```python
-print(foo('123'))
+print(add2(1000))
 ```
 
 or the more thorough
 
 ```python
-print("foo('123')", foo('123'))
+print("add2(1000)", add2(1000)))
 ```
 
 then `y()` is here to help. With arguments, `y()` inspects itself and prints
 both its own arguments and the values of those arguments.
 
-```python
+```
 from ycecream import y
 
-def foo(i):
-    return i + 333
+def add2(i):
+    return i + 2
 
-y(foo(123))
+y(add2(1000))
 ```
 
 Prints
 
 ```
-y| foo(123): 456
+y| add2(1000): 1002
 ```
 
 Similarly,
 
-```python
-d = {'key': {1: 'one'}}
-y(d['key'][1])
+```
+from ycecream import y
+class X:
+    a = 3
+world = {"EN": "world", "NL": "wereld", "FR": "monde", "DE": "Welt"}
 
-class klass():
-    attr = 'yep'
-y(klass.attr)
+y(world, X.a)
 ```
 
 Prints
 ```
-y| d['key'][1]: 'one'
-y| klass.attr: 'yep'
+y| world: {'DE': 'Welt', 'EN': 'world', 'FR': 'monde', 'NL': 'wereld'}, X.a: 3
 ```
 Just give `y()` a variable or expression and you're done. Easy.
 
@@ -63,44 +62,32 @@ Have you ever used `print()` to determine which parts of your program are
 executed, and in which order they're executed? For example, if you've ever added
 print statements to debug code like
 
-```python
-def foo():
-    print(0)
-    first()
-
-    if expression:
-        print(1)
-        second()
-    else:
-        print(2)
-        third()
+```
+def add2(i):
+    print("enter")
+    result = i + 2
+    print("exit")
+    return result
 ```
 
 then `y()` helps here, too. Without arguments, `y()` inspects itself and
 prints the calling filename, line number, and parent function.
 
-```python
+```
 from ycecream import y
-
-def foo():
+def add2(i):
     y()
-    first()
-    
-    if expression:
-        y()
-        second()
-    else:
-        y()
-        third()
+    result = i + 2
+    y()
+    return result
+y(add2(1000))
 ```
 
-Prints
-
+Prints something like
 ```
-y| example.py:4 in foo()
-y| example.py:11 in foo()
+y| x.py:3 in add2()
+y| x.py:5 in add2()
 ```
-
 Just call `y()` and you're done. Simple.
 
 
@@ -109,9 +96,9 @@ Just call `y()` and you're done. Simple.
 `y()` returns its argument(s), so `y()` can easily be inserted into
 pre-existing code.
 
-```pycon
+```
 >>> a = 6
->>> def half(i):
+>>> def add2(i):
 >>>     return i / 2
 >>> b = half(y(a))
 y| a: 6
@@ -125,25 +112,27 @@ y| b: 3
 `y.as_str(*args)` is like `y()` but the output is returned as a string instead
 of written to stderr.
 
-```pycon
->>> from ycecream import y
->>> s = 'sup'
->>> out = y.as_str(s)
->>> print(out)
-y| s: 'sup'
+```
+from ycecream import y
+def add2(i):
+    return i + 2
+b = y(add2(1000))
+y(b)
+```
+prints
+```
+y| add2(1000): 1002
+y| b: 1002
 ```
 
 Additionally, `y()`'s output can be entirely disabled, and later re-enabled, with
 `y.disable()` and `y.enable()` respectively.
 
-```python
+```
 from ycecream import y
-
 y(1)
-
 y.disable()
 y(2)
-
 y.enable()
 y(3)
 ```
@@ -155,9 +144,7 @@ y| 1
 y| 3
 ```
 
-`y()` continues to return its arguments when disabled, of course; no existing
-code with `y()` breaks.
-
+`y()` continues to return its arguments when disabled, of course.
 
 ### Import Tricks
 
@@ -193,9 +180,10 @@ useful:
 ```
 try:
     from ycecream import y
-except ImportError:  # Graceful fallback if ycecream isn't installed.
-    y = lambda *a: None if not a else (a[0] if len(a) == 1 else a)
+except ImportError:
+    y = lambda *args: None if not args else (args[0] if len(a) == 1 else args)
 ```
+
 ### Configuration
 
 ```
