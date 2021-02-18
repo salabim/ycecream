@@ -1,4 +1,5 @@
 ### ycecream -- Never use print() to debug again
+![plot](./images/logo.png)
 ```
  _   _   ___   ___   ___  _ __   ___   __ _  _ __ ___
 | | | | / __| / _ \ / __|| '__| / _ \ / _` || '_ ` _ \
