@@ -5,6 +5,20 @@
 Do you ever use `print()` or `log()` to debug your code? Of course you
 do. With ycecream, or `y` for short, printing debug information becomes a little smarter.
 
+### Installation
+
+Installing ycecream with pip is easy.
+```
+$ pip install ycecream
+```
+or when you want to upgrade,
+```
+$ pip install ycecream --upgrade
+```
+
+Alternatively, ycecream.py can be juist copied into you current work directory from GitHub (https://github.com/salabim/ycecream).
+
+
 ### Inspect Variables
 
 Have you ever printed variables or expressions to debug your program? If you've
@@ -336,9 +350,6 @@ The ycecream pacakage is a fork of the IceCream package. See https://github.com/
 
 Many thanks to the author Ansgar Grunseid / grunseid.com / grunseid@gmail.com
 
-### Copyright
-(c)2021 Ruud van der Ham - rt.van.der.ham@gmail.com
-
 ### Differences with IceCream
 
 The ycecream module is a fork of IceCream with a number of differences:
@@ -352,15 +363,3 @@ The ycecream module is a fork of IceCream with a number of differences:
 * ycecream time inclusion can be controlled independently from context
 * ycecrean has a new delta inclusion (time since start of the program)
 
-### Installation
-
-Installing ycecream with pip is easy.
-```
-$ pip install ycecream
-```
-or when you want to upgrade,
-```
-$ pip install ycecream --upgrade
-```
-
-Alternatively, ycecream.py can be juist copied into you current work directory from GitHub (https://github.com/salabim/ycecream).
