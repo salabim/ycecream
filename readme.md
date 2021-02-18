@@ -6,8 +6,6 @@
  \__, | \___| \___| \___||_|    \___| \__,_||_| |_| |_|
  |___/     The Pythonic, no depencency fork of IceCream
 
-See https://github.com/salabim/ycecream/blob/main/readme.md for details
-```
 Do you ever use `print()` or `log()` to debug your code? Of course you
 do. With ycecream, or `y` for short, printing debug information becomes a little smarter.
 
@@ -205,8 +203,18 @@ except ImportError:  # Graceful fallback if ycecream isn't installed.
 ### Configuration
 
 ```
-y.configure(prefix, output_function, arg_to_string_function,
-include_context, include_time, include_delta)`
+    def configure(
+        self,
+        prefix=None,
+        output_function=None,
+        arg_to_string_function=None,
+        include_context=None,
+        include_time=None,
+        include_delta=None,
+        line_wrap_width=None,
+        pair_delimiter=None,
+        enabled=None,
+    ):
 ```
 can be used to adopt a custom output prefix (the default is
 `y| `), change the output function (default is to write to stderr), customize
@@ -215,35 +223,47 @@ context (filename, line number, and parent function) in `y()` output with
 arguments.
 
 ```
->>> from ycecream import y
->>> y.configure(prefix='hello -> ')
->>> y('world')
+from ycecream import y
+y.configure(prefix='hello -> ')
+y('world')
+```
+prints
+```
 hello -> 'world'
 ```
 
 `prefix` can optionally be a function, too.
 
 ```
->>> import time
->>> from ycecream import y
->>>  
->>> def unixTimestamp():
->>>     return '%i |> ' % int(time.time())
->>>
->>> y.configure(prefix=unixTimestamp)
->>> y('world') 
-1519185860 |> 'world': 'world'
+import time
+from ycecream import y
+def unix_timestamp():
+    return f"{int(time.time())} "
+hello = "world"
+y.configure(prefix=unix_timestamp)
+y(hello) 
+```
+prints
+```
+1613635601 hello: 'world'
 ```
 
 `output_function`, if provided, is called with `y()`'s output instead of that
 output being written to stderr (the default).
-In the example below, the output is written to stderr.
+In the example below, the output is written to stdout.
+```
+from ycecream import y
+y.configure(output_function=print)
+y('eep')
+```
+With
 ```
 from ycecream import y
 
 y.configure(output_function=print)
 y('eep')
 ```
+, all output will be suppressed (this van also be done with disable, see below).
 
 `arg_to_string_function`, if provided, is called with argument values to be
 serialized to displayable strings. The default is PrettyPrint's
@@ -251,17 +271,24 @@ serialized to displayable strings. The default is PrettyPrint's
 but this can be changed to, for example, handle non-standard datatypes in a
 custom fashion.
 
-```pycon
->>> from ycecream import y
->>> 
->>> def toString(obj):
->>>    if isinstance(obj, str):
->>>        return '[!string %r with length %i!]' % (obj, len(obj))
->>>    return repr(obj)
->>> 
->>> y.configure(arg_to_string_function=toString)
->>> y(7, 'hello')
-y| 7: 7, 'hello': [!string 'hello' with length 5!]
+```
+from ycecream import y
+
+def add_len(obj):
+    if hasattr(obj, "__len__"):
+        add = f"[len={len(obj)}]"
+    else:
+        add = ""
+    return f"{repr(obj)} {add}"
+
+y.configure(arg_to_string_function=add_len)
+l = list(range(7))
+hello = "world"
+y(7, hello, l)
+```   
+prints
+```
+y| 7 , hello: 'world' [len=5], l: [0, 1, 2, 3, 4, 5, 6] [len=7]
 ```
 
 `include_context`, if provided and True, adds the `y()` call's filename, line
@@ -283,34 +310,19 @@ y| example.py:12 in foo()- 'str': 'str'
 The ycecream pacakage is a fork of the IceCream package.
 Many thanks to the author Ansgar Grunseid / grunseid.com / grunseid@gmail.com
 
-### Main differences with IceCream
-
-* ycecream doesn't depend on ANY external module (i.e. asttokens, six, executing, pyglets, ...)
-* ycecream is a single source file package, thus easily installed
-* ycecream does not support colouring
-* ycecream can switch on/off time inclusion
-* ycecream introduces delta time that can also be switched on or off
-* ycecream uses PEP8 compatible naming (both in the interface and internal)
-* ycecream uses an even shorter name to print (`y` versus `ic` in IceCream)
-* ycecrean runs only under Python 3.6 ++
-
 ### Copyright
 (c)2021 Ruud van der Ham - rt.van.der.ham@gmail.com
 
-
-
-
-
-
-### Compatibility with IceCream
+### Differences with IceCream
 
 The ycecream module is a fork of IceCream with a number of differences:
 
+* ycecream can't colourize the output (a nice feature of IceCream)
+* ucecream runs only on Python 3.6 and higher. IceCream runs even on Python 2.7.
 * ycecream uses y as the standard interface, whereas IceCream uses ic. To make life easy, ycecream also supports ic!
-* icecream colourizes the output by default. This functionality is completely absent in ycebreaker.
-* IceCream has many dependencies. On the other hand, ycecream has none
-* Icecream requires a number of .py files, whereas ycecream is just one (big) .py file. That makes it possible to use ycecream without even (pip) installing it. Just copy ycecream.py to your work directory.
-* In contrast to IceCream, ycecream has a PEP8 (Pythonic) API. Less important for the user, the actual code is also (more) PEP8 compatible.
+* yceceam has no dependencies. IceCream on the other hand has many (asttoken, colorize, pyglets, ...).
+* ycecream is just one .py files, whereas IceCream consits of a number of .py files. That makes it possible to use ycecream without even (pip) installing it. Just copy ycecream.py to your work directory.
+* ycecream has a PEP8 (Pythonic) API. Less important for the user, the actual code is also (more) PEP8 compatible. IceCream does not fillow the PEP8 standard.
 * With ycecream time inclusion can be controlled independently from context
 * A new delta inclusion (time since start of the program) is available in ycecream
 
@@ -323,7 +335,7 @@ $ pip install ycecream
 ```
 or when you want to upgrade,
 ```
-$ pip install ycecream
+$ pip install ycecream --upgrade
 ```
 
 Alternatively, ycecream.py can be juist copied into you current work directory from GitHub (https://github.com/salabim/ycecream).
