@@ -201,15 +201,15 @@ except ImportError:
 ### Configuration
 For the configuration, it is important to realize that y is an instance of the icecream.Y class, which has
 a nuumber of configuration attributes:
-* prefix
-* output_function
-* arg_to_string_function
-* include_context
-* include_time
-* include_delta
-* line_wrap_width
-* pair_delimiter=None
-* enabled=None
+* `prefix`
+* `output_function`
+* `arg_to_string_function`
+* `include_context`
+* `include_time`
+* `include_delta`
+* `line_wrap_width`
+* `pair_delimiter=None`
+* `enabled=None`
 
 It is perfectly ok to set/get any of these attributes directly.
 
@@ -223,7 +223,7 @@ y.given(prefix="==> ")(12)
 , which will print
 ```
 ==> 12
-
+```
 Please note that the given method does NOT change the current instance of Y. That means that 
 ```
 y.given(prefix="==> ")
