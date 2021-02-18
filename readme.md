@@ -1,6 +1,8 @@
-### ycecream -- Never use print() to debug again
 ![plot](./images/logo_small.png)
-The Pythonic, no depencency fork of IceCream
+
+the Pythonic, no depencency fork of IceCream
+
+### ycecream -- Never use print() to debug again
 
 Do you ever use `print()` or `log()` to debug your code? Of course you
 do. With ycecream, or `y` for short, printing debug information becomes a little smarter.
