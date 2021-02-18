@@ -1,4 +1,4 @@
-           ![plot](./images/logo_small.png)
+![logo](./images/logo_small.png)
 
 the Pythonic, no depencency fork of IceCream
 
