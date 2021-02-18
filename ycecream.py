@@ -2,14 +2,13 @@
 #  | | | | / __| / _ \ / __|| '__| / _ \ / _` || '_ ` _ \
 #  | |_| || (__ |  __/| (__ | |   |  __/| (_| || | | | | |
 #   \__, | \___| \___| \___||_|    \___| \__,_||_| |_| |_|
-#   |___/     The Pythonic, no depencency fork of icecream
+#   |___/     the no depencency, Pythonic fork of IceCream
 #
 #  See https://github.com/salabim/ycecream/blob/main/readme.md for details
 
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 
 """
-
 fork from IceCream - Never use print() to debug again
 Original author: Ansgar Grunseid / grunseid.com / grunseid@gmail.com
 
@@ -80,8 +79,8 @@ def format_pair(prefix, arg, value):
 PREFIX = "y| "
 LINE_WRAP_WIDTH = 80  # Characters.
 CONTEXT_DELIMITER = " ==> "
-OUTPUT_FUNCTION = lambda self, *args: stderr_print(*args)
-ARG_TO_STRING_FUNCTION = lambda self, obj: pprint.pformat(obj).replace("\\n", "\n")
+OUTPUT_FUNCTION = lambda *args: stderr_print(*args)
+ARG_TO_STRING_FUNCTION = lambda obj: pprint.pformat(obj).replace("\\n", "\n")
 INCLUDE_CONTEXT = False
 INCLUDE_TIME = False
 INCLUDE_DELTA = False
@@ -94,27 +93,17 @@ starttime = datetime.datetime.now()
 
 class Y:
 
-    prefix = PREFIX
-    line_wrap_width = LINE_WRAP_WIDTH
-    context_delimiter = CONTEXT_DELIMITER
-    output_function = OUTPUT_FUNCTION
-    arg_to_string_function = ARG_TO_STRING_FUNCTION
-    include_context = INCLUDE_CONTEXT
-    include_time = INCLUDE_TIME
-    include_delta = INCLUDE_DELTA
-    enabled = ENABLED
-    pair_delimiter = PAIR_DELIMITER
-
     def __init__(
         self,
-        prefix=None,
-        output_function=None,
-        arg_to_string_function=None,
-        include_context=None,
-        include_time=None,
-        include_delta=None,
-        line_wrap_width=None,
-        pair_delimiter=None,
+        prefix=PREFIX,
+        output_function=OUTPUT_FUNCTION,
+        arg_to_string_function=ARG_TO_STRING_FUNCTION,
+        include_context=INCLUDE_CONTEXT,
+        include_time=INCLUDE_TIME,
+        include_delta=INCLUDE_DELTA,
+        line_wrap_width=LINE_WRAP_WIDTH,
+        pair_delimiter=PAIR_DELIMITER,
+        enabled=ENABLED,
     ):
         self.configure(
             prefix=prefix,
@@ -125,6 +114,7 @@ class Y:
             include_delta=include_delta,
             line_wrap_width=line_wrap_width,
             pair_delimiter=pair_delimiter,
+            enabled=enabled,
         )
 
     def __call__(self, *args):
@@ -195,7 +185,7 @@ class Y:
         all_args_on_one_line = self.pair_delimiter.join(pairs_processed)
         multiline_args = len(all_args_on_one_line.splitlines()) > 1
 
-        context_delimiter = self.context_delimiter if context else ""
+        context_delimiter = CONTEXT_DELIMITER if context else ""
         all_pairs = prefix + context + context_delimiter + all_args_on_one_line
         first_line_too_long = len(all_pairs.splitlines()[0]) > self.line_wrap_width
 
@@ -244,6 +234,7 @@ class Y:
         include_delta=None,
         line_wrap_width=None,
         pair_delimiter=None,
+        enabled=None,
     ):
         if prefix is not None:
             self.prefix = prefix
@@ -264,10 +255,13 @@ class Y:
             self.include_delta = include_delta
 
         if line_wrap_width is not None:
-            self.line_wrap_widyh = line_wrap_widt
+            self.line_wrap_width = line_wrap_width
 
         if pair_delimiter is not None:
             self.pair_delimiter = pair_delimiter
+            
+        if enabled is not None:
+            self.enabled = enabled
 
 
 try:
@@ -1742,3 +1736,4 @@ class Source(Source):
             result = textwrap.dedent(result)
         result = result.strip()
         return result
+        
