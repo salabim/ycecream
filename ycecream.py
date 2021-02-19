@@ -4,12 +4,12 @@
 #   \__, | \___| \___| \___||_|    \___| \__,_||_| |_| |_|
 #   |___/     the no depencency, Pythonic fork of IceCream
 #
-#  See https://github.com/salabim/ycecream/blob/main/readme.md for details
+#  See https://raw.githubusercontent.com/salabim/ycecream/master/readme.md for details
 
-__version__ = "1.0.1"
+__version__ = "1.0.2"
 
 """
-fork from IceCream - Never use print() to debug again
+Fork from IceCream - Never use print() to debug again
 Original author: Ansgar Grunseid / grunseid.com / grunseid@gmail.com
 
 (c)2021 Ruud van der Ham - rt.van.der.ham@gmail.com
@@ -105,17 +105,16 @@ class Y:
         pair_delimiter=PAIR_DELIMITER,
         enabled=ENABLED,
     ):
-        self.configure(
-            prefix=prefix,
-            output_function=output_function,
-            arg_to_string_function=arg_to_string_function,
-            include_context=include_context,
-            include_time=include_time,
-            include_delta=include_delta,
-            line_wrap_width=line_wrap_width,
-            pair_delimiter=pair_delimiter,
-            enabled=enabled,
-        )
+
+        self.prefix = PREFIX if prefix is None else prefix
+        self.output_function = OUTPUT_FUNCTION if output_function is None else output_function
+        self.arg_to_string_function = ARG_TO_STRING_FUNCTION if arg_to_string_function is None else arg_to_string_function
+        self.include_context = INCLUDE_CONTEXT if include_context is None else include_context
+        self.include_time = INCLUDE_TIME if include_time is None else include_time
+        self.include_delta = INCLUDE_DELTA if include_delta is None else include_delta
+        self.line_wrap_width = LINE_WRAP_WIDTH if line_wrap_width is None else line_wrap_width
+        self.pair_delimiter = PAIR_DELIMITER if pair_delimiter is None else pair_delimiter
+        self.enabled = ENABLED if enabled is None else enabled
 
     def __call__(self, *args):
         if self.enabled:
@@ -136,7 +135,7 @@ class Y:
 
         return passthrough
 
-    def format(self, *args):
+    def as_str(self, *args):
         call_frame = inspect.currentframe().f_back
         out = self._format(call_frame, *args)
         return out
@@ -224,7 +223,7 @@ class Y:
     def disable(self):
         self.enabled = False
 
-    def configure(
+    def given(
         self,
         prefix=None,
         output_function=None,
@@ -236,33 +235,17 @@ class Y:
         pair_delimiter=None,
         enabled=None,
     ):
-        if prefix is not None:
-            self.prefix = prefix
-
-        if output_function is not None:
-            self.output_function = output_function
-
-        if arg_to_string_function is not None:
-            self.arg_to_string_function = arg_to_string_function
-
-        if include_context is not None:
-            self.include_context = include_context
-
-        if include_time is not None:
-            self.include_time = include_time
-
-        if include_delta is not None:
-            self.include_delta = include_delta
-
-        if line_wrap_width is not None:
-            self.line_wrap_width = line_wrap_width
-
-        if pair_delimiter is not None:
-            self.pair_delimiter = pair_delimiter
-            
-        if enabled is not None:
-            self.enabled = enabled
-
+        return  Y(
+        prefix=self.prefix if prefix is None else prefix,
+        output_function = self.output_function if output_function is None else output_function,
+        arg_to_string_function = self.arg_to_string_function if arg_to_string_function is None else arg_to_string_function,
+        include_context = self.include_context if include_context is None else include_context,
+        include_time = self.include_time if include_time is None else include_time,
+        include_delta = self.include_delta if include_delta is None else include_delta,
+        line_wrap_width = self.line_wrap_width if line_wrap_width is None else line_wrap_width,
+        pair_delimiter = self.pair_delimiter if pair_delimiter is None else pair_delimiter,
+        enabled = self.enabled if enabled is None else enabled
+        )
 
 try:
     builtins = __import__("__builtin__")

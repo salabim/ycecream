@@ -1,3 +1,12 @@
+version 1.0.2  2021-02-19
+=========================
+Phased out Y.configure()
+Phased out Y.format() and replaced by Y.as_str()
+
+Introduced Y.given()
+
+Major update of readme.md
+
 version 1.0.1  2021-02-18
 =========================
 Several functionality changes
