@@ -142,23 +142,27 @@ y| hello: 'world'
 ```
 
 Additionally, ycecreams's output can be entirely disabled, and later re-enabled, with
-`ycecream.disable()` and `ycecream.enable()` respectively.
-Note that these two functions refer to ALL output from ycecream.
+`ycecream.enable(False)` and `ycecream.enable(True)` respectively.
+Note that this  functions refer to ALL output from ycecream.
 ```
-import ycecream
-from ycecream import y
+from ycecream import y, Y, enable
+
+yd = Y(include_delta=True)
 y(1)
-y
-ycecream.disable()
-y(2)
-ycecream.enable()
+yd(2)
+enable(False)
 y(3)
+yd(4)
+enable(True)
+y(5)
+yd(6)
 ```
 prints
-
 ```
 y| 1
-y| 3
+y| Δ 0.117 ==> 2
+y| 5
+y| Δ 0.219 ==> 6
 ```
 `y()` continues to return its arguments when disabled, of course.
 
@@ -261,7 +265,7 @@ will print
 ```
 ==> 12
 ```
-**prefix**
+## prefix
 ```
 from ycecream import y
 y = y.given(prefix='hello -> ')
@@ -287,7 +291,7 @@ prints
 ```
 1613635601 hello: 'world'
 ```
-**output_function**
+## output_function
 This will allow the output to be handled by something else than the deafult (output being written to stderr).
 In the example below, the output is written to stdout.
 ```
@@ -303,7 +307,7 @@ y('hello')
 ```
 , all output will be suppressed (this van also be done with disable, see below).
 
-**arg_to_string_function**
+## arg_to_string_function
 This will allow to specify how argument values are to be
 serialized to displayable strings. The default is pprint, but this can be changed to,
 for example, handle non-standard datatypes in a custom fashion.
@@ -328,7 +332,7 @@ prints
 y| 7 , hello: 'world' [len=5], l: [0, 1, 2, 3, 4, 5, 6] [len=7]
 ```
 
-**include_context**
+## include_context
 If True, adds the `y()` call's filename, line number, and parent function to `y()`'s output.
 
 ```from ycecream import Y
@@ -342,7 +346,7 @@ y| x.py:4 in <module> ==> hello: 'world'
 ```
 Note that if you call `y` without any arguments, the context is always shown, regardless of the status `include_context`.
 
-**include_time**
+## include_time
 If True, adds the current time to `y()`'s output.
 
 ```
@@ -356,7 +360,7 @@ prints something like
 y| @ 13:01:47.588 ==> hello: 'world'
 ```
 
-**include_delta**
+## include_delta
 If True, adds the number of seconds since the start of the program to `y()`'s output.
 ```
 from ycecream import Y
@@ -372,6 +376,8 @@ prints something like
 y| Δ 0.021 ==> hello: 'world'
 y| Δ 1.053 ==> hello: 'world'
 ```
+
+## combining customizations
 Of course, it is possible to use several includes at the same time:
 ```
 from ycecream import Y
@@ -384,18 +390,18 @@ y(hello)
 y| x.py:4 in <module> @ 13:08:46.200 Δ 0.030 ==> hello: 'world'
 ```
 
-## Alternative installation
+### Alternative installation
 
 With `install ycecream.py from github.by`, you can install the ycecream.py directly from GitHub to the site packages (as if it were a pip install).
 
 With `install ycecream.py`, you can install the ycecream.py in your current directory to the site packages (as if it were a pip install).
 
-## Aknowledgement
+### Aknowledgement
 The ycecream pacakage is a fork of the IceCream package. See https://github.com/gruns/icecream
 
 Many thanks to the author Ansgar Grunseid / grunseid.com / grunseid@gmail.com
 
-## Differences with IceCream
+### Differences with IceCream
 
 The ycecream module is a fork of IceCream with a number of differences:
 
@@ -408,4 +414,3 @@ The ycecream module is a fork of IceCream with a number of differences:
 * ycecream uses a different API to customize (rather than IceCream's configureOutput method
 * ycecream time inclusion can be controlled independently from context
 * ycecrean has a new delta inclusion (time since start of the program)
-
