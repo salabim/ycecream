@@ -198,9 +198,9 @@ except ImportError:
     y = lambda *args: None if not args else (args[0] if len(a) == 1 else args)
 ```
 
-### Configuration
-For the configuration, it is important to realize that y is an instance of the icecream.Y class, which has
-a nuumber of configuration attributes:
+### Customization
+For the customization, it is important to realize that `y` is an instance of the `ycecream.Y` class, which has
+a nuumber of customization attributes:
 * `prefix`
 * `output_function`
 * `arg_to_string_function`
@@ -233,7 +233,7 @@ will print
 ```
 y| 12
 ```
-It is possible to assign the result of given() to y however:
+It is possible to assign the result of given() to y (or something else) however:
 ```
 y = y.given(prefix="==> ")
 y(12)
@@ -242,7 +242,7 @@ will print
 ```
 ==> 12
 ```
-It is however possibly easier to say:
+It is possibly easier to say:
 ```
 y.prefix = "==> "
 y(12)
@@ -251,7 +251,7 @@ to print
 ```
 ==> 12
 ```
-Yet another way to configure y by instantiating Y with the reuired configuration:
+Yet another way to customize y is by instantiating Y with the required customization:
 ```
 y = Y(prefix="==> ")
 y(12)
@@ -260,20 +260,10 @@ will print
 ```
 ==> 12
 ```
-
-
-
-
-
-can be used to adopt a custom output prefix (the default is
-`y| `), change the output function (default is to write to stderr), customize
-how arguments are serialized to strings, and/or include the `y()` call's
-context (filename, line number, and parent function) in `y()` output with
-arguments.
-
+**prefix**
 ```
 from ycecream import y
-y.configure(prefix='hello -> ')
+y = y.given(prefix='hello -> ')
 y('world')
 ```
 prints
@@ -289,39 +279,36 @@ from ycecream import y
 def unix_timestamp():
     return f"{int(time.time())} "
 hello = "world"
-y.configure(prefix=unix_timestamp)
+y = Y(prefix=unix_timestamp)
 y(hello) 
 ```
 prints
 ```
 1613635601 hello: 'world'
 ```
-
-`output_function`, if provided, is called with `y()`'s output instead of that
-output being written to stderr (the default).
+**output_function**
+This will allow the output to be handled by something else than the deafult (output being written to stderr).
 In the example below, the output is written to stdout.
 ```
 from ycecream import y
-y.configure(output_function=print)
-y('hello')
+y.given(output_function=print)('hello')
 ```
 With
 ```
 from ycecream import y
 
-y.configure(output_function=lambda *args: None)
+y = Y(output_function=lambda *args: None)
 y('hello')
 ```
 , all output will be suppressed (this van also be done with disable, see below).
 
-`arg_to_string_function`, if provided, is called with argument values to be
-serialized to displayable strings. The default is PrettyPrint's
-[pprint.pformat()](https://docs.python.org/3/library/pprint.html#pprint.pformat),
-but this can be changed to, for example, handle non-standard datatypes in a
-custom fashion.
+**arg_to_string_function**
+This will allow to specify how argument values are to be
+serialized to displayable strings. The default is pprint, but this can be changed to,
+for example, handle non-standard datatypes in a custom fashion.
 
 ```
-from ycecream import y
+from ycecream import Y
 
 def add_len(obj):
     if hasattr(obj, "__len__"):
@@ -330,7 +317,7 @@ def add_len(obj):
         add = ""
     return f"{repr(obj)} {add}"
 
-y.configure(arg_to_string_function=add_len)
+y = Y(arg_to_string_function=add_len)
 l = list(range(7))
 hello = "world"
 y(7, hello, l)
@@ -340,11 +327,11 @@ prints
 y| 7 , hello: 'world' [len=5], l: [0, 1, 2, 3, 4, 5, 6] [len=7]
 ```
 
-`include_context`, if provided and True, adds the `y()` call's filename, line
-number, and parent function to `y()`'s output.
+**include_context**
+If True, adds the `y()` call's filename, line number, and parent function to `y()`'s output.
 
-```from ycecream import y
-y.configure(include_context=True)
+```from ycecream import Y
+y = Y(include_context=True)
 hello="world"
 y(hello)
 ```
@@ -352,13 +339,14 @@ prints something like
 ```
 y| x.py:4 in <module> ==> hello: 'world'
 ```
-`include_context` is False by default. Note that if you call `y` without any arguments, the context is always shown, regardless of the status `include_context`.
+Note that if you call `y` without any arguments, the context is always shown, regardless of the status `include_context`.
 
-`include_time`, if provided and True, adds the current time to `y()`'s output.
+**include_time**
+If True, adds the current time to `y()`'s output.
 
 ```
-from ycecream import y
-y.configure(include_time=True)
+from ycecream import Y
+y =  Y(include_time=True)
 hello="world"
 y(hello)
 ```
@@ -366,11 +354,13 @@ prints something like
 ```
 y| @ 13:01:47.588 ==> hello: 'world'
 ```
-`include_delta`, if provided and True, adds the number of seconds since the start of the program to `y()`'s output.
+
+**include_delta**
+If True, adds the number of seconds since the start of the program to `y()`'s output.
 ```
-from ycecream import y
+from ycecream import Y
 import time
-y.configure(include_delta=True)
+y = Y(include_delta=True)
 hello="world"
 y(hello)
 time.sleep(1)
@@ -383,8 +373,8 @@ y| Δ 1.053 ==> hello: 'world'
 ```
 Of course, it is possible to use several includes at the same time:
 ```
-from ycecream import y
-y.configure(include_context=True, include_time=True, include_delta=True)
+from ycecream import Y
+y = Y(include_context=True, include_time=True, include_delta=True)
 hello="world"
 y(hello)
 ```
@@ -393,15 +383,18 @@ y(hello)
 y| x.py:4 in <module> @ 13:08:46.200 Δ 0.030 ==> hello: 'world'
 ```
 
+## Alternative installation
 
+With `install ycecream.py from github.by`, you can install the ycecream.py directly from GitHub to the site packages (as if it were a pip install).
 
+With `install ycecream.py`, you can install the ycecream.py in your current directory to the site packages (as if it were a pip install).
 
-### Aknowledgement
+## Aknowledgement
 The ycecream pacakage is a fork of the IceCream package. See https://github.com/gruns/icecream
 
 Many thanks to the author Ansgar Grunseid / grunseid.com / grunseid@gmail.com
 
-### Differences with IceCream
+## Differences with IceCream
 
 The ycecream module is a fork of IceCream with a number of differences:
 
@@ -411,6 +404,7 @@ The ycecream module is a fork of IceCream with a number of differences:
 * yceceam has no dependencies. IceCream on the other hand has many (asttoken, colorize, pyglets, ...).
 * ycecream is just one .py files, whereas IceCream consits of a number of .py files. That makes it possible to use ycecream without even (pip) installing it. Just copy ycecream.py to your work directory.
 * ycecream has a PEP8 (Pythonic) API. Less important for the user, the actual code is also (more) PEP8 compatible. IceCream does not fillow the PEP8 standard.
+* ycecream uses a different API to customize (rather than IceCream's configureOutput method
 * ycecream time inclusion can be controlled independently from context
 * ycecrean has a new delta inclusion (time since start of the program)
 
