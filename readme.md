@@ -1,11 +1,11 @@
-![logo](./images/logo.png)
+![logo](./images/logox.png)
 
 ### ycecream -- Never use print() to debug again
 
 Do you ever use `print()` or `log()` to debug your code? Of course you
 do. With ycecream, or `y` for short, printing debug information becomes a little smarter.
 
-### Installation
+## Installation
 
 Installing ycecream with pip is easy.
 ```
@@ -19,7 +19,7 @@ $ pip install ycecream --upgrade
 Alternatively, ycecream.py can be juist copied into you current work directory from GitHub (https://github.com/salabim/ycecream).
 
 
-### Inspect Variables
+## Inspect Variables
 
 Have you ever printed variables or expressions to debug your program? If you've
 ever typed something like
