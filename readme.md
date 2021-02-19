@@ -19,19 +19,23 @@ $ pip install ycecream --upgrade
 Alternatively, ycecream.py can be juist copied into you current work directory from GitHub (https://github.com/salabim/ycecream).
 
 
-## Inspect Variables
+## Inspect variables and expressions
 
 Have you ever printed variables or expressions to debug your program? If you've
 ever typed something like
 
-```python
+```
 print(add2(1000))
 ```
 
 or the more thorough
 
-```python
+```
 print("add2(1000)", add2(1000)))
+```
+or (for Python >= 3.8 only):
+```
+print(f"{add2(1000) =}")
 ```
 
 then `y()` is here to help. With arguments, `y()` inspects itself and prints
@@ -46,8 +50,7 @@ def add2(i):
 y(add2(1000))
 ```
 
-Prints
-
+prints
 ```
 y| add2(1000): 1002
 ```
@@ -63,14 +66,14 @@ world = {"EN": "world", "NL": "wereld", "FR": "monde", "DE": "Welt"}
 y(world, X.a)
 ```
 
-Prints
+prints
 ```
 y| world: {'DE': 'Welt', 'EN': 'world', 'FR': 'monde', 'NL': 'wereld'}, X.a: 3
 ```
 Just give `y()` a variable or expression and you're done. Easy.
 
 
-### Inspect Execution
+## Inspect execution
 
 Have you ever used `print()` to determine which parts of your program are
 executed, and in which order they're executed? For example, if you've ever added
@@ -83,7 +86,6 @@ def add2(i):
     print("exit")
     return result
 ```
-
 then `y()` helps here, too. Without arguments, `y()` inspects itself and
 prints the calling filename, line number, and parent function.
 
@@ -97,7 +99,7 @@ def add2(i):
 y(add2(1000))
 ```
 
-Prints something like
+prints something like
 ```
 y| x.py:3 in add2()
 y| x.py:5 in add2()
@@ -105,26 +107,10 @@ y| x.py:5 in add2()
 Just call `y()` and you're done. Simple.
 
 
-### Return Value
+## Return Value
 
 `y()` returns its argument(s), so `y()` can easily be inserted into
 pre-existing code.
-
-```
->>> a = 6
->>> def add2(i):
->>>     return i / 2
->>> b = half(y(a))
-y| a: 6
->>> y(b)
-y| b: 3
-```
-
-
-### Miscellaneous
-
-`y.as_str(*args)` is like `y()` but the output is returned as a string instead
-of written to stderr.
 
 ```
 from ycecream import y
@@ -139,28 +125,44 @@ y| add2(1000): 1002
 y| b: 1002
 ```
 
-Additionally, `y()`'s output can be entirely disabled, and later re-enabled, with
-`y.disable()` and `y.enable()` respectively.
+## Miscellaneous
+
+`y.as_str(*args)` is like `y()` but the output is returned as a string instead
+of written to stderr.
 
 ```
 from ycecream import y
-y(1)
-y.disable()
-y(2)
-y.enable()
-y(3)
+hello = "world"
+s = y.as_str(hello)
+print(s)
+```
+prints
+```
+y| hello: 'world'
 ```
 
-Prints
+Additionally, ycecreams's output can be entirely disabled, and later re-enabled, with
+`ycecream.disable()` and `ycecream.enable()` respectively.
+Note that these two functions refer to ALL output from ycecream.
+```
+import ycecream
+from ycecream import y
+y(1)
+y
+ycecream.disable()
+y(2)
+ycecream.enable()
+y(3)
+```
+prints
 
 ```
 y| 1
 y| 3
 ```
-
 `y()` continues to return its arguments when disabled, of course.
 
-### Import Tricks
+## Import Tricks
 
 To make `y()` available in every file without needing to be imported in
 every file, you can `install()` it. For example, in a root `A.py`:
@@ -181,8 +183,7 @@ def foo():
     y(x)
 ```
 
-`install()` adds `y()` to the
-[builtins](https://docs.python.org/3.8/library/builtins.html) module,
+`install()` adds `y()` to the builtins module,
 which is shared amongst all files imported by the interpreter.
 Similarly, `y()` can later be `uninstall()`ed, too.
 
@@ -198,7 +199,7 @@ except ImportError:
     y = lambda *args: None if not args else (args[0] if len(a) == 1 else args)
 ```
 
-### Customization
+## Customization
 For the customization, it is important to realize that `y` is an instance of the `ycecream.Y` class, which has
 a nuumber of customization attributes:
 * `prefix`
