@@ -414,3 +414,4 @@ The ycecream module is a fork of IceCream with a number of differences:
 * ycecream uses a different API to customize (rather than IceCream's configureOutput method
 * ycecream time inclusion can be controlled independently from context
 * ycecrean has a new delta inclusion (time since start of the program)
+* ycecream does not sort dicts by default. This behaviour can be controlled with the sort_dict parameter. (This is implemented by including the pprint 3.8 source code
