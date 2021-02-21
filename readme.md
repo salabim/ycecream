@@ -385,11 +385,11 @@ y.customize(prefix="==> ", enable=False)
 world = "perfect"
 y(hello)
 y.customize(enable=True)
-world = "in danger"
+world = "on firer"
 ```
 prints
 ```
-==> hello: world = 'in danger'
+==> hello: world = 'on fire'
 ```
 and nothing about a perfect world.
 
@@ -428,10 +428,10 @@ The ycecream module is a fork of IceCream with a number of differences:
 * ycecream runs only on Python 3.6 and higher. (IceCream runs even on Python 2.7).
 * ycecream uses y as the standard interface, whereas IceCream uses ic. To make life easy, ycecream also supports ic!
 * yceceam has no dependencies. IceCream on the other hand has many (asttoken, colorize, pyglets, ...).
-* ycecream is just one .py files, whereas IceCream consits of a number of .py files. That makes it possible to use ycecream without even (pip) installing it. Just copy ycecream.py to your work directory.
-* ycecream has a PEP8 (Pythonic) API. Less important for the user, the actual code is also (more) PEP8 compatible. IceCream does not fillow the PEP8 standard.
+* ycecream is just one .py file, whereas IceCream consists of a number of .py files. That makes it possible to use ycecream without even (pip) installing it. Just copy ycecream.py to your work directory.
+* ycecream has a PEP8 (Pythonic) API. Less important for the user, the actual code is also (more) PEP8 compatible. IceCream does not follow the PEP8 standard.
 * ycecream uses a different API to customize (rather than IceCream's configureOutput method
 * ycecream time inclusion can be controlled independently from context
-* ycecrean has a new delta inclusion (time since start of the program)
-* ycecream does not sort dicts by default. This behaviour can be controlled with the sort_dict parameter. (This is implemented by including the pprint 3.8 source code
+* ycecream has a new delta inclusion (time since start of the program)
+* ycecream does not sort dicts by default. This behaviour can be controlled with the sort_dict parameter. (This is implemented by including the pprint 3.8 source code)
 * ycecream uses pytest for the test scripts rather than YceCream's unittest script.
