@@ -17,11 +17,11 @@ Original author: Ansgar Grunseid / grunseid.com / grunseid@gmail.com
 
 import ast
 import inspect
-import pprint
 import sys
 import datetime
 import textwrap
 from pathlib import Path
+from contextlib import contextmanager
 
 
 def stderr_print(*args):
@@ -37,7 +37,7 @@ def isLiteral(s):
 
 
 class NoSourceAvailableError(OSError):
-    infoMessage = (
+    fail_message = (
         "Failed to access the underlying source code for analysis. Was y() "
         "invoked in an interpreter (e.g. python -i), a frozen application "
         "(e.g. packaged with PyInstaller), or did the underlying source code "
@@ -77,22 +77,23 @@ def format_pair(prefix, arg, value):
 
 
 PREFIX = "y| "
-LINE_WRAP_WIDTH = 80  # Characters.
+line_length = 80  # Characters.
 CONTEXT_DELIMITER = " ==> "
 OUTPUT_FUNCTION = lambda *args: stderr_print(*args)
-ARG_TO_STRING_FUNCTION = lambda obj: pprint.pformat(obj).replace("\\n", "\n")
+ARG_TO_STRING_FUNCTION = lambda obj, sort_dicts=False: pformat(obj, sort_dicts=sort_dicts).replace("\\n", "\n")
 INCLUDE_CONTEXT = False
 INCLUDE_TIME = False
 INCLUDE_DELTA = False
-
-ENABLED = True
 PAIR_DELIMITER = ", "
+ENABLED = True
+SORT_DICTS = False
+
+global_enabled = True
 
 starttime = datetime.datetime.now()
 
 
 class Y:
-
     def __init__(
         self,
         prefix=PREFIX,
@@ -101,9 +102,10 @@ class Y:
         include_context=INCLUDE_CONTEXT,
         include_time=INCLUDE_TIME,
         include_delta=INCLUDE_DELTA,
-        line_wrap_width=LINE_WRAP_WIDTH,
+        line_length=line_length,
         pair_delimiter=PAIR_DELIMITER,
         enabled=ENABLED,
+        sort_dicts=SORT_DICTS,
     ):
 
         self.prefix = PREFIX if prefix is None else prefix
@@ -112,49 +114,125 @@ class Y:
         self.include_context = INCLUDE_CONTEXT if include_context is None else include_context
         self.include_time = INCLUDE_TIME if include_time is None else include_time
         self.include_delta = INCLUDE_DELTA if include_delta is None else include_delta
-        self.line_wrap_width = LINE_WRAP_WIDTH if line_wrap_width is None else line_wrap_width
+        self.line_length = line_length if line_length is None else line_length
         self.pair_delimiter = PAIR_DELIMITER if pair_delimiter is None else pair_delimiter
         self.enabled = ENABLED if enabled is None else enabled
+        self.sort_dicts = SORT_DICTS if sort_dicts is None else sort_dicts
+        self.Y = Y
 
-    def __call__(self, *args):
-        if self.enabled:
-            call_frame = inspect.currentframe().f_back
-            try:
-                out = self._format(call_frame, *args)
-            except NoSourceAvailableError as err:
-                prefix = callOrValue(self.prefix)
-                out = prefix + "Error: " + err.infoMessage
-            self.output_function(out)
+    def __call__(
+        self,
+        *args,
+        prefix=None,
+        output_function=None,
+        arg_to_string_function=None,
+        include_context=None,
+        include_time=None,
+        include_delta=None,
+        line_length=None,
+        pair_delimiter=None,
+        enabled=None,
+        sort_dicts=None,
+        as_str=False
+    ):
+        self._prefix = self.prefix if prefix is None else prefix
+        self._output_function = self.output_function if output_function is None else output_function
+        self._arg_to_string_function = self.arg_to_string_function if arg_to_string_function is None else arg_to_string_function
+        self._include_context = self.include_context if include_context is None else include_context
+        self._include_time = self.include_time if include_time is None else include_time
+        self._include_delta = self.include_delta if include_delta is None else include_delta
+        self._line_length = self.line_length if line_length is None else line_length
+        self._pair_delimiter = self.pair_delimiter if pair_delimiter is None else pair_delimiter
+        self._enabled = self.enabled if enabled is None else enabled
+        self._sort_dicts = self.sort_dicts if sort_dicts is None else sort_dicts
 
-        if not args:  # E.g. ic().
+        call_frame = inspect.currentframe().f_back
+        try:
+            out = self._format(call_frame, *args)
+        except NoSourceAvailableError as err:
+            prefix = callOrValue(self._prefix)
+            out = prefix + "Error: " + err.fail_message
+        if as_str:
+            return out
+        if global_enabled and self._enabled:
+            self._output_function(out)
+
+        if len(args) == 0:
             passthrough = None
-        elif len(args) == 1:  # E.g. ic(1).
+        elif len(args) == 1:
             passthrough = args[0]
-        else:  # E.g. ic(1, 2, 3).
+        else:
             passthrough = args
 
         return passthrough
 
-    def as_str(self, *args):
-        call_frame = inspect.currentframe().f_back
-        out = self._format(call_frame, *args)
-        return out
+    def configure(
+        self,
+        *,
+        prefix=None,
+        output_function=None,
+        arg_to_string_function=None,
+        include_context=None,
+        include_time=None,
+        include_delta=None,
+        line_length=None,
+        pair_delimiter=None,
+        enabled=None,
+        sort_dicts=None,
+        as_str=False
+    ):
+        self.prefix = self.prefix if prefix is None else prefix
+        self.output_function = self.output_function if output_function is None else output_function
+        self.arg_to_string_function = self.arg_to_string_function if arg_to_string_function is None else arg_to_string_function
+        self.include_context = self.include_context if include_context is None else include_context
+        self.include_time = self.include_time if include_time is None else include_time
+        self.include_delta = self.include_delta if include_delta is None else include_delta
+        self.line_length = self.line_length if line_length is None else line_length
+        self.pair_delimiter = self.pair_delimiter if pair_delimiter is None else pair_delimiter
+        self.enabled = self.enabled if enabled is None else enabled
+        self.sort_dicts = self.sort_dicts if sort_dicts is None else sort_dicts
+        return self
+
+    @contextmanager
+    def preserve(self):
+        prefix = self.prefix
+        output_function = self.output_function
+        arg_to_string_function = self.arg_to_string_function
+        include_context = self.include_context
+        include_time = self.include_time
+        include_delta = self.include_delta
+        line_length = self.line_length
+        pair_delimiter = self.pair_delimiter
+        enabled = self.enabled
+        sort_dicts = self.sort_dicts
+        yield
+        self.configure(
+            prefix=prefix,
+            output_function=output_function,
+            arg_to_string_function=arg_to_string_function,
+            include_context=include_context,
+            include_time=include_time,
+            include_delta=include_delta,
+            line_length=line_length,
+            enabled=enabled,
+            sort_dicts=sort_dicts,
+        )
 
     def _format(self, call_frame, *args):
-        prefix = callOrValue(self.prefix)
+        prefix = callOrValue(self._prefix)
 
         call_node = Source.executing(call_frame).node
         if call_node is None:
             raise NoSourceAvailableError()
 
-        if len(args) == 0 or self.include_context:
+        if len(args) == 0 or self._include_context:
             parts = [self._format_context(call_frame, call_node)]
         else:
             parts = []
-        if self.include_time:
+        if self._include_time:
             parts.append(f'@ {datetime.datetime.now().strftime("%H:%M:%S.%f")[:-3]}')
 
-        if self.include_delta:
+        if self._include_delta:
             t0 = (datetime.datetime.now() - starttime).total_seconds()
             parts.append(f"\u0394 {t0:.3f}")
 
@@ -178,15 +256,19 @@ class Y:
         def arg_prefix(arg):
             return f"{arg}: "
 
-        pairs = [(arg, self.arg_to_string_function(val)) for arg, val in pairs]
+        if "sort_dicts" in inspect.signature(self._arg_to_string_function).parameters:
+            pairs = [(arg, self._arg_to_string_function(val, sort_dicts=self._sort_dicts)) for arg, val in pairs]
+        else:
+            pairs = [(arg, self._arg_to_string_function(val)) for arg, val in pairs]
+
         pairs_processed = [val if isLiteral(arg) else (arg_prefix(arg) + val) for arg, val in pairs]
 
-        all_args_on_one_line = self.pair_delimiter.join(pairs_processed)
+        all_args_on_one_line = self._pair_delimiter.join(pairs_processed)
         multiline_args = len(all_args_on_one_line.splitlines()) > 1
 
         context_delimiter = CONTEXT_DELIMITER if context else ""
         all_pairs = prefix + context + context_delimiter + all_args_on_one_line
-        first_line_too_long = len(all_pairs.splitlines()[0]) > self.line_wrap_width
+        first_line_too_long = len(all_pairs.splitlines()[0]) > self._line_length
 
         if multiline_args or first_line_too_long:
             if context:
@@ -217,35 +299,6 @@ class Y:
 
         return filename, line_number, parent_function
 
-    def enable(self):
-        self.enabled = True
-
-    def disable(self):
-        self.enabled = False
-
-    def given(
-        self,
-        prefix=None,
-        output_function=None,
-        arg_to_string_function=None,
-        include_context=None,
-        include_time=None,
-        include_delta=None,
-        line_wrap_width=None,
-        pair_delimiter=None,
-        enabled=None,
-    ):
-        return  Y(
-        prefix=self.prefix if prefix is None else prefix,
-        output_function = self.output_function if output_function is None else output_function,
-        arg_to_string_function = self.arg_to_string_function if arg_to_string_function is None else arg_to_string_function,
-        include_context = self.include_context if include_context is None else include_context,
-        include_time = self.include_time if include_time is None else include_time,
-        include_delta = self.include_delta if include_delta is None else include_delta,
-        line_wrap_width = self.line_wrap_width if line_wrap_width is None else line_wrap_width,
-        pair_delimiter = self.pair_delimiter if pair_delimiter is None else pair_delimiter,
-        enabled = self.enabled if enabled is None else enabled
-        )
 
 try:
     builtins = __import__("__builtin__")
@@ -259,6 +312,13 @@ def install(y="y"):
 
 def uninstall(y="y"):
     delattr(builtins, y)
+
+
+def enable(value=None):
+    global global_enabled
+    if value is not None:
+        global_enabled = value
+    return global_enabled
 
 
 ic = Y(prefix="ic| ")
@@ -1216,6 +1276,605 @@ class ASTTokens(object):
 
 # end of source of asttokes
 
+# source of pprint (3.8) module
+
+#
+#  Author:      Fred L. Drake, Jr.
+#               fdrake@acm.org
+#
+#  This is a simple little module I wrote to make life easier.  I didn't
+#  see anything quite like it in the library, though I may have overlooked
+#  something.  I wrote this when I was trying to read some heavily nested
+#  tuples with fairly non-descriptive content.  This is modeled very much
+#  after Lisp/Scheme - style pretty-printing of lists.  If you find it
+#  useful, thank small children who sleep at night.
+
+"""Support to pretty-print lists, tuples, & dictionaries recursively.
+
+Very simple, but useful, especially in debugging data structures.
+
+Classes
+-------
+
+PrettyPrinter()
+    Handle pretty-printing operations onto a stream using a configured
+    set of formatting parameters.
+
+Functions
+---------
+
+pformat()
+    Format a Python object into a pretty-printed representation.
+
+pprint()
+    Pretty-print a Python object to a stream [default is sys.stdout].
+
+saferepr()
+    Generate a 'standard' repr()-like value, but protect against recursive
+    data structures.
+
+"""
+
+import collections as _collections
+import re
+import sys as _sys
+import types as _types
+from io import StringIO as _StringIO
+
+__all__ = ["pprint", "pformat", "isreadable", "isrecursive", "saferepr", "PrettyPrinter", "pp"]
+
+
+def pprint(object, stream=None, indent=1, width=80, depth=None, *, compact=False, sort_dicts=True):
+    """Pretty-print a Python object to a stream [default is sys.stdout]."""
+    printer = PrettyPrinter(stream=stream, indent=indent, width=width, depth=depth, compact=compact, sort_dicts=sort_dicts)
+    printer.pprint(object)
+
+
+def pformat(object, indent=1, width=80, depth=None, *, compact=False, sort_dicts=True):
+    """Format a Python object into a pretty-printed representation."""
+    return PrettyPrinter(indent=indent, width=width, depth=depth, compact=compact, sort_dicts=sort_dicts).pformat(object)
+
+
+def pp(object, *args, sort_dicts=False, **kwargs):
+    """Pretty-print a Python object"""
+    pprint(object, *args, sort_dicts=sort_dicts, **kwargs)
+
+
+def saferepr(object):
+    """Version of repr() which can handle recursive data structures."""
+    return _safe_repr(object, {}, None, 0, True)[0]
+
+
+def isreadable(object):
+    """Determine if saferepr(object) is readable by eval()."""
+    return _safe_repr(object, {}, None, 0, True)[1]
+
+
+def isrecursive(object):
+    """Determine if object requires a recursive representation."""
+    return _safe_repr(object, {}, None, 0, True)[2]
+
+
+class _safe_key:
+    """Helper function for key functions when sorting unorderable objects.
+
+    The wrapped-object will fallback to a Py2.x style comparison for
+    unorderable types (sorting first comparing the type name and then by
+    the obj ids).  Does not work recursively, so dict.items() must have
+    _safe_key applied to both the key and the value.
+
+    """
+
+    __slots__ = ["obj"]
+
+    def __init__(self, obj):
+        self.obj = obj
+
+    def __lt__(self, other):
+        try:
+            return self.obj < other.obj
+        except TypeError:
+            return (str(type(self.obj)), id(self.obj)) < (str(type(other.obj)), id(other.obj))
+
+
+def _safe_tuple(t):
+    "Helper function for comparing 2-tuples"
+    return _safe_key(t[0]), _safe_key(t[1])
+
+
+class PrettyPrinter:
+    def __init__(self, indent=1, width=80, depth=None, stream=None, *, compact=False, sort_dicts=True):
+        """Handle pretty printing operations onto a stream using a set of
+        configured parameters.
+
+        indent
+            Number of spaces to indent for each level of nesting.
+
+        width
+            Attempted maximum number of columns in the output.
+
+        depth
+            The maximum depth to print out nested structures.
+
+        stream
+            The desired output stream.  If omitted (or false), the standard
+            output stream available at construction will be used.
+
+        compact
+            If true, several items will be combined in one line.
+
+        sort_dicts
+            If true, dict keys are sorted.
+
+        """
+        indent = int(indent)
+        width = int(width)
+        if indent < 0:
+            raise ValueError("indent must be >= 0")
+        if depth is not None and depth <= 0:
+            raise ValueError("depth must be > 0")
+        if not width:
+            raise ValueError("width must be != 0")
+        self._depth = depth
+        self._indent_per_level = indent
+        self._width = width
+        if stream is not None:
+            self._stream = stream
+        else:
+            self._stream = _sys.stdout
+        self._compact = bool(compact)
+        self._sort_dicts = sort_dicts
+
+    def pprint(self, object):
+        self._format(object, self._stream, 0, 0, {}, 0)
+        self._stream.write("\n")
+
+    def pformat(self, object):
+        sio = _StringIO()
+        self._format(object, sio, 0, 0, {}, 0)
+        return sio.getvalue()
+
+    def isrecursive(self, object):
+        return self.format(object, {}, 0, 0)[2]
+
+    def isreadable(self, object):
+        s, readable, recursive = self.format(object, {}, 0, 0)
+        return readable and not recursive
+
+    def _format(self, object, stream, indent, allowance, context, level):
+        objid = id(object)
+        if objid in context:
+            stream.write(_recursion(object))
+            self._recursive = True
+            self._readable = False
+            return
+        rep = self._repr(object, context, level)
+        max_width = self._width - indent - allowance
+        if len(rep) > max_width:
+            p = self._dispatch.get(type(object).__repr__, None)
+            if p is not None:
+                context[objid] = 1
+                p(self, object, stream, indent, allowance, context, level + 1)
+                del context[objid]
+                return
+            elif isinstance(object, dict):
+                context[objid] = 1
+                self._pprint_dict(object, stream, indent, allowance, context, level + 1)
+                del context[objid]
+                return
+        stream.write(rep)
+
+    _dispatch = {}
+
+    def _pprint_dict(self, object, stream, indent, allowance, context, level):
+        write = stream.write
+        write("{")
+        if self._indent_per_level > 1:
+            write((self._indent_per_level - 1) * " ")
+        length = len(object)
+        if length:
+            if self._sort_dicts:
+                items = sorted(object.items(), key=_safe_tuple)
+            else:
+                items = object.items()
+            self._format_dict_items(items, stream, indent, allowance + 1, context, level)
+        write("}")
+
+    _dispatch[dict.__repr__] = _pprint_dict
+
+    def _pprint_ordered_dict(self, object, stream, indent, allowance, context, level):
+        if not len(object):
+            stream.write(repr(object))
+            return
+        cls = object.__class__
+        stream.write(cls.__name__ + "(")
+        self._format(list(object.items()), stream, indent + len(cls.__name__) + 1, allowance + 1, context, level)
+        stream.write(")")
+
+    _dispatch[_collections.OrderedDict.__repr__] = _pprint_ordered_dict
+
+    def _pprint_list(self, object, stream, indent, allowance, context, level):
+        stream.write("[")
+        self._format_items(object, stream, indent, allowance + 1, context, level)
+        stream.write("]")
+
+    _dispatch[list.__repr__] = _pprint_list
+
+    def _pprint_tuple(self, object, stream, indent, allowance, context, level):
+        stream.write("(")
+        endchar = ",)" if len(object) == 1 else ")"
+        self._format_items(object, stream, indent, allowance + len(endchar), context, level)
+        stream.write(endchar)
+
+    _dispatch[tuple.__repr__] = _pprint_tuple
+
+    def _pprint_set(self, object, stream, indent, allowance, context, level):
+        if not len(object):
+            stream.write(repr(object))
+            return
+        typ = object.__class__
+        if typ is set:
+            stream.write("{")
+            endchar = "}"
+        else:
+            stream.write(typ.__name__ + "({")
+            endchar = "})"
+            indent += len(typ.__name__) + 1
+        object = sorted(object, key=_safe_key)
+        self._format_items(object, stream, indent, allowance + len(endchar), context, level)
+        stream.write(endchar)
+
+    _dispatch[set.__repr__] = _pprint_set
+    _dispatch[frozenset.__repr__] = _pprint_set
+
+    def _pprint_str(self, object, stream, indent, allowance, context, level):
+        write = stream.write
+        if not len(object):
+            write(repr(object))
+            return
+        chunks = []
+        lines = object.splitlines(True)
+        if level == 1:
+            indent += 1
+            allowance += 1
+        max_width1 = max_width = self._width - indent
+        for i, line in enumerate(lines):
+            rep = repr(line)
+            if i == len(lines) - 1:
+                max_width1 -= allowance
+            if len(rep) <= max_width1:
+                chunks.append(rep)
+            else:
+                # A list of alternating (non-space, space) strings
+                parts = re.findall(r"\S*\s*", line)
+                assert parts
+                assert not parts[-1]
+                parts.pop()  # drop empty last part
+                max_width2 = max_width
+                current = ""
+                for j, part in enumerate(parts):
+                    candidate = current + part
+                    if j == len(parts) - 1 and i == len(lines) - 1:
+                        max_width2 -= allowance
+                    if len(repr(candidate)) > max_width2:
+                        if current:
+                            chunks.append(repr(current))
+                        current = part
+                    else:
+                        current = candidate
+                if current:
+                    chunks.append(repr(current))
+        if len(chunks) == 1:
+            write(rep)
+            return
+        if level == 1:
+            write("(")
+        for i, rep in enumerate(chunks):
+            if i > 0:
+                write("\n" + " " * indent)
+            write(rep)
+        if level == 1:
+            write(")")
+
+    _dispatch[str.__repr__] = _pprint_str
+
+    def _pprint_bytes(self, object, stream, indent, allowance, context, level):
+        write = stream.write
+        if len(object) <= 4:
+            write(repr(object))
+            return
+        parens = level == 1
+        if parens:
+            indent += 1
+            allowance += 1
+            write("(")
+        delim = ""
+        for rep in _wrap_bytes_repr(object, self._width - indent, allowance):
+            write(delim)
+            write(rep)
+            if not delim:
+                delim = "\n" + " " * indent
+        if parens:
+            write(")")
+
+    _dispatch[bytes.__repr__] = _pprint_bytes
+
+    def _pprint_bytearray(self, object, stream, indent, allowance, context, level):
+        write = stream.write
+        write("bytearray(")
+        self._pprint_bytes(bytes(object), stream, indent + 10, allowance + 1, context, level + 1)
+        write(")")
+
+    _dispatch[bytearray.__repr__] = _pprint_bytearray
+
+    def _pprint_mappingproxy(self, object, stream, indent, allowance, context, level):
+        stream.write("mappingproxy(")
+        self._format(object.copy(), stream, indent + 13, allowance + 1, context, level)
+        stream.write(")")
+
+    _dispatch[_types.MappingProxyType.__repr__] = _pprint_mappingproxy
+
+    def _format_dict_items(self, items, stream, indent, allowance, context, level):
+        write = stream.write
+        indent += self._indent_per_level
+        delimnl = ",\n" + " " * indent
+        last_index = len(items) - 1
+        for i, (key, ent) in enumerate(items):
+            last = i == last_index
+            rep = self._repr(key, context, level)
+            write(rep)
+            write(": ")
+            self._format(ent, stream, indent + len(rep) + 2, allowance if last else 1, context, level)
+            if not last:
+                write(delimnl)
+
+    def _format_items(self, items, stream, indent, allowance, context, level):
+        write = stream.write
+        indent += self._indent_per_level
+        if self._indent_per_level > 1:
+            write((self._indent_per_level - 1) * " ")
+        delimnl = ",\n" + " " * indent
+        delim = ""
+        width = max_width = self._width - indent + 1
+        it = iter(items)
+        try:
+            next_ent = next(it)
+        except StopIteration:
+            return
+        last = False
+        while not last:
+            ent = next_ent
+            try:
+                next_ent = next(it)
+            except StopIteration:
+                last = True
+                max_width -= allowance
+                width -= allowance
+            if self._compact:
+                rep = self._repr(ent, context, level)
+                w = len(rep) + 2
+                if width < w:
+                    width = max_width
+                    if delim:
+                        delim = delimnl
+                if width >= w:
+                    width -= w
+                    write(delim)
+                    delim = ", "
+                    write(rep)
+                    continue
+            write(delim)
+            delim = delimnl
+            self._format(ent, stream, indent, allowance if last else 1, context, level)
+
+    def _repr(self, object, context, level):
+        repr, readable, recursive = self.format(object, context.copy(), self._depth, level)
+        if not readable:
+            self._readable = False
+        if recursive:
+            self._recursive = True
+        return repr
+
+    def format(self, object, context, maxlevels, level):
+        """Format object for a specific context, returning a string
+        and flags indicating whether the representation is 'readable'
+        and whether the object represents a recursive construct.
+        """
+        return _safe_repr(object, context, maxlevels, level, self._sort_dicts)
+
+    def _pprint_default_dict(self, object, stream, indent, allowance, context, level):
+        if not len(object):
+            stream.write(repr(object))
+            return
+        rdf = self._repr(object.default_factory, context, level)
+        cls = object.__class__
+        indent += len(cls.__name__) + 1
+        stream.write("%s(%s,\n%s" % (cls.__name__, rdf, " " * indent))
+        self._pprint_dict(object, stream, indent, allowance + 1, context, level)
+        stream.write(")")
+
+    _dispatch[_collections.defaultdict.__repr__] = _pprint_default_dict
+
+    def _pprint_counter(self, object, stream, indent, allowance, context, level):
+        if not len(object):
+            stream.write(repr(object))
+            return
+        cls = object.__class__
+        stream.write(cls.__name__ + "({")
+        if self._indent_per_level > 1:
+            stream.write((self._indent_per_level - 1) * " ")
+        items = object.most_common()
+        self._format_dict_items(items, stream, indent + len(cls.__name__) + 1, allowance + 2, context, level)
+        stream.write("})")
+
+    _dispatch[_collections.Counter.__repr__] = _pprint_counter
+
+    def _pprint_chain_map(self, object, stream, indent, allowance, context, level):
+        if not len(object.maps):
+            stream.write(repr(object))
+            return
+        cls = object.__class__
+        stream.write(cls.__name__ + "(")
+        indent += len(cls.__name__) + 1
+        for i, m in enumerate(object.maps):
+            if i == len(object.maps) - 1:
+                self._format(m, stream, indent, allowance + 1, context, level)
+                stream.write(")")
+            else:
+                self._format(m, stream, indent, 1, context, level)
+                stream.write(",\n" + " " * indent)
+
+    _dispatch[_collections.ChainMap.__repr__] = _pprint_chain_map
+
+    def _pprint_deque(self, object, stream, indent, allowance, context, level):
+        if not len(object):
+            stream.write(repr(object))
+            return
+        cls = object.__class__
+        stream.write(cls.__name__ + "(")
+        indent += len(cls.__name__) + 1
+        stream.write("[")
+        if object.maxlen is None:
+            self._format_items(object, stream, indent, allowance + 2, context, level)
+            stream.write("])")
+        else:
+            self._format_items(object, stream, indent, 2, context, level)
+            rml = self._repr(object.maxlen, context, level)
+            stream.write("],\n%smaxlen=%s)" % (" " * indent, rml))
+
+    _dispatch[_collections.deque.__repr__] = _pprint_deque
+
+    def _pprint_user_dict(self, object, stream, indent, allowance, context, level):
+        self._format(object.data, stream, indent, allowance, context, level - 1)
+
+    _dispatch[_collections.UserDict.__repr__] = _pprint_user_dict
+
+    def _pprint_user_list(self, object, stream, indent, allowance, context, level):
+        self._format(object.data, stream, indent, allowance, context, level - 1)
+
+    _dispatch[_collections.UserList.__repr__] = _pprint_user_list
+
+    def _pprint_user_string(self, object, stream, indent, allowance, context, level):
+        self._format(object.data, stream, indent, allowance, context, level - 1)
+
+    _dispatch[_collections.UserString.__repr__] = _pprint_user_string
+
+
+# Return triple (repr_string, isreadable, isrecursive).
+
+
+def _safe_repr(object, context, maxlevels, level, sort_dicts):
+    typ = type(object)
+    if typ in _builtin_scalars:
+        return repr(object), True, False
+
+    r = getattr(typ, "__repr__", None)
+    if issubclass(typ, dict) and r is dict.__repr__:
+        if not object:
+            return "{}", True, False
+        objid = id(object)
+        if maxlevels and level >= maxlevels:
+            return "{...}", False, objid in context
+        if objid in context:
+            return _recursion(object), False, True
+        context[objid] = 1
+        readable = True
+        recursive = False
+        components = []
+        append = components.append
+        level += 1
+        if sort_dicts:
+            items = sorted(object.items(), key=_safe_tuple)
+        else:
+            items = object.items()
+        for k, v in items:
+            krepr, kreadable, krecur = _safe_repr(k, context, maxlevels, level, sort_dicts)
+            vrepr, vreadable, vrecur = _safe_repr(v, context, maxlevels, level, sort_dicts)
+            append("%s: %s" % (krepr, vrepr))
+            readable = readable and kreadable and vreadable
+            if krecur or vrecur:
+                recursive = True
+        del context[objid]
+        return "{%s}" % ", ".join(components), readable, recursive
+
+    if (issubclass(typ, list) and r is list.__repr__) or (issubclass(typ, tuple) and r is tuple.__repr__):
+        if issubclass(typ, list):
+            if not object:
+                return "[]", True, False
+            format = "[%s]"
+        elif len(object) == 1:
+            format = "(%s,)"
+        else:
+            if not object:
+                return "()", True, False
+            format = "(%s)"
+        objid = id(object)
+        if maxlevels and level >= maxlevels:
+            return format % "...", False, objid in context
+        if objid in context:
+            return _recursion(object), False, True
+        context[objid] = 1
+        readable = True
+        recursive = False
+        components = []
+        append = components.append
+        level += 1
+        for o in object:
+            orepr, oreadable, orecur = _safe_repr(o, context, maxlevels, level, sort_dicts)
+            append(orepr)
+            if not oreadable:
+                readable = False
+            if orecur:
+                recursive = True
+        del context[objid]
+        return format % ", ".join(components), readable, recursive
+
+    rep = repr(object)
+    return rep, (rep and not rep.startswith("<")), False
+
+
+_builtin_scalars = frozenset({str, bytes, bytearray, int, float, complex, bool, type(None)})
+
+
+def _recursion(object):
+    return "<Recursion on %s with id=%s>" % (type(object).__name__, id(object))
+
+
+def _perfcheck(object=None):
+    import time
+
+    if object is None:
+        object = [("string", (1, 2), [3, 4], {5: 6, 7: 8})] * 100000
+    p = PrettyPrinter()
+    t1 = time.perf_counter()
+    _safe_repr(object, {}, None, 0, True)
+    t2 = time.perf_counter()
+    p.pformat(object)
+    t3 = time.perf_counter()
+    print("_safe_repr:", t2 - t1)
+    print("pformat:", t3 - t2)
+
+
+def _wrap_bytes_repr(object, width, allowance):
+    current = b""
+    last = len(object) // 4 * 4
+    for i in range(0, len(object), 4):
+        part = object[i : i + 4]
+        candidate = current + part
+        if i == last:
+            width -= allowance
+        if len(repr(candidate)) > width:
+            if current:
+                yield repr(current)
+            current = part
+        else:
+            current = candidate
+    if current:
+        yield repr(current)
+
+
+# end of source of pprint (3.8)
+
 # source of executing module
 import __future__
 import ast
@@ -1711,7 +2370,8 @@ def _extract_ipython_statement(stmts, tree):
 
 # end of source of executing module
 
-class Source(Source): 
+
+class Source(Source):
     def get_text_with_indentation(self, node):
         result = self.asttokens().get_text(node)
         if "\n" in result:
@@ -1719,4 +2379,3 @@ class Source(Source):
             result = textwrap.dedent(result)
         result = result.strip()
         return result
-        
