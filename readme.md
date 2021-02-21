@@ -127,7 +127,7 @@ y| b: 1002
 
 ## Miscellaneous
 
-`y.as_str(*args)` is like `y()` but the output is returned as a string instead
+`y(*args, as_str=True` is like `y(*args)` but the output is returned as a string instead
 of written to stderr.
 
 ```
@@ -142,7 +142,8 @@ y| hello: 'world'
 ```
 
 Additionally, ycecreams's output can be entirely disabled, and later re-enabled, with
-`ycecream.enable(False)` and `ycecream.enable(True)` respectively.
+`ycecream.enable(False)` and `ycecream.enable(True)` respectively. The function always returns
+the current setting.
 Note that this  functions refer to ALL output from ycecream.
 ```
 from ycecream import y, Y, enable
@@ -156,6 +157,7 @@ yd(4)
 enable(True)
 y(5)
 yd(6)
+print(enable())
 ```
 prints
 ```
@@ -163,6 +165,7 @@ y| 1
 y| Δ 0.117 ==> 2
 y| 5
 y| Δ 0.219 ==> 6
+True
 ```
 `y()` continues to return its arguments when disabled, of course.
 
@@ -218,34 +221,25 @@ a nuumber of customization attributes:
 
 It is perfectly ok to set/get any of these attributes directly.
 
-But, it is also possible to create a new Y instance from a Y instance, with the given method.
-
+But, it is also possible to use a customization directly:
 So, it is possible to say
 ```
 from ycecream import y
-y.given(prefix="==> ")(12)
+y(12, prefix="==> ")
 ```
 , which will print
 ```
 ==> 12
 ```
-Please note that the given method does NOT change the current instance of Y. That means that 
+It is also possible to customize y permanently with the customize method. 
 ```
-y.given(prefix="==> ")
-y(12)
-```
-will print
-```
-y| 12
-```
-It is possible to assign the result of given() to y (or something else) however:
-```
-y = y.given(prefix="==> ")
+y.customize(prefix="==> ")
 y(12)
 ```
 will print
 ```
 ==> 12
+```
 ```
 It is possibly easier to say:
 ```
@@ -268,8 +262,7 @@ will print
 ## prefix
 ```
 from ycecream import y
-y = y.given(prefix='hello -> ')
-y('world')
+y('world', prefix='hello -> ')
 ```
 prints
 ```
@@ -293,24 +286,26 @@ prints
 ```
 ## output_function
 This will allow the output to be handled by something else than the deafult (output being written to stderr).
+The output_function should at leae accept one perameter (the one that will be printed)
+
 In the example below, the output is written to stdout.
 ```
 from ycecream import y
-y.given(output_function=print)('hello')
+y("hello", output_function=print)
 ```
 With
 ```
 from ycecream import y
-
 y = Y(output_function=lambda *args: None)
-y('hello')
+y("hello")
 ```
-, all output will be suppressed (this van also be done with disable, see below).
+, all output will be suppressed (this can also be done with the enable parameter, see below).
 
 ## arg_to_string_function
 This will allow to specify how argument values are to be
 serialized to displayable strings. The default is pprint, but this can be changed to,
 for example, handle non-standard datatypes in a custom fashion.
+The arg_to_string function should accept at least one parameter.
 
 ```
 from ycecream import Y
@@ -377,19 +372,43 @@ y| Δ 0.021 ==> hello: 'world'
 y| Δ 1.053 ==> hello: 'world'
 ```
 
-## combining customizations
-Of course, it is possible to use several includes at the same time:
-```
-from ycecream import Y
-y = Y(include_context=True, include_time=True, include_delta=True)
-hello="world"
-y(hello)
-```
-, which will print something like
-```
-y| x.py:4 in <module> @ 13:08:46.200 Δ 0.030 ==> hello: 'world'
-```
+## line_length
+used to specify the line length (for wrapping)
 
+## enable
+Can be used to disable the output:
+
+```
+from ycecream import y
+
+y.customize(prefix="==> ", enable=False)
+world = "perfect"
+y(hello)
+y.customize(enable=True)
+world = "in danger"
+```
+prints
+```
+==> hello: world = 'in danger'
+```
+and nothing about a perfect world.
+
+## sorted_dicts
+By default, ycecream does not sort dicts (printed by pprint). However, it is possible to get the
+default ppprint behaviour (i.e. sorting dicts) with the sorted_dicts attribute:
+
+```
+world = {"EN": "world", "NL": "wereld", "FR": "monde", "DE": "Welt"}
+y(world))
+s1 = y(world, sort_dicts=False)
+s2 = y(world, sort_dicts=True)
+```
+prints
+```
+y| world: {'EN': 'world', 'NL': 'wereld', 'FR': 'monde', 'DE': 'Welt'}
+y| world: {'EN': 'world', 'NL': 'wereld', 'FR': 'monde', 'DE': 'Welt'}
+y| world: {'DE': 'Welt', 'EN': 'world', 'FR': 'monde', 'NL': 'wereld'}
+```
 ### Alternative installation
 
 With `install ycecream.py from github.by`, you can install the ycecream.py directly from GitHub to the site packages (as if it were a pip install).
@@ -415,3 +434,4 @@ The ycecream module is a fork of IceCream with a number of differences:
 * ycecream time inclusion can be controlled independently from context
 * ycecrean has a new delta inclusion (time since start of the program)
 * ycecream does not sort dicts by default. This behaviour can be controlled with the sort_dict parameter. (This is implemented by including the pprint 3.8 source code
+* ycecream uses pytest for the test scripts rather than YceCream's unittest script.
