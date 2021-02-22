@@ -1,9 +1,9 @@
 ![logo](./images/logox.png)
 
-### ycecream -- Never use print() to debug again
+### ycecream -- Debug sweeter than with print()
 
 Do you ever use `print()` or `log()` to debug your code? Of course you
-do. With ycecream, or `y` for short, printing debug information becomes a little smarter.
+do. With ycecream, or `y` for short, printing debug information becomes a lot sweeter.
 
 ## Installation
 
@@ -68,9 +68,9 @@ y(world, X.a)
 
 prints
 ```
-y| world: {'DE': 'Welt', 'EN': 'world', 'FR': 'monde', 'NL': 'wereld'}, X.a: 3
+y| world: {"EN": "world", "NL": "wereld", "FR": "monde", "DE": "Welt"}, X.a: 3
 ```
-Just give `y()` a variable or expression and you're done. Easy.
+Just give `y()` a variable or expression and you're done. Sweet, isn't it?
 
 
 ## Inspect execution
@@ -103,8 +103,9 @@ prints something like
 ```
 y| x.py:3 in add2()
 y| x.py:5 in add2()
+y| add2(1000): 1002
 ```
-Just call `y()` and you're done. Simple.
+Just call `y()` and you're done. Isn't that sweet?
 
 
 ## Return Value
@@ -141,10 +142,10 @@ prints
 y| hello: 'world'
 ```
 
-Additionally, ycecreams's output can be entirely disabled, and later re-enabled, with
+Additionally, ycecreams's output can be entirely disabled, and optionally  later re-enabled, with
 `ycecream.enable(False)` and `ycecream.enable(True)` respectively. The function always returns
-the current setting.
-Note that this  functions refer to ALL output from ycecream.
+the current (new) setting.
+Note that this function refer to ALL output from ycecream.
 ```
 from ycecream import y, Y, enable
 
@@ -208,7 +209,7 @@ except ImportError:
 
 ## Customization
 For the customization, it is important to realize that `y` is an instance of the `ycecream.Y` class, which has
-a nuumber of customization attributes:
+a number of customization attributes:
 * `prefix`
 * `output_function`
 * `arg_to_string_function`
@@ -221,7 +222,7 @@ a nuumber of customization attributes:
 
 It is perfectly ok to set/get any of these attributes directly.
 
-But, it is also possible to use a customization directly:
+But, it is also possible to use a customization in the call to `y`:
 So, it is possible to say
 ```
 from ycecream import y
@@ -241,7 +242,7 @@ will print
 ==> 12
 ```
 ```
-It is possibly easier to say:
+It is argiably easier to say:
 ```
 y.prefix = "==> "
 y(12)
@@ -269,7 +270,7 @@ prints
 hello -> 'world'
 ```
 
-`prefix` can optionally be a function, too.
+`prefix` can also be a function, too.
 
 ```
 import time
@@ -304,7 +305,7 @@ y("hello")
 ## arg_to_string_function
 This will allow to specify how argument values are to be
 serialized to displayable strings. The default is pprint, but this can be changed to,
-for example, handle non-standard datatypes in a custom fashion.
+for example, to handle non-standard datatypes in a custom fashion.
 The arg_to_string function should accept at least one parameter.
 
 ```
@@ -312,10 +313,10 @@ from ycecream import Y
 
 def add_len(obj):
     if hasattr(obj, "__len__"):
-        add = f"[len={len(obj)}]"
+        add = f" [len={len(obj)}]"
     else:
         add = ""
-    return f"{repr(obj)} {add}"
+    return f"{repr(obj)}{add}"
 
 y = Y(arg_to_string_function=add_len)
 l = list(range(7))
@@ -324,7 +325,7 @@ y(7, hello, l)
 ```   
 prints
 ```
-y| 7 , hello: 'world' [len=5], l: [0, 1, 2, 3, 4, 5, 6] [len=7]
+y| 7, hello: 'world' [len=5], l: [0, 1, 2, 3, 4, 5, 6] [len=7]
 ```
 
 ## include_context
@@ -385,7 +386,7 @@ y.customize(prefix="==> ", enable=False)
 world = "perfect"
 y(hello)
 y.customize(enable=True)
-world = "on firer"
+world = "on fire"
 ```
 prints
 ```
@@ -434,4 +435,4 @@ The ycecream module is a fork of IceCream with a number of differences:
 * ycecream time inclusion can be controlled independently from context
 * ycecream has a new delta inclusion (time since start of the program)
 * ycecream does not sort dicts by default. This behaviour can be controlled with the sort_dict parameter. (This is implemented by including the pprint 3.8 source code)
-* ycecream uses pytest for the test scripts rather than YceCream's unittest script.
+* ycecream uses pytest for the test scripts rather than IceCream's unittest script.
