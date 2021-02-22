@@ -1,9 +1,8 @@
 ![logo](./images/logox.png)
 
-### ycecream -- Debug sweeter than with print()
+### ycecream -- Sweeter debugging
 
-Do you ever use `print()` or `log()` to debug your code? Of course you
-do. With ycecream, or `y` for short, printing debug information becomes a lot sweeter.
+Do you ever use `print()` or `log()` to debug your code? If so,  ycecream, or `y` for short, will make printing debug information a lot sweeter.
 
 ## Installation
 
