@@ -124,6 +124,41 @@ prints
 y| add2(1000): 1002
 y| b: 1002
 ```
+## Debug entry and exit of function calls
+
+When you apply `y` as a decorator to a function or method, both the entry and exit can be tracked.
+The (keyword) arguments passed will be shown and upon return, the return value.
+
+```
+from ycecream import y
+@y
+def mul(x, y):
+    return(x, y)
+    
+print(mul(5, 7))
+```
+prints
+```
+y| called mul(5, 7)
+y| returned 12 from mul(5, 7)
+12
+```
+It is possible to suppress the print-out of either the enter or the exit information with
+the show_enter and show_exit parameters, like:
+
+```
+from ycecream import y
+@y(show_exit=False)
+def mul(x, y):
+    return(x, y)
+    
+print(mul(5, 7))
+```
+prints
+```
+y| called mul(5, 7)
+12
+```
 
 ## Miscellaneous
 
