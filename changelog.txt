@@ -1,9 +1,28 @@
+version 1.1.0  2021-02-23
+=========================
+y can now be used as a decorator to debug (keyword) argumnets given to a function.
+In connection with this there are two new parameters:
+- show_enter
+- show_exit
+
+Changed the name of several parameters:
+- show_context (was include_context)
+- show_time (was include_time)
+- show_delta (was include_delta)
+
+The parameter output_function is now called output. And it can now be:
+- callable (like before, e.g. print)
+- an open text file (e.g. sys.stdout or an explicitely opened file)
+- a str or Path object that will be used as the filename (opened with 'a+' for each call)
+
+The parameter arg_to_string is now called serialize.
+
+Complete rewrite of tests, now in PyTest.
+
+
 version 1.0.2  2021-02-19
 =========================
-Phased out Y.configure()
-Phased out Y.format() and replaced by Y.as_str()
-
-Introduced Y.given()
+Phased out Y.format() and replaced by Y(as_str=True)
 
 Major update of readme.md
 

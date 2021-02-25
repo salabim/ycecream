@@ -6,7 +6,7 @@
 #
 #  See https://raw.githubusercontent.com/salabim/ycecream/master/readme.md for details
 
-__version__ = "1.0.2"
+__version__ = "1.1.0"
 
 """
 Fork from IceCream - Never use print() to debug again
@@ -22,6 +22,7 @@ import datetime
 import textwrap
 from pathlib import Path
 from contextlib import contextmanager
+from functools import wraps
 
 
 def stderr_print(*args):
@@ -45,7 +46,7 @@ class NoSourceAvailableError(OSError):
     )
 
 
-def callOrValue(obj):
+def call_or_value(obj):
     return obj() if callable(obj) else obj
 
 
@@ -75,19 +76,45 @@ def format_pair(prefix, arg, value):
     lines = arg_lines[:-1] + value_lines
     return "\n".join(lines)
 
+def check_output(output):
+    if callable(output):
+        return output
+    if isinstance(output, (str, Path)):
+        return output
+    try:
+        output.write('')
+        return output
+    except Exception:
+        pass
+    raise ValueError("output is neither a callable, str, Path or open text file")    
+
+def do_output(output, s):
+    if callable(output):
+        output(s)
+        return
+    if isinstance(output, (str, Path)):
+        if output != '':
+            with open(output, "a+") as f:
+                print(s, file=f)
+        return
+    print(s, file=output)
+
+
 
 PREFIX = "y| "
-line_length = 80  # Characters.
+LINE_LENGTH = 80  # Characters.
 CONTEXT_DELIMITER = " ==> "
-OUTPUT_FUNCTION = lambda *args: stderr_print(*args)
-ARG_TO_STRING_FUNCTION = lambda obj, sort_dicts=False: pformat(obj, sort_dicts=sort_dicts).replace("\\n", "\n")
-INCLUDE_CONTEXT = False
-INCLUDE_TIME = False
-INCLUDE_DELTA = False
+OUTPUT = lambda *args: stderr_print(*args)
+SERIALIZE = lambda obj, sort_dicts=False: pformat(obj, sort_dicts=sort_dicts).replace("\\n", "\n")
+SHOW_CONTEXT = False
+SHOW_TIME = False
+SHOW_DELTA = False
 PAIR_DELIMITER = ", "
 ENABLED = True
 SORT_DICTS = False
-
+AS_STR = False
+SHOW_ENTER = True
+SHOW_EXIT = True
 global_enabled = True
 
 starttime = datetime.datetime.now()
@@ -96,66 +123,136 @@ starttime = datetime.datetime.now()
 class Y:
     def __init__(
         self,
-        prefix=PREFIX,
-        output_function=OUTPUT_FUNCTION,
-        arg_to_string_function=ARG_TO_STRING_FUNCTION,
-        include_context=INCLUDE_CONTEXT,
-        include_time=INCLUDE_TIME,
-        include_delta=INCLUDE_DELTA,
-        line_length=line_length,
-        pair_delimiter=PAIR_DELIMITER,
-        enabled=ENABLED,
-        sort_dicts=SORT_DICTS,
+        *,
+        prefix=None,
+        output=None,
+        serialize=None,
+        show_context=None,
+        show_time=None,
+        show_delta=None,
+        line_length=None,
+        pair_delimiter=None,
+        enabled=None,
+        sort_dicts=None,
+        as_str=None,
+        show_enter=None,
+        show_exit=None,
     ):
 
         self.prefix = PREFIX if prefix is None else prefix
-        self.output_function = OUTPUT_FUNCTION if output_function is None else output_function
-        self.arg_to_string_function = ARG_TO_STRING_FUNCTION if arg_to_string_function is None else arg_to_string_function
-        self.include_context = INCLUDE_CONTEXT if include_context is None else include_context
-        self.include_time = INCLUDE_TIME if include_time is None else include_time
-        self.include_delta = INCLUDE_DELTA if include_delta is None else include_delta
-        self.line_length = line_length if line_length is None else line_length
+        self.output = OUTPUT if output is None else check_output(output)
+        self.serialize = SERIALIZE if serialize is None else serialize
+        self.show_context = SHOW_CONTEXT if show_context is None else show_context
+        self.show_time = SHOW_TIME if show_time is None else show_time
+        self.show_delta = SHOW_DELTA if show_delta is None else show_delta
+        self.line_length = LINE_LENGTH if line_length is None else line_length
         self.pair_delimiter = PAIR_DELIMITER if pair_delimiter is None else pair_delimiter
         self.enabled = ENABLED if enabled is None else enabled
         self.sort_dicts = SORT_DICTS if sort_dicts is None else sort_dicts
-        self.Y = Y
+        self.as_str = AS_STR if as_str is None else as_str
+        self.show_enter = SHOW_ENTER if show_enter is None else show_enter
+        self.show_exit = SHOW_EXIT if show_exit is None else show_exit
 
     def __call__(
         self,
         *args,
         prefix=None,
-        output_function=None,
-        arg_to_string_function=None,
-        include_context=None,
-        include_time=None,
-        include_delta=None,
+        output=None,
+        serialize=None,
+        show_context=None,
+        show_time=None,
+        show_delta=None,
         line_length=None,
         pair_delimiter=None,
         enabled=None,
         sort_dicts=None,
-        as_str=False
+        as_str=None,
+        show_enter=None,
+        show_exit=None
     ):
+        call_frame = inspect.currentframe().f_back
+        frame = inspect.getframeinfo(call_frame, context=1)
+
+        if frame.code_context[0].strip().startswith("@"):
+            prefix = self.prefix if prefix is None else prefix
+            output = self.output if output is None else check_output(output)
+            serialize = self.serialize if serialize is None else serialize
+            show_context = self.show_context if show_context is None else show_context
+            show_time = self.show_time if show_time is None else show_time
+            show_delta = self.show_delta if show_delta is None else show_delta
+            line_length = self.line_length if line_length is None else line_length
+            pair_delimiter = self.pair_delimiter if pair_delimiter is None else pair_delimiter
+            enabled = self.enabled if enabled is None else enabled
+            sort_dicts = self.sort_dicts if sort_dicts is None else sort_dicts
+            show_enter = self.show_enter if show_enter is None else show_enter
+            show_exit = self.show_exit if show_exit is None else show_exit
+ 
+            frame_info = inspect.getframeinfo(call_frame)
+            filename = Path(frame_info.filename).name
+            line_number = frame_info.lineno
+            parent_function = frame_info.function
+            context_info = f"{filename}:{line_number} in {parent_function}"
+
+            def real_decorator(function):
+                @wraps(function)
+                def wrapper(*args, **kwargs):
+                    if show_context:
+                        parts = [context_info]
+                    else:
+                        parts = []
+                    if show_time:
+                        parts.append(f'@ {datetime.datetime.now().strftime("%H:%M:%S.%f")[:-3]}')
+
+                    if show_delta:
+                        t0 = (datetime.datetime.now() - starttime).total_seconds()
+                        parts.append(f"\u0394 {t0:.3f}")
+
+                    context = " ".join(parts)
+                    if context:
+                        context += CONTEXT_DELIMITER
+
+                    args_kwargs = [repr(arg) for arg in args] + [f"{str(k)}={repr(v)}" for k, v in kwargs.items()]
+                    function_arguments = f"{function.__name__}({', '.join(args_kwargs)})"
+
+                    if global_enabled and enabled and show_enter:
+                        do_output(output,f"{prefix() if callable(prefix) else prefix}{context}called {function_arguments}")
+
+                    result = function(*args, **kwargs)
+                    if global_enabled and enabled and show_exit:
+                        do_output(output,f"{call_or_value(prefix)}{context}returned {repr(result)} from {function_arguments}")
+                    return result
+
+                return wrapper
+
+            if len(args) == 0:
+                return real_decorator
+
+            if len(args) == 1 and callable(args[0]):
+                return real_decorator(args[0])
+            raise ValueError("arguments are not allowed in y used as decorator")
+            return  # not really required
+
         self._prefix = self.prefix if prefix is None else prefix
-        self._output_function = self.output_function if output_function is None else output_function
-        self._arg_to_string_function = self.arg_to_string_function if arg_to_string_function is None else arg_to_string_function
-        self._include_context = self.include_context if include_context is None else include_context
-        self._include_time = self.include_time if include_time is None else include_time
-        self._include_delta = self.include_delta if include_delta is None else include_delta
+        self._output = self.output if output is None else check_output(output)
+        self._serialize = self.serialize if serialize is None else serialize
+        self._show_context = self.show_context if show_context is None else show_context
+        self._show_time = self.show_time if show_time is None else show_time
+        self._show_delta = self.show_delta if show_delta is None else show_delta
         self._line_length = self.line_length if line_length is None else line_length
         self._pair_delimiter = self.pair_delimiter if pair_delimiter is None else pair_delimiter
         self._enabled = self.enabled if enabled is None else enabled
         self._sort_dicts = self.sort_dicts if sort_dicts is None else sort_dicts
-
-        call_frame = inspect.currentframe().f_back
+        self._as_str = self.as_str if as_str is None else as_str       
+        
         try:
             out = self._format(call_frame, *args)
         except NoSourceAvailableError as err:
-            prefix = callOrValue(self._prefix)
+            prefix = call_or_value(self._prefix)
             out = prefix + "Error: " + err.fail_message
-        if as_str:
+        if self._as_str:
             return out
         if global_enabled and self._enabled:
-            self._output_function(out)
+            do_output(self._output,out)
 
         if len(args) == 0:
             passthrough = None
@@ -170,69 +267,113 @@ class Y:
         self,
         *,
         prefix=None,
-        output_function=None,
-        arg_to_string_function=None,
-        include_context=None,
-        include_time=None,
-        include_delta=None,
+        output=None,
+        serialize=None,
+        show_context=None,
+        show_time=None,
+        show_delta=None,
         line_length=None,
         pair_delimiter=None,
         enabled=None,
         sort_dicts=None,
-        as_str=False
+        as_str=False,
+        show_enter=None,
+        show_exit=None
     ):
         self.prefix = self.prefix if prefix is None else prefix
-        self.output_function = self.output_function if output_function is None else output_function
-        self.arg_to_string_function = self.arg_to_string_function if arg_to_string_function is None else arg_to_string_function
-        self.include_context = self.include_context if include_context is None else include_context
-        self.include_time = self.include_time if include_time is None else include_time
-        self.include_delta = self.include_delta if include_delta is None else include_delta
+        self.output = self.output if output is None else check_output(output)
+        self.serialize = self.serialize if serialize is None else serialize
+        self.show_context = self.show_context if show_context is None else show_context
+        self.show_time = self.show_time if show_time is None else show_time
+        self.show_delta = self.show_delta if show_delta is None else show_delta
         self.line_length = self.line_length if line_length is None else line_length
         self.pair_delimiter = self.pair_delimiter if pair_delimiter is None else pair_delimiter
         self.enabled = self.enabled if enabled is None else enabled
         self.sort_dicts = self.sort_dicts if sort_dicts is None else sort_dicts
+        self.as_str = self.as_str if as_str is None else as_str
+        self.show_enter = self.show_enter if show_enter is None else show_enter
+        self.decoraror_exit = self.show_exit if show_exit is None else show_exit
         return self
+
+    def clone(
+        self,
+        *,
+        prefix=None,
+        output=None,
+        serialize=None,
+        show_context=None,
+        show_time=None,
+        show_delta=None,
+        line_length=None,
+        pair_delimiter=None,
+        enabled=None,
+        sort_dicts=None,
+        as_str=False,
+        show_enter=None,
+        show_exit=None
+    ):
+        return Y(
+            prefix=self.prefix if prefix is None else prefix,
+            output=self.output if output is None else output,
+            serialize=self.serialize if serialize is None else serialize,
+            show_context=self.show_context if show_context is None else show_context,
+            show_time=self.show_time if show_time is None else show_time,
+            show_delta=self.show_delta if show_delta is None else show_delta,
+            line_length=self.line_length if line_length is None else line_length,
+            pair_delimiter=self.pair_delimiter if pair_delimiter is None else pair_delimiter,
+            enabled=self.enabled if enabled is None else enabled,
+            sort_dicts=self.sort_dicts if sort_dicts is None else sort_dicts,
+            as_str=self.as_str if as_str is None else as_str,
+            show_enter=self.show_enter if show_enter is None else show_enter,
+            show_exit=self.show_exit if show_exit is None else show_exit,
+        )
 
     @contextmanager
     def preserve(self):
         prefix = self.prefix
-        output_function = self.output_function
-        arg_to_string_function = self.arg_to_string_function
-        include_context = self.include_context
-        include_time = self.include_time
-        include_delta = self.include_delta
+        output = self.output
+        serialize = self.serialize
+        show_context = self.show_context
+        show_time = self.show_time
+        show_delta = self.show_delta
         line_length = self.line_length
         pair_delimiter = self.pair_delimiter
         enabled = self.enabled
         sort_dicts = self.sort_dicts
+        as_str = self.as_str
+        show_enter = (None,)
+        show_exit = (None,)
         yield
         self.configure(
             prefix=prefix,
-            output_function=output_function,
-            arg_to_string_function=arg_to_string_function,
-            include_context=include_context,
-            include_time=include_time,
-            include_delta=include_delta,
+            output=output,
+            serialize=serialize,
+            show_context=show_context,
+            show_time=show_time,
+            show_delta=show_delta,
             line_length=line_length,
             enabled=enabled,
             sort_dicts=sort_dicts,
+            as_str=as_str,
+            show_enter=show_enter,
+            show_exit=show_exit,
         )
 
     def _format(self, call_frame, *args):
-        prefix = callOrValue(self._prefix)
+        prefix = call_or_value(self._prefix)
 
         call_node = Source.executing(call_frame).node
         if call_node is None:
             raise NoSourceAvailableError()
 
-        if len(args) == 0 or self._include_context:
+        if len(args) == 0 or self._show_context:
             parts = [self._format_context(call_frame, call_node)]
         else:
             parts = []
-        if self._include_time:
+        if self._show_time:
             parts.append(f'@ {datetime.datetime.now().strftime("%H:%M:%S.%f")[:-3]}')
 
-        if self._include_delta:
+        if self._show_delta:
             t0 = (datetime.datetime.now() - starttime).total_seconds()
             parts.append(f"\u0394 {t0:.3f}")
 
@@ -256,10 +397,10 @@ class Y:
         def arg_prefix(arg):
             return f"{arg}: "
 
-        if "sort_dicts" in inspect.signature(self._arg_to_string_function).parameters:
-            pairs = [(arg, self._arg_to_string_function(val, sort_dicts=self._sort_dicts)) for arg, val in pairs]
+        if "sort_dicts" in inspect.signature(self._serialize).parameters:
+            pairs = [(arg, self._serialize(val, sort_dicts=self._sort_dicts)) for arg, val in pairs]
         else:
-            pairs = [(arg, self._arg_to_string_function(val)) for arg, val in pairs]
+            pairs = [(arg, self._serialize(val)) for arg, val in pairs]
 
         pairs_processed = [val if isLiteral(arg) else (arg_prefix(arg) + val) for arg, val in pairs]
 
