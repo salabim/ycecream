@@ -127,7 +127,7 @@ y| b: 1002
 
 ## Miscellaneous
 
-`y(*args, as_str=True` is like `y(*args)` but the output is returned as a string instead
+`y(*args, as_str=True)` is like `y(*args)` but the output is returned as a string instead
 of written to stderr.
 
 ```
@@ -210,11 +210,13 @@ except ImportError:
 For the customization, it is important to realize that `y` is an instance of the `ycecream.Y` class, which has
 a number of customization attributes:
 * `prefix`
-* `output_function`
-* `arg_to_string_function`
-* `include_context`
-* `include_time`
-* `include_delta`
+* `output`
+* `serialize`
+* `show_context`
+* `show_time`
+* `show_delta`
+* `show_enter`
+* `show_exit`
 * `line_wrap_width`
 * `pair_delimiter=None`
 * `enabled=None`
@@ -284,9 +286,9 @@ prints
 ```
 1613635601 hello: 'world'
 ```
-## output_function
-This will allow the output to be handled by something else than the deafult (output being written to stderr).
-The output_function should at leae accept one perameter (the one that will be printed)
+## output
+This will allow the output to be handled by something else than the default (output being written to stderr).
+The output parameter can beshould at leae accept one perameter (the one that will be printed)
 
 In the example below, the output is written to stdout.
 ```
@@ -296,16 +298,16 @@ y("hello", output_function=print)
 With
 ```
 from ycecream import y
-y = Y(output_function=lambda *args: None)
+y = Y(output_function="")
 y("hello")
 ```
 , all output will be suppressed (this can also be done with the enable parameter, see below).
 
-## arg_to_string_function
+## serialize
 This will allow to specify how argument values are to be
 serialized to displayable strings. The default is pprint, but this can be changed to,
 for example, to handle non-standard datatypes in a custom fashion.
-The arg_to_string function should accept at least one parameter.
+The serialize function should accept at least one parameter.
 
 ```
 from ycecream import Y
@@ -317,7 +319,7 @@ def add_len(obj):
         add = ""
     return f"{repr(obj)}{add}"
 
-y = Y(arg_to_string_function=add_len)
+y = Y(serialize=add_len)
 l = list(range(7))
 hello = "world"
 y(7, hello, l)
@@ -327,11 +329,11 @@ prints
 y| 7, hello: 'world' [len=5], l: [0, 1, 2, 3, 4, 5, 6] [len=7]
 ```
 
-## include_context
+## show_context
 If True, adds the `y()` call's filename, line number, and parent function to `y()`'s output.
 
 ```from ycecream import Y
-y = Y(include_context=True)
+y = Y(show_context=True)
 hello="world"
 y(hello)
 ```
@@ -341,12 +343,12 @@ y| x.py:4 in <module> ==> hello: 'world'
 ```
 Note that if you call `y` without any arguments, the context is always shown, regardless of the status `include_context`.
 
-## include_time
+## show_time
 If True, adds the current time to `y()`'s output.
 
 ```
 from ycecream import Y
-y =  Y(include_time=True)
+y =  Y(show_time=True)
 hello="world"
 y(hello)
 ```
@@ -355,12 +357,12 @@ prints something like
 y| @ 13:01:47.588 ==> hello: 'world'
 ```
 
-## include_delta
+## show_delta
 If True, adds the number of seconds since the start of the program to `y()`'s output.
 ```
 from ycecream import Y
 import time
-y = Y(include_delta=True)
+y = Y(show_delta=True)
 hello="world"
 y(hello)
 time.sleep(1)
@@ -393,9 +395,9 @@ prints
 ```
 and nothing about a perfect world.
 
-## sorted_dicts
+## sort_dicts
 By default, ycecream does not sort dicts (printed by pprint). However, it is possible to get the
-default ppprint behaviour (i.e. sorting dicts) with the sorted_dicts attribute:
+default pprint behaviour (i.e. sorting dicts) with the sorted_dicts attribute:
 
 ```
 world = {"EN": "world", "NL": "wereld", "FR": "monde", "DE": "Welt"}
@@ -429,9 +431,11 @@ The ycecream module is a fork of IceCream with a number of differences:
 * ycecream uses y as the standard interface, whereas IceCream uses ic. To make life easy, ycecream also supports ic!
 * yceceam has no dependencies. IceCream on the other hand has many (asttoken, colorize, pyglets, ...).
 * ycecream is just one .py file, whereas IceCream consists of a number of .py files. That makes it possible to use ycecream without even (pip) installing it. Just copy ycecream.py to your work directory.
+* ycecream can be used as a decorator of a function showing the enter and/or exit event
 * ycecream has a PEP8 (Pythonic) API. Less important for the user, the actual code is also (more) PEP8 compatible. IceCream does not follow the PEP8 standard.
-* ycecream uses a different API to customize (rather than IceCream's configureOutput method
-* ycecream time inclusion can be controlled independently from context
-* ycecream has a new delta inclusion (time since start of the program)
+* ycecream uses a different API to customize (rather than IceCream's configureOutput method)
+* ycecream time showing can be controlled independently from context
+* ycecream can optionally show a delta (time since start of the program)
+* ycecream uses a pytest script rather than IceCream's unittest script
 * ycecream does not sort dicts by default. This behaviour can be controlled with the sort_dict parameter. (This is implemented by including the pprint 3.8 source code)
 * ycecream uses pytest for the test scripts rather than IceCream's unittest script.
