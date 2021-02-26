@@ -229,43 +229,6 @@ True
 ```
 `y()` continues to return its arguments when disabled, of course.
 
-## Import Tricks
-
-To make `y()` available in every file without needing to be imported in
-every file, you can `install()` it. For example, in a root `A.py`:
-
-```
-from ycecream import install
-install()
-
-from B import foo
-foo()
-```
-
-and then in `B.py`, which is imported by `A.py`, just call `y()`:
-
-```
-def foo():
-    x = 3
-    y(x)
-```
-
-`install()` adds `y()` to the builtins module,
-which is shared amongst all files imported by the interpreter.
-Similarly, `y()` can later be `uninstall()`ed, too.
-
-`y()` can also be imported in a manner that fails gracefully if
-ycecream isn't installed, like in production environments (i.e. not
-development). To that end, this fallback import snippet may prove
-useful:
-
-```
-try:
-    from ycecream import y
-except ImportError:
-    y = lambda *args: None if not args else (args[0] if len(a) == 1 else args)
-```
-
 ## Customization
 For the customization, it is important to realize that `y` is an instance of the `ycecream.Y` class, which has
 a number of customization attributes:
@@ -370,6 +333,24 @@ y(4, output="")
 * `y| 2` will be printed to stdout
 * `y| 3` will be appended to the file test
 * `y| 4` will *disappear*
+
+As `output` may be any callable, you can even use this to automatically log any `y` output:
+```
+from ycecream import y
+import logging
+logging.basicConfig(level="INFO")
+log = logging.getLogger("demo")
+y.configure(output=log.info)
+a = {1, 2, 3, 4, 5}
+y(a)
+a.remove(4)
+y(a)
+```
+will print to stderr:
+```
+INFO:demo:y| a: {1, 2, 3, 4, 5}
+INFO:demo:y| a: {1, 2, 3, 5}
+```
 
 ## serialize
 This will allow to specify how argument values are to be
