@@ -160,6 +160,7 @@ y| called mul(5, 7)
 ```
 
 The included duration upon exit offers basic function benchmark functionality.
+
 For instance, with
 ```
 from ycecream import y
@@ -172,7 +173,7 @@ def do_sort(n):
 for i in range(8):
     do_sort(i)
 ```
-the ouput will show the effects of the population size on a the sort speed:
+the ouput will show the effects of the population size on the sort speed:
 ```
 y| returned None from do_sort(0) in 0.000011 seconds
 y| returned None from do_sort(1) in 0.000032 seconds
