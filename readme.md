@@ -302,8 +302,7 @@ will print
 ```
 ==> 12
 ```
-```
-It is argiably easier to say:
+It is arguably easier to say:
 ```
 y.prefix = "==> "
 y(12)
@@ -346,6 +345,7 @@ prints
 ```
 1613635601 hello: 'world'
 ```
+
 ## output
 This will allow the output to be handled by something else than the default (output being written to stderr).
 
