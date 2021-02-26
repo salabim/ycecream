@@ -5,6 +5,27 @@ import sys
 context_start = "y| " + Path(__file__).name + ":"
 from ycecream import y
 
+import datetime
+import pytest
+
+FAKE_TIME = datetime.datetime(2021, 1, 1, 0, 0, 0)
+
+
+@pytest.fixture
+def patch_datetime_now(monkeypatch):
+    class mydatetime:
+        @classmethod
+        def now(cls):
+            return FAKE_TIME
+
+    monkeypatch.setattr(datetime, "datetime", mydatetime)
+
+
+def test_time(patch_datetime_now):
+    hello = "world"
+    s = y(hello, show_time=True, as_str=True)
+    assert s == "y| @ 00:00:00.000 ==> hello: 'world'\n"
+
 
 def test_no_arguments(capsys):
     result = y()
@@ -53,12 +74,12 @@ def test_dynamic_prefix(capsys):
 
 
 def test_output_to_stdout(capsys, tmpdir):
-    result = ''
+    result = ""
+
     def my_output(s):
         nonlocal result
-        result += s + '\n'
-        
-    
+        result += s + "\n"
+
     hello = "world"
     y(hello, output=print)
     out, err = capsys.readouterr()
@@ -68,53 +89,54 @@ def test_output_to_stdout(capsys, tmpdir):
     out, err = capsys.readouterr()
     assert out == "y| hello: 'world'\n"
     assert err == ""
-    y(hello, output='')
+    y(hello, output="")
     out, err = capsys.readouterr()
     assert out == ""
     assert err == ""
-    
+
     y(hello, output=print)
     out, err = capsys.readouterr()
     assert out == "y| hello: 'world'\n"
-    assert err == ""    
-    
-    path = Path(tmpdir) / 'x0'
+    assert err == ""
+
+    path = Path(tmpdir) / "x0"
     y(hello, output=path)
     out, err = capsys.readouterr()
     assert out == ""
     assert err == ""
-    with open(path, 'r') as f:
-        assert f.read() == "y| hello: 'world'\n" 
-        
-    path = Path(tmpdir) / 'x1'
+    with open(path, "r") as f:
+        assert f.read() == "y| hello: 'world'\n"
+
+    path = Path(tmpdir) / "x1"
     y(hello, output=str(path))
     out, err = capsys.readouterr()
     assert out == ""
     assert err == ""
-    with open(path, 'r') as f:
-        assert f.read() == "y| hello: 'world'\n"      
-        
-    path = Path(tmpdir) / 'x2'   
-    with open(path, 'a+') as f:                   
+    with open(path, "r") as f:
+        assert f.read() == "y| hello: 'world'\n"
+
+    path = Path(tmpdir) / "x2"
+    with open(path, "a+") as f:
         y(hello, output=f)
     with pytest.raises(ValueError):  # closed file
         y(hello, output=f)
     out, err = capsys.readouterr()
     assert out == ""
     assert err == ""
-    with open(path, 'r') as f:
-        assert f.read() == "y| hello: 'world'\n"      
-        
+    with open(path, "r") as f:
+        assert f.read() == "y| hello: 'world'\n"
+
     with pytest.raises(ValueError):
         y(hello, output=1)
-        
+
     y(hello, output=my_output)
-    y(1, output=my_output)    
+    y(1, output=my_output)
     out, err = capsys.readouterr()
     assert out == ""
     assert err == ""
-    assert result == "y| hello: 'world'\ny| 1\n"    
-                  
+    assert result == "y| hello: 'world'\ny| 1\n"
+
+
 def test_serialize(capsys):
     def serialize(s):
         return f"{repr(s)} [len={len(s)}]"
@@ -146,7 +168,7 @@ def test_as_str(capsys):
     s = y(hello, as_str=True)
     y(hello)
     out, err = capsys.readouterr()
-    assert err[:-1] == s
+    assert err == s
 
 
 def test_clone():
@@ -164,8 +186,8 @@ def test_sort_dicts():
     s0 = y(world, as_str=True)
     s1 = y(world, sort_dicts=False, as_str=True)
     s2 = y(world, sort_dicts=True, as_str=True)
-    assert s0 == s1 == "y| world: {'EN': 'world', 'NL': 'wereld', 'FR': 'monde', 'DE': 'Welt'}"
-    assert s2 == "y| world: {'DE': 'Welt', 'EN': 'world', 'FR': 'monde', 'NL': 'wereld'}"
+    assert s0 == s1 == "y| world: {'EN': 'world', 'NL': 'wereld', 'FR': 'monde', 'DE': 'Welt'}\n"
+    assert s2 == "y| world: {'DE': 'Welt', 'EN': 'world', 'FR': 'monde', 'NL': 'wereld'}\n"
 
 
 def test_multiline():
@@ -179,56 +201,97 @@ def test_multiline():
     # fmt: on
     assert (
         s
-        == """
-y| (a, b): (1, 2)
+        == """y| (a, b): (1, 2)
    [l,
    l]: [[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14],
-        [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]]""".strip()
+        [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]]
+"""
     )
 
     lines = "\n".join(f"line{i}" for i in range(4))
     result = y(lines, as_str=True)
     assert (
         result
-        == """
-y| lines: 'line0
+        == """y| lines: 'line0
            line1
            line2
-           line3'""".strip()
+           line3'
+"""
     )
 
-def test_decorator(capsys):
+
+def test_decorator(capsys, patch_datetime_now):
     @y
     def mul(x, y):
         return x * y
+
     @y()
     def div(x, y):
         return x / y
+
     @y(show_enter=False)
     def add(x, y):
         return x + y
+
     @y(show_exit=False)
     def sub(x, y):
-        return x - y    
-    @y(show_enter= False, show_exit=False)
+        return x - y
+
+    @y(show_enter=False, show_exit=False)
     def pos(x, y):
         return x ** y
-    assert mul(2,3) == 2 * 3
+
+    assert mul(2, 3) == 2 * 3
     assert div(10, 2) == 10 / 2
     assert add(2, 3) == 2 + 3
     assert sub(10, 2) == 10 - 2
     assert pow(10, 2) == 10 ** 2
     out, err = capsys.readouterr()
-    assert err == '''y| called mul(2, 3)
-y| returned 6 from mul(2, 3)
+    assert (
+        err
+        == """y| called mul(2, 3)
+y| returned 6 from mul(2, 3) in 0.000000 seconds
 y| called div(10, 2)
-y| returned 5.0 from div(10, 2)
-y| returned 5 from add(2, 3)
+y| returned 5.0 from div(10, 2) in 0.000000 seconds
+y| returned 5 from add(2, 3) in 0.000000 seconds
 y| called sub(10, 2)
-'''
+"""
+    )
 
-        
-    
-    
+
+def test_decorator_with_methods(capsys):
+    class Number:
+        def __init__(self, value):
+            self.value = value
+
+        @y(show_exit=False)
+        def __mul__(self, other):
+            if isinstance(other, Number):
+                return self.value * other.value
+            else:
+                return self.value * other
+
+        def __repr__(self):
+            return f"{self.__class__.__name__}({self.value})"
+
+    a = Number(2)
+    b = Number(3)
+    print(a * 2)
+    print(a * b)
+    out, err = capsys.readouterr()
+    assert (
+        err
+        == """y| called __mul__(Number(2), 2)
+y| called __mul__(Number(2), Number(3))
+"""
+    )
+    assert (
+        out
+        == """4
+6
+"""
+    )
+
+
 if __name__ == "__main__":
     pytest.main(["-vv", "-s", __file__])

@@ -2,14 +2,14 @@
 #  | | | | / __| / _ \ / __|| '__| / _ \ / _` || '_ ` _ \
 #  | |_| || (__ |  __/| (__ | |   |  __/| (_| || | | | | |
 #   \__, | \___| \___| \___||_|    \___| \__,_||_| |_| |_|
-#   |___/     the no depencency, Pythonic fork of IceCream
+#   |___/                          makes debugging sweeter
 #
 #  See https://raw.githubusercontent.com/salabim/ycecream/master/readme.md for details
 
-__version__ = "1.1.0"
+__version__ = "1.1.1"
 
 """
-Fork from IceCream - Never use print() to debug again
+Fork of IceCream - Never use print() to debug again
 Original author: Ansgar Grunseid / grunseid.com / grunseid@gmail.com
 
 (c)2021 Ruud van der Ham - rt.van.der.ham@gmail.com
@@ -76,29 +76,30 @@ def format_pair(prefix, arg, value):
     lines = arg_lines[:-1] + value_lines
     return "\n".join(lines)
 
+
 def check_output(output):
     if callable(output):
         return output
     if isinstance(output, (str, Path)):
         return output
     try:
-        output.write('')
+        output.write("")
         return output
     except Exception:
         pass
-    raise ValueError("output is neither a callable, str, Path or open text file")    
+    raise ValueError("output should be a callable, str, Path or open text file.")
+
 
 def do_output(output, s):
     if callable(output):
         output(s)
         return
     if isinstance(output, (str, Path)):
-        if output != '':
+        if output != "":
             with open(output, "a+") as f:
                 print(s, file=f)
         return
     print(s, file=output)
-
 
 
 PREFIX = "y| "
@@ -136,7 +137,7 @@ class Y:
         sort_dicts=None,
         as_str=None,
         show_enter=None,
-        show_exit=None,
+        show_exit=None
     ):
 
         self.prefix = PREFIX if prefix is None else prefix
@@ -186,22 +187,23 @@ class Y:
             sort_dicts = self.sort_dicts if sort_dicts is None else sort_dicts
             show_enter = self.show_enter if show_enter is None else show_enter
             show_exit = self.show_exit if show_exit is None else show_exit
- 
+
             frame_info = inspect.getframeinfo(call_frame)
             filename = Path(frame_info.filename).name
-            line_number = frame_info.lineno
+            line_number = frame_info.lineno + 1
             parent_function = frame_info.function
             context_info = f"{filename}:{line_number} in {parent_function}"
 
             def real_decorator(function):
                 @wraps(function)
                 def wrapper(*args, **kwargs):
+                    start_time = datetime.datetime.now()
                     if show_context:
                         parts = [context_info]
                     else:
                         parts = []
                     if show_time:
-                        parts.append(f'@ {datetime.datetime.now().strftime("%H:%M:%S.%f")[:-3]}')
+                        parts.append(f'@ {start_time.strftime("%H:%M:%S.%f")[:-3]}')
 
                     if show_delta:
                         t0 = (datetime.datetime.now() - starttime).total_seconds()
@@ -215,11 +217,11 @@ class Y:
                     function_arguments = f"{function.__name__}({', '.join(args_kwargs)})"
 
                     if global_enabled and enabled and show_enter:
-                        do_output(output,f"{prefix() if callable(prefix) else prefix}{context}called {function_arguments}")
-
+                        do_output(output, f"{prefix() if callable(prefix) else prefix}{context}called {function_arguments}")
                     result = function(*args, **kwargs)
+                    duration = (datetime.datetime.now() - start_time).total_seconds()
                     if global_enabled and enabled and show_exit:
-                        do_output(output,f"{call_or_value(prefix)}{context}returned {repr(result)} from {function_arguments}")
+                        do_output(output, f"{call_or_value(prefix)}{context}returned {repr(result)} from {function_arguments} in {duration:.6f} seconds")
                     return result
 
                 return wrapper
@@ -242,17 +244,17 @@ class Y:
         self._pair_delimiter = self.pair_delimiter if pair_delimiter is None else pair_delimiter
         self._enabled = self.enabled if enabled is None else enabled
         self._sort_dicts = self.sort_dicts if sort_dicts is None else sort_dicts
-        self._as_str = self.as_str if as_str is None else as_str       
-        
+        self._as_str = self.as_str if as_str is None else as_str
+
         try:
             out = self._format(call_frame, *args)
         except NoSourceAvailableError as err:
             prefix = call_or_value(self._prefix)
             out = prefix + "Error: " + err.fail_message
         if self._as_str:
-            return out
+            return out + "\n"
         if global_enabled and self._enabled:
-            do_output(self._output,out)
+            do_output(self._output, out)
 
         if len(args) == 0:
             passthrough = None

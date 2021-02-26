@@ -1,3 +1,9 @@
+version 1.1.1  2021-02-25
+=========================
+The y decorator now also adds the duration of the function/method call on exit, like
+y| returned None from wait(5) in 5.004965 seconds
+This can be useful as a basic way to benchmark a function.
+
 version 1.1.0  2021-02-23
 =========================
 y can now be used as a decorator to debug (keyword) argumnets given to a function.
