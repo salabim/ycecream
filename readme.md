@@ -481,9 +481,11 @@ y| world: {'DE': 'Welt', 'EN': 'world', 'FR': 'monde', 'NL': 'wereld'}
 ```
 ### Alternative installation
 
-With `install ycecream.py from github.by`, you can install the ycecream.py directly from GitHub to the site packages (as if it were a pip install).
+With `install ycecream from github.py`, you can install the ycecream.py directly from GitHub to the site packages (as if it was a pip install).
 
 With `install ycecream.py`, you can install the ycecream.py in your current directory to the site packages (as if it were a pip install).
+
+Both files can be found in the GitHub repository (https://github.com/salabim/ycecream).
 
 ### Aknowledgement
 The ycecream pacakage is a fork of the IceCream package. See https://github.com/gruns/icecream
@@ -496,14 +498,13 @@ The ycecream module is a fork of IceCream with a number of differences:
 
 * ycecream can't colourize the output (a nice feature of IceCream)
 * ycecream runs only on Python 3.6 and higher. (IceCream runs even on Python 2.7).
-* ycecream uses y as the standard interface, whereas IceCream uses ic. To make life easy, ycecream also supports ic!
+* ycecream uses y as the standard interface, whereas IceCream uses ic. For compatibility, ycecream also supports ic.
 * yceceam has no dependencies. IceCream on the other hand has many (asttoken, colorize, pyglets, ...).
 * ycecream is just one .py file, whereas IceCream consists of a number of .py files. That makes it possible to use ycecream without even (pip) installing it. Just copy ycecream.py to your work directory.
 * ycecream can be used as a decorator of a function showing the enter and/or exit event as well as the duration
 * ycecream has a PEP8 (Pythonic) API. Less important for the user, the actual code is also (more) PEP8 compatible. IceCream does not follow the PEP8 standard.
-* ycecream uses a different API to customize (rather than IceCream's configureOutput method)
-* ycecream time showing can be controlled independently from context
+* ycecream uses a completely different API to customize (rather than IceCream's configureOutput method)
+* ycecream time showing can be controlled independently from context showing
 * ycecream can optionally show a delta (time since start of the program)
-* ycecream uses a pytest script rather than IceCream's unittest script
 * ycecream does not sort dicts by default. This behaviour can be controlled with the sort_dict parameter. (This is implemented by including the pprint 3.8 source code)
 * ycecream uses pytest for the test scripts rather than IceCream's unittest script.
