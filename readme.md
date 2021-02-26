@@ -139,7 +139,7 @@ print(mul(5, 7))
 prints
 ```
 y| called mul(5, 7)
-y| returned 12 from mul(5, 7)
+y| returned 12 from mul(5, 7) in 0.000006 seconds
 12
 ```
 It is possible to suppress the print-out of either the enter or the exit information with
@@ -157,6 +157,31 @@ prints
 ```
 y| called mul(5, 7)
 12
+```
+
+The included duration upon exit offers basic function benchmark functionality.
+For instance, with
+```
+from ycecream import y
+import time
+
+@y(show_enter=False)
+def do_sort(n):
+    x = sorted(list(range(10 ** n)))
+        
+for i in range(8):
+    do_sort(i)
+```
+the ouput will show the effects of the population size on a the sort speed:
+```
+y| returned None from do_sort(0) in 0.000011 seconds
+y| returned None from do_sort(1) in 0.000032 seconds
+y| returned None from do_sort(2) in 0.000010 seconds
+y| returned None from do_sort(3) in 0.000042 seconds
+y| returned None from do_sort(4) in 0.000716 seconds
+y| returned None from do_sort(5) in 0.004501 seconds
+y| returned None from do_sort(6) in 0.049840 seconds
+y| returned None from do_sort(7) in 0.490177 seconds
 ```
 
 ## Miscellaneous
