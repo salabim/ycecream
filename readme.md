@@ -348,20 +348,28 @@ prints
 ```
 ## output
 This will allow the output to be handled by something else than the default (output being written to stderr).
-The output parameter can beshould at leae accept one perameter (the one that will be printed)
 
-In the example below, the output is written to stdout.
+The `output` attribute can be
+
+* a callable that accepts at least one parameter (the text to be printed)
+* a string or Path object that will be used as the filename
+* the null string (""), resulting in a dummy action when a text has to be printed
+* a text file that is open for writing/appending
+
+In the example below, 
 ```
 from ycecream import y
-y("hello", output_function=print)
+import sys
+y(1, output=print)
+y(2, output=sys.stdout
+with open("test", "a+") as f:
+    y(3, output=f)
+y(4, output="")
 ```
-With
-```
-from ycecream import y
-y = Y(output_function="")
-y("hello")
-```
-, all output will be suppressed (this can also be done with the enable parameter, see below).
+* `y| 1` will be printed to stdout
+* `y| 2` will be printed to stdout
+* `y| 3` will be appended to the file test
+* `y| 4` will *disappear*
 
 ## serialize
 This will allow to specify how argument values are to be
