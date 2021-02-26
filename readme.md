@@ -132,15 +132,15 @@ The (keyword) arguments passed will be shown and upon return, the return value.
 from ycecream import y
 @y
 def mul(x, y):
-    return(x, y)
+    return x * y
     
 print(mul(5, 7))
 ```
 prints
 ```
 y| called mul(5, 7)
-y| returned 12 from mul(5, 7) in 0.000006 seconds
-12
+y| returned 35 from mul(5, 7) in 0.000006 seconds
+35
 ```
 It is possible to suppress the print-out of either the enter or the exit information with
 the show_enter and show_exit parameters, like:
@@ -149,14 +149,14 @@ the show_enter and show_exit parameters, like:
 from ycecream import y
 @y(show_exit=False)
 def mul(x, y):
-    return(x, y)
+    return x * y
     
 print(mul(5, 7))
 ```
 prints
 ```
 y| called mul(5, 7)
-12
+35
 ```
 
 The included duration upon exit offers basic function benchmark functionality.
