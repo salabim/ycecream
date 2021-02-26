@@ -194,7 +194,7 @@ of written to stderr.
 from ycecream import y
 hello = "world"
 s = y.as_str(hello)
-print(s)
+print(s, end="")
 ```
 prints
 ```
@@ -204,7 +204,7 @@ y| hello: 'world'
 Additionally, ycecreams's output can be entirely disabled, and optionally  later re-enabled, with
 `ycecream.enable(False)` and `ycecream.enable(True)` respectively. The function always returns
 the current (new) setting.
-Note that this function refer to ALL output from ycecream.
+Note that this function refers to ALL output from ycecream.
 ```
 from ycecream import y, Y, enable
 
@@ -491,7 +491,7 @@ The ycecream module is a fork of IceCream with a number of differences:
 * ycecream uses y as the standard interface, whereas IceCream uses ic. To make life easy, ycecream also supports ic!
 * yceceam has no dependencies. IceCream on the other hand has many (asttoken, colorize, pyglets, ...).
 * ycecream is just one .py file, whereas IceCream consists of a number of .py files. That makes it possible to use ycecream without even (pip) installing it. Just copy ycecream.py to your work directory.
-* ycecream can be used as a decorator of a function showing the enter and/or exit event
+* ycecream can be used as a decorator of a function showing the enter and/or exit event as well as the duration
 * ycecream has a PEP8 (Pythonic) API. Less important for the user, the actual code is also (more) PEP8 compatible. IceCream does not follow the PEP8 standard.
 * ycecream uses a different API to customize (rather than IceCream's configureOutput method)
 * ycecream time showing can be controlled independently from context
