@@ -54,4 +54,3 @@ Several functionality changes
 version 1.0.0  2021-02-17
 =========================
 Initial release version
-
