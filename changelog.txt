@@ -1,3 +1,18 @@
+version 1.1.2  2021-02-28 
+=========================
+It is now possible to use the string 'stderr', 'stdout' and 'null' as output attributes.
+
+Ycecream will now try and read ycecream.json (in the directories in sys.path) to override
+the default values, e.g.
+    {
+    "prefix": "==> ",
+    "show_time": true,
+    "line_length": 120
+    }
+
+Internal change: all defaults are now stored in a class defaults.
+Internal change: phased out stderr_print.
+
 version 1.1.1  2021-02-25
 =========================
 The y decorator now also adds the duration of the function/method call on exit, like

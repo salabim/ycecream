@@ -1,10 +1,21 @@
 import pytest
 from pathlib import Path
 import sys
+import tempfile
 
 context_start = "y| " + Path(__file__).name + ":"
-from ycecream import y
 
+# make a temporary dict and put a dummy ycecream.json file there, to prevent reading any ycecream.json
+with tempfile.TemporaryDirectory() as tmpdir:
+    json_filename = Path(tmpdir) / "ycecream.json"
+    with open(json_filename, "w") as f:
+        print("{}", file=f)
+    sys.path = [tmpdir] + sys.path
+    from ycecream import y
+
+    sys.path.pop(0)
+
+import ycecream
 import datetime
 import pytest
 
@@ -291,6 +302,54 @@ y| called __mul__(Number(2), Number(3))
 6
 """
     )
+
+
+def test_json_reading(tmpdir):
+    json_filename = Path(tmpdir) / "ycecream.json"
+    with open(json_filename, "w") as f:
+        print('{"prefix": "xxx"}', file=f)
+
+    sys.path = [tmpdir] + sys.path
+    ycecream.set_defaults()
+    sys.path.pop(0)
+
+    y1 = ycecream.Y()
+
+    s = y1(3, as_str=True)
+    assert s == "xxx3\n"
+
+    with open(json_filename, "w") as f:
+        print('{"prefix1": "xxx"}', file=f)
+
+    sys.path = [tmpdir] + sys.path
+    with pytest.raises(ValueError):
+        ycecream.set_defaults()
+    sys.path.pop(0)
+
+    with open(json_filename, "w") as f:
+        print('{"serialize": "xxx"}', file=f)
+
+    sys.path = [tmpdir] + sys.path
+    with pytest.raises(ValueError):
+        ycecream.set_defaults()
+    sys.path.pop(0)
+
+    tmpdir = Path(tmpdir) / "ycecream"
+    tmpdir.mkdir()
+    json_filename = Path(tmpdir) / "ycecream.json"
+    with open(json_filename, "w") as f:
+        print('{"prefix": "yyy"}', file=f)
+
+    sys.path = [tmpdir] + sys.path
+    ycecream.set_defaults()
+    sys.path.pop(0)
+
+    y1 = ycecream.Y()
+
+    s = y1(3, as_str=True)
+    assert s == "yyy3\n"
+    sys.modules["_ycecream_ignore_json_"] = True  # indicator for ycecream to not read from ycecream.json
+    ycecream.set_defaults()
 
 
 if __name__ == "__main__":
