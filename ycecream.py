@@ -6,7 +6,7 @@
 #
 #      See https://github.com/salabim/ycecream for details
 
-__version__ = "1.1.2"
+__version__ = "1.1.3"
 
 """
 Fork of IceCream - Never use print() to debug again
@@ -25,47 +25,23 @@ from contextlib import contextmanager
 from functools import wraps
 import json
 
-YCECREAM = 'ycecream'
-class default:
-    pass
-   
-def set_defaults():
-    default.prefix= "y| "
-    default.output = "stderr"
-    default.serialize = lambda obj, sort_dicts=False: pformat(obj, sort_dicts=sort_dicts).replace("\\n", "\n")
-    default.show_context = False
-    default.show_time = False
-    default.show_delta = False
-    default.sort_dicts = False
-    default.show_enter = True
-    default.show_exit = True
-    default.as_str = False
-    default.enabled = True
-    default.line_length = 80
-    default.context_delimiter = " ==> "
-    default.pair_delimiter = ", "
+def read_json():
+    global PREFIX
+    global OUTPUT
+    global SHOW_ENTER
 
-    config = {}
-    for path in sys.path:
-        path = Path(path)
-        if (path / f"{YCECREAM}.json").is_file():
-            with open(path / f"{YCECREAM}.json", "r") as f:
-                config = json.load(f)
-            break
-        if (path / "YCECREAM" / f"{YCECREAM}.json").is_file():
-            with open(path / {YCECREAM} / f"{YCECREAM}.json", "r") as f:
-                config = json.load(f)
-            break
-
-    for k, v in config.items():
-        if k == "serialize":
-            raise ValueError(f"error in {path}: key {k} not allowed")            
-          
-        elif hasattr(default, k):
-            setattr(default, k, v)
-
-        else:
-            raise ValueError(f"error in {path}: key {k} not recognized")            
+    if Path("ycecream.json").is_file():
+        with open("ycecream.json", "r") as f:
+            config = json.load(f)
+            for k,v in config.items():
+                if k == "prefix":
+                    PREFIX = v
+                elif k == "output":
+                    OUTPUT = v
+                elif k == "show_enter":
+                    SHOW_ENTER = k
+                else:
+                    raise ValueError("wrong")            
 
 
 
@@ -133,18 +109,34 @@ def check_output(output):
 def do_output(output, s):
     if callable(output):
         output(s)
-    elif output == "stderr":
-        print(s, file=sys.stderr)
-    elif output == "stdout":
-        print(s, file=sys.stdout)
-    elif output in ("", "null"):
-        pass
-    elif isinstance(output, (str, Path)):            
-        with open(output, "a+") as f:
-            print(s, file=f)
+    elif isinstance(output, (str, Path)):
+        if output == "stderr":
+            print(s, file=sys.stderr)
+        elif output == "stdout":
+            print(s, file=sys.stdout)
+        elif output != "":
+            with open(output, "a+") as f:
+                print(s, file=f)
+        else:
+            pass
     else:
         print(s, file=output)
 
+
+PREFIX = "y| "
+LINE_LENGTH = 80  # Characters.
+CONTEXT_DELIMITER = " ==> "
+OUTPUT = "stderr"
+SERIALIZE = lambda obj, sort_dicts=False: pformat(obj, sort_dicts=sort_dicts).replace("\\n", "\n")
+SHOW_CONTEXT = False
+SHOW_TIME = False
+SHOW_DELTA = False
+PAIR_DELIMITER = ", "
+ENABLED = True
+SORT_DICTS = False
+AS_STR = False
+SHOW_ENTER = True
+SHOW_EXIT = True
 global_enabled = True
 
 starttime = datetime.datetime.now()
@@ -160,31 +152,28 @@ class Y:
         show_context=None,
         show_time=None,
         show_delta=None,
-        show_enter=None,
-        show_exit=None,
+        line_length=None,
+        pair_delimiter=None,
+        enabled=None,
         sort_dicts=None,
         as_str=None,
-        enabled=None,
-        line_length=None,
-        context_delimiter=None,
-        pair_delimiter=None,
-        
+        show_enter=None,
+        show_exit=None
     ):
 
-        self.prefix = default.prefix if prefix is None else prefix
-        self.output = default.output if output is None else check_output(output)
-        self.serialize = default.serialize if serialize is None else serialize
-        self.show_context = default.show_context if show_context is None else show_context
-        self.show_time = default.show_time if show_time is None else show_time
-        self.show_delta = default.show_delta if show_delta is None else show_delta
-        self.show_enter = default.show_enter if show_enter is None else show_enter
-        self.show_exit = default.show_exit if show_exit is None else show_exit
-        self.sort_dicts = default.sort_dicts if sort_dicts is None else sort_dicts
-        self.as_str = default.as_str if as_str is None else as_str
-        self.enabled = default.enabled if enabled is None else enabled
-        self.line_length = default.line_length if line_length is None else line_length
-        self.context_delimiter = default.context_delimiter if context_delimiter is None else context_delimiter
-        self.pair_delimiter = default.pair_delimiter if pair_delimiter is None else pair_delimiter
+        self.prefix = PREFIX if prefix is None else prefix
+        self.output = OUTPUT if output is None else check_output(output)
+        self.serialize = SERIALIZE if serialize is None else serialize
+        self.show_context = SHOW_CONTEXT if show_context is None else show_context
+        self.show_time = SHOW_TIME if show_time is None else show_time
+        self.show_delta = SHOW_DELTA if show_delta is None else show_delta
+        self.line_length = LINE_LENGTH if line_length is None else line_length
+        self.pair_delimiter = PAIR_DELIMITER if pair_delimiter is None else pair_delimiter
+        self.enabled = ENABLED if enabled is None else enabled
+        self.sort_dicts = SORT_DICTS if sort_dicts is None else sort_dicts
+        self.as_str = AS_STR if as_str is None else as_str
+        self.show_enter = SHOW_ENTER if show_enter is None else show_enter
+        self.show_exit = SHOW_EXIT if show_exit is None else show_exit
 
     def __call__(
         self,
@@ -195,14 +184,13 @@ class Y:
         show_context=None,
         show_time=None,
         show_delta=None,
-        show_enter=None,
-        show_exit=None,
+        line_length=None,
+        pair_delimiter=None,
+        enabled=None,
         sort_dicts=None,
         as_str=None,
-        enabled=None,
-        line_length=None,
-        context_delimiter=None,
-        pair_delimiter=None,
+        show_enter=None,
+        show_exit=None
     ):
         call_frame = inspect.currentframe().f_back
         frame = inspect.getframeinfo(call_frame, context=1)
@@ -214,13 +202,12 @@ class Y:
             show_context = self.show_context if show_context is None else show_context
             show_time = self.show_time if show_time is None else show_time
             show_delta = self.show_delta if show_delta is None else show_delta
+            line_length = self.line_length if line_length is None else line_length
+            pair_delimiter = self.pair_delimiter if pair_delimiter is None else pair_delimiter
+            enabled = self.enabled if enabled is None else enabled
+            sort_dicts = self.sort_dicts if sort_dicts is None else sort_dicts
             show_enter = self.show_enter if show_enter is None else show_enter
             show_exit = self.show_exit if show_exit is None else show_exit
-            sort_dicts = self.sort_dicts if sort_dicts is None else sort_dicts
-            enabled = self.enabled if enabled is None else enabled
-            line_length = self.line_length if line_length is None else line_length
-            context_delimiter = self.context_delimiter if context_delimiter is None else context_delimiter
-            pair_delimiter = self.pair_delimiter if pair_delimiter is None else pair_delimiter
 
             frame_info = inspect.getframeinfo(call_frame)
             filename = Path(frame_info.filename).name
@@ -245,7 +232,7 @@ class Y:
 
                     context = " ".join(parts)
                     if context:
-                        context += self._context_delimiter
+                        context += CONTEXT_DELIMITER
 
                     args_kwargs = [repr(arg) for arg in args] + [f"{str(k)}={repr(v)}" for k, v in kwargs.items()]
                     function_arguments = f"{function.__name__}({', '.join(args_kwargs)})"
@@ -274,12 +261,11 @@ class Y:
         self._show_context = self.show_context if show_context is None else show_context
         self._show_time = self.show_time if show_time is None else show_time
         self._show_delta = self.show_delta if show_delta is None else show_delta
-        self._sort_dicts = self.sort_dicts if sort_dicts is None else sort_dicts
-        self._as_str = self.as_str if as_str is None else as_str
-        self._enabled = self.enabled if enabled is None else enabled
         self._line_length = self.line_length if line_length is None else line_length
         self._pair_delimiter = self.pair_delimiter if pair_delimiter is None else pair_delimiter
-        self._context_delimiter = self.context_delimiter if context_delimiter is None else context_delimiter
+        self._enabled = self.enabled if enabled is None else enabled
+        self._sort_dicts = self.sort_dicts if sort_dicts is None else sort_dicts
+        self._as_str = self.as_str if as_str is None else as_str
 
         try:
             out = self._format(call_frame, *args)
@@ -309,14 +295,13 @@ class Y:
         show_context=None,
         show_time=None,
         show_delta=None,
-        show_enter=None,
-        show_exit=None,
+        line_length=None,
+        pair_delimiter=None,
+        enabled=None,
         sort_dicts=None,
         as_str=False,
-        enabled=None,
-        line_length=None,
-        context_delimiter=None,
-        pair_delimiter=None,
+        show_enter=None,
+        show_exit=None
     ):
         self.prefix = self.prefix if prefix is None else prefix
         self.output = self.output if output is None else check_output(output)
@@ -324,15 +309,13 @@ class Y:
         self.show_context = self.show_context if show_context is None else show_context
         self.show_time = self.show_time if show_time is None else show_time
         self.show_delta = self.show_delta if show_delta is None else show_delta
-        self.show_enter = self.show_enter if show_enter is None else show_enter
-        self.show_exit = self.show_exit if show_exit is None else show_exit
+        self.line_length = self.line_length if line_length is None else line_length
+        self.pair_delimiter = self.pair_delimiter if pair_delimiter is None else pair_delimiter
+        self.enabled = self.enabled if enabled is None else enabled
         self.sort_dicts = self.sort_dicts if sort_dicts is None else sort_dicts
         self.as_str = self.as_str if as_str is None else as_str
-        self.enabled = self.enabled if enabled is None else enabled
-        self.line_length = self.line_length if line_length is None else line_length
-        self.context_delimiter = self.context_delimiter if context_delimiter is None else context_delimiter
-        self.pair_delimiter = self.pair_delimiter if pair_delimiter is None else pair_delimiter
-
+        self.show_enter = self.show_enter if show_enter is None else show_enter
+        self.decoraror_exit = self.show_exit if show_exit is None else show_exit
         return self
 
     def clone(
@@ -344,14 +327,13 @@ class Y:
         show_context=None,
         show_time=None,
         show_delta=None,
-        show_enter=None,
-        show_exit=None,
+        line_length=None,
+        pair_delimiter=None,
+        enabled=None,
         sort_dicts=None,
         as_str=False,
-        enabled=None,
-        line_length=None,
-        context_delimiter=None,
-        pair_delimiter=None,
+        show_enter=None,
+        show_exit=None
     ):
         return Y(
             prefix=self.prefix if prefix is None else prefix,
@@ -360,14 +342,13 @@ class Y:
             show_context=self.show_context if show_context is None else show_context,
             show_time=self.show_time if show_time is None else show_time,
             show_delta=self.show_delta if show_delta is None else show_delta,
-            show_enter=self.show_enter if show_enter is None else show_enter,
-            show_exit=self.show_exit if show_exit is None else show_exit,
+            line_length=self.line_length if line_length is None else line_length,
+            pair_delimiter=self.pair_delimiter if pair_delimiter is None else pair_delimiter,
+            enabled=self.enabled if enabled is None else enabled,
             sort_dicts=self.sort_dicts if sort_dicts is None else sort_dicts,
             as_str=self.as_str if as_str is None else as_str,
-            enabled=self.enabled if enabled is None else enabled,
-            line_length=self.line_length if line_length is None else line_length,
-            context_delimiter= self.context_delimiter if context_delimiter is None else context_delimiter,
-            pair_delimiter=self.pair_delimiter if pair_delimiter is None else pair_delimiter,
+            show_enter=self.show_enter if show_enter is None else show_enter,
+            show_exit=self.show_exit if show_exit is None else show_exit,
         )
 
     @contextmanager
@@ -378,14 +359,13 @@ class Y:
         show_context = self.show_context
         show_time = self.show_time
         show_delta = self.show_delta
-        show_enter = (None,)
-        show_exit = (None,)
+        line_length = self.line_length
+        pair_delimiter = self.pair_delimiter
+        enabled = self.enabled
         sort_dicts = self.sort_dicts
         as_str = self.as_str
-        enabled = self.enabled
-        line_length = self.line_length
-        context_delimiter = self.context_delimiter
-        pair_delimiter = self.pair_delimiter
+        show_enter = (None,)
+        show_exit = (None,)
         yield
         self.configure(
             prefix=prefix,
@@ -394,14 +374,12 @@ class Y:
             show_context=show_context,
             show_time=show_time,
             show_delta=show_delta,
-            show_enter=show_enter,
-            show_exit=show_exit,
+            line_length=line_length,
+            enabled=enabled,
             sort_dicts=sort_dicts,
             as_str=as_str,
-            enabled=enabled,
-            context_delimiter=context_delimiter,
-            pair_delimiter=pair_delimiter,
-            line_length=line_length,
+            show_enter=show_enter,
+            show_exit=show_exit,
         )
 
     def _format(self, call_frame, *args):
@@ -452,7 +430,7 @@ class Y:
         all_args_on_one_line = self._pair_delimiter.join(pairs_processed)
         multiline_args = len(all_args_on_one_line.splitlines()) > 1
 
-        context_delimiter = self._context_delimiter if context else ""
+        context_delimiter = CONTEXT_DELIMITER if context else ""
         all_pairs = prefix + context + context_delimiter + all_args_on_one_line
         first_line_too_long = len(all_pairs.splitlines()[0]) > self._line_length
 
@@ -506,7 +484,7 @@ def enable(value=None):
         global_enabled = value
     return global_enabled
 
-set_defaults()
+read_json()
 
 ic = Y(prefix="ic| ")
 y = Y()
@@ -1507,9 +1485,6 @@ import re
 import sys as _sys
 import types as _types
 from io import StringIO as _StringIO
-
-__all__ = ["pprint", "pformat", "isreadable", "isrecursive", "saferepr", "PrettyPrinter", "pp"]
-
 
 def pprint(object, stream=None, indent=1, width=80, depth=None, *, compact=False, sort_dicts=True):
     """Pretty-print a Python object to a stream [default is sys.stdout]."""
