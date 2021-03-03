@@ -593,4 +593,7 @@ The ycecream module is a fork of IceCream with a number of differences:
 * ycecream can be configured from a json file, thus overriding some or all default settings at import time.
 * ycecream uses pytest for the test scripts rather than IceCream's unittest script.
 
+![Python 3.6](https://img.shields.io/badge/python-3.6-blue.svg) ![Python 3.7](https://img.shields.io/badge/python-3.7-blue.svg) ![Python 3.8](https://img.shields.io/badge/python-3.8-blue.svg) ![Python 3.9](https://img.shields.io/badge/python-3.9-blue.svg)
+![Black](https://img.shields.io/badge/code%20style-black-000000.svg)
 
+<a href="https://www.buymeacoffee.com/ruudvanderham" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-red.png" alt="Buy Me A Coffee" height="41" width="174"></a>
