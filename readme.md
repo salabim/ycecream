@@ -592,3 +592,15 @@ The ycecream module is a fork of IceCream with a number of differences:
 * ycecream does not sort dicts by default. This behaviour can be controlled with the sort_dict parameter. (This is implemented by including the pprint 3.8 source code)
 * ycecream can be configured from a json file, thus overriding some or all default settings at import time.
 * ycecream uses pytest for the test scripts rather than IceCream's unittest script.
+
+# Level 1
+
+## Level 2
+
+### Level 3
+
+#### Level 4
+
+##### Level 5
+
+###### Level 6
