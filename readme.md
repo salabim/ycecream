@@ -551,7 +551,7 @@ from ycecream import y
 hello = "world"
 y(hello)
 ```
-will print to stdout (rather than stderr:
+will print to stdout (rather than stderr):
 ```
 ==> @ 14:53:41.392190 ==> hello: 'world'
 ```
@@ -560,6 +560,8 @@ you can place an `ycecream.json` file in the site-packages folder where `ycecrea
 these modified settings.
 
 Note that not-specified attributes will remain the default settings.
+
+For obvious reasons, it is not possible to specify serialize in an ycecream.json file.
 
 # Alternative installation
 
