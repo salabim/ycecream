@@ -2,6 +2,7 @@
 
 
 Do you ever use `print()` or `log()` to debug your code? If so,  ycecream, or `y` for short, will make printing debug information a lot sweeter.
+And on top of that, you get some basic benchmarking functionality.
 
 ## Installation
 
@@ -159,9 +160,11 @@ y| called mul(5, 7)
 35
 ```
 
-The included duration upon exit offers basic function benchmark functionality.
+## Benchmaring with y
 
-For instance, with
+If you decorate a function or method with y, you will be offered the duration between entry and exit (in seconds) as a bonus.
+
+That opens the door to simple benchmarking, like:
 ```
 from ycecream import y
 import time
@@ -185,15 +188,56 @@ y| returned None from do_sort(6) in 0.049840 seconds
 y| returned None from do_sort(7) in 0.490177 seconds
 ```
 
+It is also possible to time any code by using y as a context manager, e.g.
+```
+with y():
+    time.sleep(1)
+```
+wil print something like
+```
+y| enter
+y| exit in 1.000900 seconds
+```
+You can include parameters here as well:
+```
+with y(show_context=True, show_time=True):
+    time.sleep(1)
+```
+will print somethink like:
+```
+y| x7.py:8 @ 13:20:32.605903 ==> enter
+y| x7.py:8 @ 13:20:33.609519 ==> exit in 1.003358 seconds
+```
+
+Finally, to help with timing code, you can request the current delta with
+```
+y().delta
+```
+or (re)set it  with
+```
+y().delta = 0
+```
+So, e.g. to time a section of code:
+```
+y.delta = 0
+time.sleep(1)
+duration = y.delta
+y(duration)
+```
+might print:
+```
+y| duration: 1.0001721999999997
+```
+
 ## Miscellaneous
 
 `y(*args, as_str=True)` is like `y(*args)` but the output is returned as a string instead
-of written to stderr.
+of written to output.
 
 ```
 from ycecream import y
 hello = "world"
-s = y.as_str(hello)
+s = y(hello, as_str=True)
 print(s, end="")
 ```
 prints
@@ -206,9 +250,8 @@ Additionally, ycecreams's output can be entirely disabled, and optionally  later
 the current (new) setting.
 Note that this function refers to ALL output from ycecream.
 ```
-from ycecream import y, Y, enable
-
-yd = Y(include_delta=True)
+from ycecream import y, enable
+yd = y.clone(show_delta=True)
 y(1)
 yd(2)
 enable(False)
@@ -222,12 +265,11 @@ print(enable())
 prints
 ```
 y| 1
-y| Δ 0.117 ==> 2
+y| delta=0.011826 ==> 2
 y| 5
-y| Δ 0.219 ==> 6
-True
+y| delta=
 ```
-`y()` continues to return its arguments when disabled, of course.
+Note that `y()` continues to return its arguments when disabled, of course.
 
 ## Customization
 For the customization, it is important to realize that `y` is an instance of the `ycecream.Y` class, which has
