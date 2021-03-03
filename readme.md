@@ -574,7 +574,7 @@ The ycecream pacakage is a fork of the IceCream package. See https://github.com/
 
 Many thanks to the author Ansgar Grunseid / grunseid.com / grunseid@gmail.com
 
-### Differences with IceCream
+# Differences with IceCream
 
 The ycecream module is a fork of IceCream with a number of differences:
 
