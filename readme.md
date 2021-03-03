@@ -4,7 +4,7 @@
 Do you ever use `print()` or `log()` to debug your code? If so,  ycecream, or `y` for short, will make printing debug information a lot sweeter.
 And on top of that, you get some basic benchmarking functionality.
 
-## Installation
+# Installation
 
 Installing ycecream with pip is easy.
 ```
@@ -18,7 +18,7 @@ $ pip install ycecream --upgrade
 Alternatively, ycecream.py can be juist copied into you current work directory from GitHub (https://github.com/salabim/ycecream).
 
 
-## Inspect variables and expressions
+# Inspect variables and expressions
 
 Have you ever printed variables or expressions to debug your program? If you've
 ever typed something like
@@ -72,7 +72,7 @@ y| world: {"EN": "world", "NL": "wereld", "FR": "monde", "DE": "Welt"}, X.a: 3
 Just give `y()` a variable or expression and you're done. Sweet, isn't it?
 
 
-## Inspect execution
+# Inspect execution
 
 Have you ever used `print()` to determine which parts of your program are
 executed, and in which order they're executed? For example, if you've ever added
@@ -107,7 +107,7 @@ y| add2(1000): 1002
 Just call `y()` and you're done. Isn't that sweet?
 
 
-## Return Value
+# Return Value
 
 `y()` returns its argument(s), so `y()` can easily be inserted into
 pre-existing code.
@@ -124,7 +124,7 @@ prints
 y| add2(1000): 1002
 y| b: 1002
 ```
-## Debug entry and exit of function calls
+# Debug entry and exit of function calls
 
 When you apply `y` as a decorator to a function or method, both the entry and exit can be tracked.
 The (keyword) arguments passed will be shown and upon return, the return value.
@@ -160,7 +160,7 @@ y| called mul(5, 7)
 35
 ```
 
-## Benchmaring with y
+# Benchmaring with ycecream
 
 If you decorate a function or method with y, you will be offered the duration between entry and exit (in seconds) as a bonus.
 
@@ -229,7 +229,7 @@ might print:
 y| duration: 1.0001721999999997
 ```
 
-## Miscellaneous
+# Miscellaneous
 
 `y(*args, as_str=True)` is like `y(*args)` but the output is returned as a string instead
 of written to output.
@@ -272,7 +272,7 @@ True
 ```
 Note that `y()` continues to return its arguments when disabled, of course.
 
-## Configuration
+# Configuration
 
 For the configuration, it is important to realize that `y` is an instance of the `ycecream.Y` class, which has
 a number of configuration attributes:
@@ -534,7 +534,7 @@ y| world: {'EN': 'world', 'NL': 'wereld', 'FR': 'monde', 'DE': 'Welt'}
 y| world: {'DE': 'Welt', 'EN': 'world', 'FR': 'monde', 'NL': 'wereld'}
 ```
 
-### Configuring at import time
+# Configuring at import time
 It can be useful to configure ycecream at import time. This can be done writing a `ycecream.json` file which
 can contain any attribute configuration overriding the standard settings.
 E.g. if there is an `ycecream.json` file with the following contents
@@ -561,7 +561,7 @@ these modified settings.
 
 Note that not-specified attributes will remain the default settings.
 
-### Alternative installation
+# Alternative installation
 
 With `install ycecream from github.py`, you can install the ycecream.py directly from GitHub to the site packages (as if it was a pip install).
 
@@ -569,7 +569,7 @@ With `install ycecream.py`, you can install the ycecream.py in your current dire
 
 Both files can be found in the GitHub repository (https://github.com/salabim/ycecream).
 
-### Aknowledgement
+# Aknowledgement
 The ycecream pacakage is a fork of the IceCream package. See https://github.com/gruns/icecream
 
 Many thanks to the author Ansgar Grunseid / grunseid.com / grunseid@gmail.com
@@ -593,14 +593,4 @@ The ycecream module is a fork of IceCream with a number of differences:
 * ycecream can be configured from a json file, thus overriding some or all default settings at import time.
 * ycecream uses pytest for the test scripts rather than IceCream's unittest script.
 
-# Level 1
 
-## Level 2
-
-### Level 3
-
-#### Level 4
-
-##### Level 5
-
-###### Level 6
