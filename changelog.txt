@@ -1,3 +1,38 @@
+version 1.1.4  2021-02-03 
+=========================
+Increased the resolution of show_date and show_time (now microseconds).
+Delta now start on creation of an Y object and is thus different for each instance.
+
+It is now possible to query the current delta with Y.delta and to reset it with Y.delta = 0
+
+y() can now also be used as a context manager, primarily to time sections of code rather than a function or method:
+|   with y():
+|       time.sleep(1)
+will print
+|    y| enter
+|    y| exit in 1.000822 seconds    
+
+If you also want to see where the context manager was defined:
+
+|   with y(show_context=True):
+|       time.sleep(1)
+will print something like:
+|   y| x6.py:19 ==> enter
+|   y| x6.py:19 ==> exit in 1.000544 seconds
+
+As with the decorator y, the show_enter and show_exit parameters may be used to show/hide that information.
+
+The ouput attribute can now also be the string
+    "logging.debug", "logging.info", "logging.warning", "logging.error" or "logging.critical"
+, which is primarily useful when a configuration is read from ycecream.json .
+Note that
+    y.configure(logging.info) 
+ie essentially the same as
+    y.configure("logging.info")
+    
+Internal change: now uses time.perf_counter() to improve accuracy of timings
+
+
 version 1.1.3  2021-03-02 
 =========================
 There was still a __all__ definition left over, which caused a problem when using ycecream from site-packages
