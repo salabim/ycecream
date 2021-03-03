@@ -1,4 +1,4 @@
-![logo](./images/logox.png)
+![logo](./images/logo new.png)
 
 
 Do you ever use `print()` or `log()` to debug your code? If so,  ycecream, or `y` for short, will make printing debug information a lot sweeter.
