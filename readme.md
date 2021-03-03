@@ -570,7 +570,7 @@ With `install ycecream.py`, you can install the ycecream.py in your current dire
 Both files can be found in the GitHub repository (https://github.com/salabim/ycecream).
 
 # Aknowledgement
-The ycecream pacakage is a fork of the IceCream package. See https://github.com/gruns/icecream
+The **ycecream** pacakage is a fork of the **IceCream** package. See https://github.com/gruns/icecream
 
 Many thanks to the author Ansgar Grunseid / grunseid.com / grunseid@gmail.com
 
