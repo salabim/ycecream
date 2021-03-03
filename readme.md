@@ -267,13 +267,15 @@ prints
 y| 1
 y| delta=0.011826 ==> 2
 y| 5
-y| delta=
+y| delta=0.044893 ==> 6
+True
 ```
 Note that `y()` continues to return its arguments when disabled, of course.
 
-## Customization
-For the customization, it is important to realize that `y` is an instance of the `ycecream.Y` class, which has
-a number of customization attributes:
+## Configuration
+
+For the configuration, it is important to realize that `y` is an instance of the `ycecream.Y` class, which has
+a number of configuration attributes:
 * `prefix`
 * `output`
 * `serialize`
@@ -282,13 +284,15 @@ a number of customization attributes:
 * `show_delta`
 * `show_enter`
 * `show_exit`
+* `sort_dicts`
+* `enabled`
 * `line_wrap_width`
-* `pair_delimiter=None`
-* `enabled=None`
+* `context_delimiter`
+* `pair_delimiter`
 
 It is perfectly ok to set/get any of these attributes directly.
 
-But, it is also possible to use a customization in the call to `y`:
+But, it is also possible to apply configuration directly in the call to `y`:
 So, it is possible to say
 ```
 from ycecream import y
@@ -298,9 +302,9 @@ y(12, prefix="==> ")
 ```
 ==> 12
 ```
-It is also possible to customize y permanently with the customize method. 
+It is also possible to configure y permanently with the configure method. 
 ```
-y.customize(prefix="==> ")
+y.configure(prefix="==> ")
 y(12)
 ```
 will print
@@ -316,7 +320,7 @@ to print
 ```
 ==> 12
 ```
-Yet another way to customize y is by instantiating Y with the required customization:
+Yet another way to configure y is by instantiating Y with the required configuration:
 ```
 y = Y(prefix="==> ")
 y(12)
@@ -325,6 +329,15 @@ will print
 ```
 ==> 12
 ```
+
+Or, yet another possibility is to clone y (optionally with modified attributes):
+```
+yd1 = y.clone(show_date=True)
+yd2 = y.clone()
+yd2.cunfigure(show_date=True)
+```
+After this `yd1` and `yd2` will behave similarly.
+
 ## prefix
 ```
 from ycecream import y
@@ -358,7 +371,6 @@ The `output` attribute can be
 
 * a callable that accepts at least one parameter (the text to be printed)
 * a string or Path object that will be used as the filename
-* the null string (""), resulting in a dummy action when a text has to be printed
 * a text file that is open for writing/appending
 
 In the example below, 
@@ -393,6 +405,24 @@ will print to stderr:
 INFO:demo:y| a: {1, 2, 3, 4, 5}
 INFO:demo:y| a: {1, 2, 3, 5}
 ```
+Finally, you can specify the following strings:
+```
+"stderr"           to print to stderr
+"stdput"           to print to stdout
+"null"             to completely ignore (dummy) output 
+"logging.debug"    to use logging.debug
+"logging.info"     to use logging.info
+"logging.warning"  to use logging.warning
+"logging.error"    to use logging.error
+"logging.critical" to use logging.critical
+```
+E.g.
+```
+from ycecream import y
+import sys
+y.configure(output="stdout")
+```
+to print to stdout.
 
 ## serialize
 This will allow to specify how argument values are to be
@@ -445,7 +475,7 @@ y(hello)
 ```
 prints something like
 ```
-y| @ 13:01:47.588 ==> hello: 'world'
+y| @ 13:01:47.588125 ==> hello: 'world'
 ```
 
 ## show_delta
@@ -454,15 +484,16 @@ If True, adds the number of seconds since the start of the program to `y()`'s ou
 from ycecream import Y
 import time
 y = Y(show_delta=True)
-hello="world"
+allô="monde"
+hallo
 y(hello)
 time.sleep(1)
-y(hello)
+y(âllo)
 ```
 prints something like
 ```
-y| Δ 0.021 ==> hello: 'world'
-y| Δ 1.053 ==> hello: 'world'
+y| delta=0.021002 ==> hello: 'world'
+y| delta=1.053234 ==> âllo: 'monde'
 ```
 
 ## line_length
@@ -474,10 +505,10 @@ Can be used to disable the output:
 ```
 from ycecream import y
 
-y.customize(prefix="==> ", enable=False)
+y.configure(prefix="==> ", enable=False)
 world = "perfect"
 y(hello)
-y.customize(enable=True)
+y.configure(enable=True)
 world = "on fire"
 ```
 prints
@@ -502,6 +533,34 @@ y| world: {'EN': 'world', 'NL': 'wereld', 'FR': 'monde', 'DE': 'Welt'}
 y| world: {'EN': 'world', 'NL': 'wereld', 'FR': 'monde', 'DE': 'Welt'}
 y| world: {'DE': 'Welt', 'EN': 'world', 'FR': 'monde', 'NL': 'wereld'}
 ```
+
+### Configuring at import time
+It can be useful to configure ycecream at import time. This can be done writing a `ycecream.json` file which
+can contain any attribute configuration overriding the standard settings.
+E.g. if there is an `ycecream.json` file with the following contents
+```
+{
+    "prefix": "==> ",
+    "output": "stdout",
+    "show_time": true
+}
+```
+in the same folder as the application, this program:
+```
+from ycecream import y
+hello = "world"
+y(hello)
+```
+will print to stdout (rather than stderr:
+```
+==> @ 14:53:41.392190 ==> hello: 'world'
+```
+At import time the sys.path will be searched for, in that order, to find an `ycecream.json` file and use that. This mean that 
+you can place an `ycecream.json` file in the site-packages folder where `ycecream` is installed to always use
+these modified settings.
+
+Note that not-specified attributes will remain the default settings.
+
 ### Alternative installation
 
 With `install ycecream from github.py`, you can install the ycecream.py directly from GitHub to the site packages (as if it was a pip install).
@@ -524,10 +583,12 @@ The ycecream module is a fork of IceCream with a number of differences:
 * ycecream uses y as the standard interface, whereas IceCream uses ic. For compatibility, ycecream also supports ic.
 * yceceam has no dependencies. IceCream on the other hand has many (asttoken, colorize, pyglets, ...).
 * ycecream is just one .py file, whereas IceCream consists of a number of .py files. That makes it possible to use ycecream without even (pip) installing it. Just copy ycecream.py to your work directory.
-* ycecream can be used as a decorator of a function showing the enter and/or exit event as well as the duration
+* ycecream can be used as a decorator of a function showing the enter and/or exit event as well as the duration.
+* ycecream can be used as a context manager to benchamrk code.
 * ycecream has a PEP8 (Pythonic) API. Less important for the user, the actual code is also (more) PEP8 compatible. IceCream does not follow the PEP8 standard.
-* ycecream uses a completely different API to customize (rather than IceCream's configureOutput method)
+* ycecream uses a completely different API to configure (rather than IceCream's configureOutput method)
 * ycecream time showing can be controlled independently from context showing
 * ycecream can optionally show a delta (time since start of the program)
 * ycecream does not sort dicts by default. This behaviour can be controlled with the sort_dict parameter. (This is implemented by including the pprint 3.8 source code)
+* ycecream can be configured from a json file, thus overriding some or all default settings at import time.
 * ycecream uses pytest for the test scripts rather than IceCream's unittest script.
