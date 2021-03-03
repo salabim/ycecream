@@ -160,7 +160,7 @@ y| called mul(5, 7)
 35
 ```
 
-# Benchmaring with ycecream
+# Benchmarking with ycecream
 
 If you decorate a function or method with y, you will be offered the duration between entry and exit (in seconds) as a bonus.
 
@@ -569,7 +569,7 @@ With `install ycecream.py`, you can install the ycecream.py in your current dire
 
 Both files can be found in the GitHub repository (https://github.com/salabim/ycecream).
 
-# Aknowledgement
+# Acknowledgement
 The **ycecream** pacakage is a fork of the **IceCream** package. See https://github.com/gruns/icecream
 
 Many thanks to the author Ansgar Grunseid / grunseid.com / grunseid@gmail.com
