@@ -561,7 +561,7 @@ these modified settings.
 
 Note that not-specified attributes will remain the default settings.
 
-For obvious reasons, it is not possible to specify serialize in an ycecream.json file.
+For obvious reasons, it is not possible to specify `serialize` in an ycecream.json file.
 
 # Alternative installation
 
