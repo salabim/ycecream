@@ -170,22 +170,25 @@ from ycecream import y
 import time
 
 @y(show_enter=False)
-def do_sort(n):
-    x = sorted(list(range(10 ** n)))
-        
+def do_sort(i):
+    n = 10 ** i
+    x = sorted(list(range(n)))
+    return f"{n:9d}"  
+    
 for i in range(8):
     do_sort(i)
 ```
 the ouput will show the effects of the population size on the sort speed:
 ```
-y| returned None from do_sort(0) in 0.000011 seconds
-y| returned None from do_sort(1) in 0.000032 seconds
-y| returned None from do_sort(2) in 0.000010 seconds
-y| returned None from do_sort(3) in 0.000042 seconds
-y| returned None from do_sort(4) in 0.000716 seconds
-y| returned None from do_sort(5) in 0.004501 seconds
-y| returned None from do_sort(6) in 0.049840 seconds
-y| returned None from do_sort(7) in 0.490177 seconds
+y| x3.py:118 in <module> delta=0.045760 ==> y.delta: 2.9999999999752447e-06
+y| x3.py:120 in <module> delta=0.048 ==> returned '        1' from do_sort(0) in 0.000039 seconds
+y| x3.py:120 in <module> delta=0.048 ==> returned '       10' from do_sort(1) in 0.000034 seconds
+y| x3.py:120 in <module> delta=0.049 ==> returned '      100' from do_sort(2) in 0.000033 seconds
+y| x3.py:120 in <module> delta=0.049 ==> returned '     1000' from do_sort(3) in 0.000135 seconds
+y| x3.py:120 in <module> delta=0.050 ==> returned '    10000' from do_sort(4) in 0.000927 seconds
+y| x3.py:120 in <module> delta=0.065 ==> returned '   100000' from do_sort(5) in 0.013300 seconds
+y| x3.py:120 in <module> delta=0.181 ==> returned '  1000000' from do_sort(6) in 0.115092 seconds
+y| x3.py:120 in <module> delta=1.348 ==> returned ' 10000000' from do_sort(7) in 1.164489 seconds
 ```
 
 It is also possible to time any code by using y as a context manager, e.g.
@@ -497,7 +500,24 @@ y| delta=1.053234 ==> âllo: 'monde'
 ```
 
 ## line_length
-used to specify the line length (for wrapping)
+This attribute is used to specify the line length (for wrapping). The default is 80.
+Ycecream always tries to keep all output on one line, but if it can't it will wrap:
+```
+d = dict(a=1,b=2,c=3,d=dict(a=1,b=1,c=3),e=list(range(10)))
+y(d)
+y(d, line_length=120)
+```
+prints
+```
+y|
+    d:
+        {'a': 1,
+         'b': 2,
+         'c': 3,
+         'd': {'a': 1, 'b': 1, 'c': 3},
+         'e': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]}
+y| d: {'a': 1, 'b': 2, 'c': 3, 'd': {'a': 1, 'b': 1, 'c': 3}, 'e': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]}
+```
 
 ## enable
 Can be used to disable the output:
@@ -542,7 +562,8 @@ E.g. if there is an `ycecream.json` file with the following contents
 {
     "prefix": "==> ",
     "output": "stdout",
-    "show_time": true
+    "show_time": true,
+    "line_length": 120`
 }
 ```
 in the same folder as the application, this program:
