@@ -641,14 +641,14 @@ With `install ycecream.py`, you can install the ycecream.py in your current dire
 
 Both files can be found in the GitHub repository (https://github.com/salabim/ycecream).
 
-# Restrictions
+# Limitations
 It is not possible to use ycecream:
 * in a REPL or other interactive environment
 * from a frozen application (e.g. packaged with PyInstaller)
 * when the underlying source code has changed during execution
 
-# Acknowledgement
-The **ycecream** pacakage is a fork of the **IceCream** package. See https://github.com/gruns/icecream
+# Acknowledgeme
+The **ycecream** pacakage is based on (forked from) the **IceCream** package. See https://github.com/gruns/icecream
 
 Many thanks to the author Ansgar Grunseid / grunseid.com / grunseid@gmail.com
 
