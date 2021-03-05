@@ -574,6 +574,37 @@ y| world: {'EN': 'world', 'NL': 'wereld', 'FR': 'monde', 'DE': 'Welt'}
 y| world: {'DE': 'Welt', 'EN': 'world', 'FR': 'monde', 'NL': 'wereld'}
 ```
 
+## context_delimiter
+By default the context (and time and delta) are followed by ` ==> `.
+It is possible to change this with the attribute `context_delimiter`:
+```
+a="abcd"
+y(a)
+y(a, show_time=True, context_delimiter = ' \u279c ')
+```
+prints:
+```
+y| @ 12:56:11.341650 ==> a: 'abcd'
+y| @ 12:56:11.485567 ➜ a: 'abcd'
+```
+
+## pair_delimiter
+By default, pairs (on one line) as separated by `, `.
+It is possible to change this with the attribute ` pair_delimiter`:
+```
+a="abcd"
+b=1
+c=1000
+d=list("ycecream")
+y(a,(b,c),d)
+y(a,(b,c),d, pair_delimiter=" | ")
+```
+prints
+```
+y| a: 'abcd', (b,c): (1, 1000), d: ['y', 'c', 'e', 'c', 'r', 'e', 'a', 'm']
+y| a: 'abcd' | (b,c): (1, 1000) | d: ['y', 'c', 'e', 'c', 'r', 'e', 'a', 'm']
+```
+
 # Configuring at import time
 It can be useful to configure ycecream at import time. This can be done writing a `ycecream.json` file which
 can contain any attribute configuration overriding the standard settings.
