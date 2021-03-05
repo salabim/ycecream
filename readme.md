@@ -589,7 +589,7 @@ y| @ 12:56:11.485567 ➜ a: 'abcd'
 ```
 
 ## pair_delimiter
-By default, pairs (on one line) as separated by `, `.
+By default, pairs (on one line) are separated by `, `.
 It is possible to change this with the attribute ` pair_delimiter`:
 ```
 a="abcd"
