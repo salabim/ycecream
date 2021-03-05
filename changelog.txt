@@ -1,3 +1,14 @@
+version 1.1.5  2021-02-05
+=========================
+Now, the line_length is properly observed and indentation is not anymore dependent on prefix. 
+Instead by default 4 blanks (this can overriden with the wrap_indent attribute) are used as an indent.
+
+The attributes context_delimiter and pair_delimiter are now documented.
+
+Exception NoSourceAvailableError is now correctly raised.
+
+Internal change: complete overhaul of formatting.
+
 version 1.1.4  2021-02-03 
 =========================
 Increased the resolution of show_date and show_time (now microseconds).

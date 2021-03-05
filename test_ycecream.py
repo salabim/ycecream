@@ -17,6 +17,7 @@ with tempfile.TemporaryDirectory() as tmpdir:
 
 import ycecream
 import datetime
+import time
 import pytest
 
 FAKE_TIME = datetime.datetime(2021, 1, 1, 0, 0, 0)
@@ -32,10 +33,18 @@ def patch_datetime_now(monkeypatch):
     monkeypatch.setattr(datetime, "datetime", mydatetime)
 
 
+@pytest.fixture
+def patch_perf_counter(monkeypatch):
+    def myperf_counter():
+        return 0
+
+    monkeypatch.setattr(time, "perf_counter", myperf_counter)
+
+
 def test_time(patch_datetime_now):
     hello = "world"
     s = y(hello, show_time=True, as_str=True)
-    assert s == "y| @ 00:00:00.000 ==> hello: 'world'\n"
+    assert s == "y| @ 00:00:00.000000 ==> hello: 'world'\n"
 
 
 def test_no_arguments(capsys):
@@ -171,7 +180,7 @@ def test_show_delta(capsys):
     y(hello, show_delta=True)
     out, err = capsys.readouterr()
     assert err.endswith("hello: 'world'\n")
-    assert "\u0394 " in err
+    assert "delta=" in err
 
 
 def test_as_str(capsys):
@@ -212,26 +221,30 @@ def test_multiline():
     # fmt: on
     assert (
         s
-        == """y| (a, b): (1, 2)
-   [l,
-   l]: [[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14],
-        [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]]
+        == """y|
+    (a, b): (1, 2)
+    [l,
+    l]:
+        [[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14],
+         [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]]
 """
     )
 
     lines = "\n".join(f"line{i}" for i in range(4))
-    result = y(lines, as_str=True)
+    result = y(lines, as_str=Trueimp
     assert (
         result
-        == """y| lines: 'line0
-           line1
-           line2
-           line3'
+        == """y|
+    lines:
+        'line0
+        line1
+        line2
+        line3'
 """
     )
 
 
-def test_decorator(capsys, patch_datetime_now):
+def test_decorator(capsys, patch_perf_counter):
     @y
     def mul(x, y):
         return x * y

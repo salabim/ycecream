@@ -6,7 +6,7 @@
 #
 #      See https://github.com/salabim/ycecream for details
 
-__version__ = "1.1.4"
+__version__ = "1.1.5"
 
 """
 Fork of IceCream - Never use print() to debug again
@@ -34,10 +34,19 @@ class default:
     pass
 
 
+class Pair:
+    def __init__(self, left, right):
+        self.left = left
+        self.right = right
+
+    def __repr__(self):
+        return f"Pair({self.left}, {self.right})"
+
+
 def set_defaults():
     default.prefix = "y| "
     default.output = "stderr"
-    default.serialize = lambda obj, sort_dicts=False: pformat(obj, sort_dicts=sort_dicts).replace("\\n", "\n")
+    default.serialize = lambda obj, sort_dicts, width: pformat(obj, sort_dicts=sort_dicts, width=width).replace("\\n", "\n")
     default.show_context = False
     default.show_time = False
     default.show_delta = False
@@ -46,6 +55,7 @@ def set_defaults():
     default.show_exit = True
     default.enabled = True
     default.line_length = 80
+    default.wrap_indent = "    "
     default.context_delimiter = " ==> "
     default.pair_delimiter = ", "
 
@@ -72,7 +82,7 @@ def set_defaults():
             raise ValueError(f"error in {path}: key {k} not recognized")
 
 
-def isLiteral(s):
+def is_literal(s):
     try:
         ast.literal_eval(s)
     except Exception:
@@ -81,43 +91,17 @@ def isLiteral(s):
 
 
 class NoSourceAvailableError(OSError):
-    fail_message = (
-        "Failed to access the underlying source code for analysis. Was y() "
-        "invoked in an interpreter (e.g. python -i), a frozen application "
-        "(e.g. packaged with PyInstaller), or did the underlying source code "
-        "change during execution?"
-    )
+    def __init__(self):
+        fail_message = """
+    Failed to access the underlying source code for analysis. Possible causes:
+    - used from interpreter/REPL (e.g. python -i)
+    - used from a frozen application (e.g. packaged with PyInstaller)
+    - underlying source code was changed during execution"""
+        super().__init__(fail_message)    
 
 
 def call_or_value(obj):
     return obj() if callable(obj) else obj
-
-
-def prefixLinesAfterFirst(prefix, s):
-    lines = s.splitlines(True)
-
-    for i in range(1, len(lines)):
-        lines[i] = prefix + lines[i]
-
-    return "".join(lines)
-
-
-def indented_lines(prefix, string):
-    lines = string.splitlines()
-    return [prefix + lines[0]] + [" " * len(prefix) + line for line in lines[1:]]
-
-
-def format_pair(prefix, arg, value):
-    arg_lines = indented_lines(prefix, arg)
-    value_prefix = arg_lines[-1] + ": "
-
-    looksLikeAString = value[0] + value[-1] in ["''", '""']
-    if looksLikeAString:  # Align the start of multiline strings.
-        value = prefixLinesAfterFirst(" ", value)
-
-    value_lines = indented_lines(value_prefix, value)
-    lines = arg_lines[:-1] + value_lines
-    return "\n".join(lines)
 
 
 def check_output(output):
@@ -178,6 +162,7 @@ class Y:
         sort_dicts=None,
         enabled=None,
         line_length=None,
+        wrap_indent=None,
         context_delimiter=None,
         pair_delimiter=None
     ):
@@ -193,6 +178,7 @@ class Y:
         self.sort_dicts = default.sort_dicts if sort_dicts is None else sort_dicts
         self.enabled = default.enabled if enabled is None else enabled
         self.line_length = default.line_length if line_length is None else line_length
+        self.wrap_indent = default.wrap_indent if wrap_indent is None else wrap_indent
         self.context_delimiter = default.context_delimiter if context_delimiter is None else context_delimiter
         self.pair_delimiter = default.pair_delimiter if pair_delimiter is None else pair_delimiter
         self.start_time = time.perf_counter()
@@ -211,12 +197,16 @@ class Y:
         sort_dicts=None,
         enabled=None,
         line_length=None,
+        wrap_indent=None,
         context_delimiter=None,
         pair_delimiter=None,
         as_str=False
     ):
         call_frame = inspect.currentframe().f_back
         frame = inspect.getframeinfo(call_frame, context=1)
+        this_context = frame.code_context
+        if this_context is None:
+            raise NoSourceAvailableError()
         this_line = frame.code_context[0].strip()
 
         if this_line.startswith("@"):
@@ -231,6 +221,7 @@ class Y:
             sort_dicts = self.sort_dicts if sort_dicts is None else sort_dicts
             enabled = self.enabled if enabled is None else enabled
             line_length = self.line_length if line_length is None else line_length
+            wrap_indent = self.wrap_indent if wrap_indent is None else wrap_indent
             context_delimiter = self.context_delimiter if context_delimiter is None else context_delimiter
             pair_delimiter = self.pair_delimiter if pair_delimiter is None else pair_delimiter
             if as_str:
@@ -305,6 +296,7 @@ class Y:
         self._sort_dicts = self.sort_dicts if sort_dicts is None else sort_dicts
         self._as_str = as_str
         self._enabled = self.enabled if enabled is None else enabled
+        self._wrap_indent = self.wrap_indent if wrap_indent is None else wrap_indent
         self._line_length = self.line_length if line_length is None else line_length
         self._pair_delimiter = self.pair_delimiter if pair_delimiter is None else pair_delimiter
         self._context_delimiter = self.context_delimiter if context_delimiter is None else context_delimiter
@@ -332,17 +324,14 @@ class Y:
                 show_exit=show_exit,
                 sort_dicts=sort_dicts,
                 enabled=enabled,
+                line_length=line_length,
+                wrap_indent=wrap_indent,
                 context_delimiter=context_delimiter,
                 pair_delimiter=pair_delimiter,
-                line_length=line_length,
             )
             new_y.cm_info = context_info
             return new_y
-        try:
-            out = self._format(call_frame, *args)
-        except NoSourceAvailableError as err:
-            prefix = call_or_value(self._prefix)
-            out = prefix + "Error: " + err.fail_message
+        out = self._format(call_frame, *args)
         if self._as_str:
             return out + "\n"
         if global_enabled and self._enabled:
@@ -371,6 +360,7 @@ class Y:
         sort_dicts=None,
         enabled=None,
         line_length=None,
+        wrap_indent=None,
         context_delimiter=None,
         pair_delimiter=None
     ):
@@ -385,6 +375,7 @@ class Y:
         self.sort_dicts = self.sort_dicts if sort_dicts is None else sort_dicts
         self.enabled = self.enabled if enabled is None else enabled
         self.line_length = self.line_length if line_length is None else line_length
+        self.wrap_indent = self.wrap_indent if wrap_indent is None else wrap_indent
         self.context_delimiter = self.context_delimiter if context_delimiter is None else context_delimiter
         self.pair_delimiter = self.pair_delimiter if pair_delimiter is None else pair_delimiter
 
@@ -404,6 +395,7 @@ class Y:
         sort_dicts=None,
         enabled=None,
         line_length=None,
+        wrap_indent=None,
         context_delimiter=None,
         pair_delimiter=None
     ):
@@ -419,6 +411,7 @@ class Y:
             sort_dicts=self.sort_dicts if sort_dicts is None else sort_dicts,
             enabled=self.enabled if enabled is None else enabled,
             line_length=self.line_length if line_length is None else line_length,
+            wrap_indent=self.wrap_indent if wrap_indent is None else wrap_indent,
             context_delimiter=self.context_delimiter if context_delimiter is None else context_delimiter,
             pair_delimiter=self.pair_delimiter if pair_delimiter is None else pair_delimiter,
         )
@@ -436,6 +429,7 @@ class Y:
         sort_dicts = self.sort_dicts
         enabled = self.enabled
         line_length = self.line_length
+        wrap_indent = self.wrap_indent
         context_delimiter = self.context_delimiter
         pair_delimiter = self.pair_delimiter
         yield
@@ -450,9 +444,10 @@ class Y:
             show_exit=show_exit,
             sort_dicts=sort_dicts,
             enabled=enabled,
+            line_length=line_length,
+            wrap_indent=wrap_indent,
             context_delimiter=context_delimiter,
             pair_delimiter=pair_delimiter,
-            line_length=line_length,
         )
 
     @property
@@ -462,6 +457,14 @@ class Y:
     @delta.setter
     def delta(self, t):
         self.start_time = time.perf_counter() + t
+
+    def _serialize_native(self, val, sort_dicts, width):
+        kwargs = {}
+        if "sort_dicts" in inspect.signature(self._serialize).parameters:
+            kwargs["sort_dicts"] = sort_dicts
+        if "width" in inspect.signature(self._serialize).parameters:
+            kwargs["width"] = width
+        return self._serialize(val, **kwargs)
 
     def _format(self, call_frame, *args):
         prefix = call_or_value(self._prefix)
@@ -489,44 +492,61 @@ class Y:
             return prefix + context
 
     def _format_args(self, call_frame, call_node, prefix, context, args):
-        source = Source.for_frame(call_frame)
-        sanitized_args = [source.get_text_with_indentation(arg) for arg in call_node.args]
+        context_delimiter = self._context_delimiter if context else ""
+        header = prefix + context + context_delimiter
 
-        pairs = list(zip(sanitized_args, args))
+        source = Source.for_frame(call_frame)
+        pairs = []
+        for node, right in zip(call_node.args, args):
+            left = source.asttokens().get_text(node)
+            if "\n" in left:
+                left = " " * node.first_token.start[1] + left
+                left = textwrap.dedent(left)
+
+            if is_literal(left):
+                left = ""
+            else:
+                left = left + ": "
+            pairs.append(Pair(left=left, right=right))
+
+        if not any("\n" in pair.left for pair in pairs):
+            as_one_line = header + self._pair_delimiter.join(
+                pair.left + self._serialize_native(pair.right, sort_dicts=self._sort_dicts, width=10000) for pair in pairs
+            )
+            if len(as_one_line) <= self._line_length and "\n" not in as_one_line:
+                return as_one_line
+
+        if header.strip():
+            indent1 = self._wrap_indent
+            lines = [header]
+        else:
+            indent1 = ""
+            lines = []
+
+        for pair in pairs:
+            do_right = False
+            if "\n" in pair.left:
+                for s in pair.left.splitlines():
+                    lines.append(indent1 + s)
+                    do_right = True
+            else:
+                start = indent1 + pair.left
+                line = start + self._serialize_native(pair.right, sort_dicts=self._sort_dicts, width=self._line_length - len(start))
+                if "\n" in line:
+                    lines.append(start)
+                    do_right = True
+                else:
+                    lines.append(line)
+            if do_right:
+                indent2 = indent1 + self._wrap_indent
+                line = self._serialize_native(pair.right, sort_dicts=self._sort_dicts, width=self._line_length - len(indent2))
+                for s in line.splitlines():
+                    lines.append(indent2 + s)
+
+        return "\n".join(line.rstrip() for line in lines)
 
         out = self._construct_argument_output(prefix, context, pairs)
         return out
-
-    def _construct_argument_output(self, prefix, context, pairs):
-        def arg_prefix(arg):
-            return f"{arg}: "
-
-        if "sort_dicts" in inspect.signature(self._serialize).parameters:
-            pairs = [(arg, self._serialize(val, sort_dicts=self._sort_dicts)) for arg, val in pairs]
-        else:
-            pairs = [(arg, self._serialize(val)) for arg, val in pairs]
-
-        print("pairs==", pairs)
-
-        pairs_processed = [val if isLiteral(arg) else (arg_prefix(arg) + val) for arg, val in pairs]
-
-        all_args_on_one_line = self._pair_delimiter.join(pairs_processed)
-        multiline_args = len(all_args_on_one_line.splitlines()) > 1
-
-        context_delimiter = self._context_delimiter if context else ""
-        all_pairs = prefix + context + context_delimiter + all_args_on_one_line
-        first_line_too_long = len(all_pairs.splitlines()[0]) > self._line_length
-
-        if multiline_args or first_line_too_long:
-            if context:
-                lines = [prefix + context] + [format_pair(len(prefix) * " ", arg, value) for arg, value in pairs]
-            else:
-                arg_lines = [format_pair("", arg, value) for arg, value in pairs]
-                lines = indented_lines(prefix, "\n".join(arg_lines))
-        else:
-            lines = [prefix + context + context_delimiter + all_args_on_one_line]
-
-        return "\n".join(lines)
 
     def _format_context(self, call_frame, call_node):
         filename, line_number, parent_function = self._get_context(call_frame, call_node)
@@ -2659,12 +2679,3 @@ def _extract_ipython_statement(stmts, tree):
 
 # end of source of executing module
 
-
-class Source(Source):
-    def get_text_with_indentation(self, node):
-        result = self.asttokens().get_text(node)
-        if "\n" in result:
-            result = " " * node.first_token.start[1] + result
-            result = textwrap.dedent(result)
-        result = result.strip()
-        return result
