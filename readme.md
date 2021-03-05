@@ -515,6 +515,7 @@ y|
          'a2': {'a': 1, 'b': 1, 'c': 3},
          'a3': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]}
 y| d: {'a1': 1, 'a2': {'a': 1, 'b': 1, 'c': 3}, 'a3': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]}
+```
 
 ## wrap_indent
 This can control how to indent if the output does not fit in the line_length (has to be wrapped).
