@@ -168,7 +168,7 @@ That opens the door to simple benchmarking, like:
 from ycecream import y
 import time
 
-@y(show_enter=False)
+@y(show_enter=False,show_context=True)
 def do_sort(i):
     n = 10 ** i
     x = sorted(list(range(n)))
@@ -179,15 +179,14 @@ for i in range(8):
 ```
 the ouput will show the effects of the population size on the sort speed:
 ```
-y| x3.py:118 in <module> delta=0.045760 ==> y.delta: 2.9999999999752447e-06
-y| x3.py:120 in <module> delta=0.048 ==> returned '        1' from do_sort(0) in 0.000039 seconds
-y| x3.py:120 in <module> delta=0.048 ==> returned '       10' from do_sort(1) in 0.000034 seconds
-y| x3.py:120 in <module> delta=0.049 ==> returned '      100' from do_sort(2) in 0.000033 seconds
-y| x3.py:120 in <module> delta=0.049 ==> returned '     1000' from do_sort(3) in 0.000135 seconds
-y| x3.py:120 in <module> delta=0.050 ==> returned '    10000' from do_sort(4) in 0.000927 seconds
-y| x3.py:120 in <module> delta=0.065 ==> returned '   100000' from do_sort(5) in 0.013300 seconds
-y| x3.py:120 in <module> delta=0.181 ==> returned '  1000000' from do_sort(6) in 0.115092 seconds
-y| x3.py:120 in <module> delta=1.348 ==> returned ' 10000000' from do_sort(7) in 1.164489 seconds
+y| x7.py:7 in <module> ==> returned '        1' from do_sort(0) in 0.000020 seconds
+y| x7.py:7 in <module> ==> returned '       10' from do_sort(1) in 0.000019 seconds
+y| x7.py:7 in <module> ==> returned '      100' from do_sort(2) in 0.000023 seconds
+y| x7.py:7 in <module> ==> returned '     1000' from do_sort(3) in 0.000077 seconds
+y| x7.py:7 in <module> ==> returned '    10000' from do_sort(4) in 0.000743 seconds
+y| x7.py:7 in <module> ==> returned '   100000' from do_sort(5) in 0.009779 seconds
+y| x7.py:7 in <module> ==> returned '  1000000' from do_sort(6) in 0.095857 seconds
+y| x7.py:7 in <module> ==> returned ' 10000000' from do_sort(7) in 0.645205 seconds
 ```
 
 It is also possible to time any code by using y as a context manager, e.g.
