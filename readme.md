@@ -1,5 +1,4 @@
-![logo](./images/logo_new.png)
-
+![Logo](http://www.salabim.org/ycecream_logo.png)
 
 Do you ever use `print()` or `log()` to debug your code? If so,  ycecream, or `y` for short, will make printing debug information a lot sweeter.
 And on top of that, you get some basic benchmarking functionality.
