@@ -571,6 +571,12 @@ With `install ycecream.py`, you can install the ycecream.py in your current dire
 
 Both files can be found in the GitHub repository (https://github.com/salabim/ycecream).
 
+# Restrictions
+It is not possible to use ycecream:
+* in a REPL or other interactive environment
+* from a frozen application (e.g. packaged with PyInstaller)
+* when the underlying source code has changed during execution
+
 # Acknowledgement
 The **ycecream** pacakage is a fork of the **IceCream** package. See https://github.com/gruns/icecream
 
@@ -593,6 +599,8 @@ The ycecream module is a fork of IceCream with a number of differences:
 * ycecream can optionally show a delta (time since start of the program)
 * ycecream does not sort dicts by default. This behaviour can be controlled with the sort_dict parameter. (This is implemented by including the pprint 3.8 source code)
 * ycecream can be configured from a json file, thus overriding some or all default settings at import time.
+* ycecream has a line_length attribute that is observed correctly.
+* ycecream indents output by 4 blanks rather than IceCream's indentation that depends on the length of prefix.
 * ycecream uses pytest for the test scripts rather than IceCream's unittest script.
 
 ![Python 3.6](https://img.shields.io/badge/python-3.6-blue.svg) ![Python 3.7](https://img.shields.io/badge/python-3.7-blue.svg) ![Python 3.8](https://img.shields.io/badge/python-3.8-blue.svg) ![Python 3.9](https://img.shields.io/badge/python-3.9-blue.svg)
