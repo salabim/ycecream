@@ -503,7 +503,7 @@ y| delta=1.053234 ==> âllo: 'monde'
 This attribute is used to specify the line length (for wrapping). The default is 80.
 Ycecream always tries to keep all output on one line, but if it can't it will wrap:
 ```
-d = dict(a=1,b=2,c=3,d=dict(a=1,b=1,c=3),e=list(range(10)))
+d = dict(a1=1,a2=dict(a=1,b=1,c=3),a3=list(range(10)))
 y(d)
 y(d, line_length=120)
 ```
@@ -511,12 +511,31 @@ prints
 ```
 y|
     d:
-        {'a': 1,
-         'b': 2,
-         'c': 3,
-         'd': {'a': 1, 'b': 1, 'c': 3},
-         'e': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]}
-y| d: {'a': 1, 'b': 2, 'c': 3, 'd': {'a': 1, 'b': 1, 'c': 3}, 'e': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]}
+        {'a1': 1,
+         'a2': {'a': 1, 'b': 1, 'c': 3},
+         'a3': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]}
+y| d: {'a1': 1, 'a2': {'a': 1, 'b': 1, 'c': 3}, 'a3': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]}
+
+## wrap_indent
+This can control how to indent if the output does not fit in the line_length (has to be wrapped).
+E.g.
+```
+d = dict(a1=1,a2=dict(a=1,b=1,c=3),a3=list(range(10)))
+y(d, wrap_indent="  ")
+y(d, wrap_indent="....")
+```
+prints
+```
+y|
+  d:
+    {'a1': 1,
+     'a2': {'a': 1, 'b': 1, 'c': 3},
+     'a3': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]}
+y|
+....d:
+........{'a1': 1,
+........ 'a2': {'a': 1, 'b': 1, 'c': 3},
+........ 'a3': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]}
 ```
 
 ## enable
