@@ -429,7 +429,8 @@ to print to stdout.
 This will allow to specify how argument values are to be
 serialized to displayable strings. The default is pprint, but this can be changed to,
 for example, to handle non-standard datatypes in a custom fashion.
-The serialize function should accept at least one parameter.
+The serialize function should accept at least one parameter. The function can optionally (and 
+preferably should) accept the keyword arguments `width` and `sort_dicts`.
 
 ```
 from ycecream import Y
@@ -496,6 +497,19 @@ prints something like
 y| delta=0.021002 ==> hello: 'world'
 y| delta=1.053234 ==> âllo: 'monde'
 ```
+
+## show_enter
+When used as a decorator or context manager, by default, ycecream ouputs a line when the decorated the
+function is called  or the context manager is entered.
+
+With `show_enter=False` this line can be suppressed.
+
+## show_exit
+When used as a decorator or context manager, by default, ycecream ouputs a line when the decorated the
+function returned or the context manager is exited.
+
+With `show_exit=False` this line can be suppressed.
+
 
 ## line_length
 This attribute is used to specify the line length (for wrapping). The default is 80.
@@ -633,6 +647,46 @@ Note that not-specified attributes will remain the default settings.
 
 For obvious reasons, it is not possible to specify `serialize` in an ycecream.json file.
 
+# Working with multiple instances of Y
+Normally, only the `y()` object (which is an instance of Y) is used.
+
+It can be useful to have multiple instances, e.g. when some of the debugging has to be done with context information
+and others requires an alternative prefix.
+
+THere are several ways to obtain a new instance of Y:
+
+*    by using `Y()`
+*    by using `y.new()`, which is essentially the same as Y, but there's no need to import Y explicitely
+*    by using `y.clone()`, which copies all attributes from y()
+*    with y() used as a context manager
+    
+In either case, attributes can be added to override these:
+
+### Example
+```
+from ycecream import y, Y
+y_with_context = Y(show_context=True)
+y_with_new_prefix = y.new(prefix="==> ")
+y_with_new_prefix_and_time = y_with_new_prefix.clone(show_time=True)
+hello="world"
+y_with_context(hello)
+y_with_new_prefix(hello)
+y_with_new_prefix_and_time(hello)
+with y(prefix="ycm ") as ycm:
+    ycm(hello)
+    y(hello)
+```
+prints
+```
+y| x.py:6 in <module> ==> hello: 'world'
+==> hello: 'world'
+==> @ 10:15:41.457879 ==> hello: 'world'
+ycm enter
+ycm hello: 'world'
+y| hello: 'world'
+ycm exit in 0.041361 seconds
+```
+
 # Alternative installation
 
 With `install ycecream from github.py`, you can install the ycecream.py directly from GitHub to the site packages (as if it was a pip install).
@@ -647,7 +701,7 @@ It is not possible to use ycecream:
 * from a frozen application (e.g. packaged with PyInstaller)
 * when the underlying source code has changed during execution
 
-# Acknowledgeme
+# Acknowledgement
 The **ycecream** pacakage is based on (forked from) the **IceCream** package. See https://github.com/gruns/icecream
 
 Many thanks to the author Ansgar Grunseid / grunseid.com / grunseid@gmail.com
@@ -658,19 +712,19 @@ The ycecream module is a fork of IceCream with a number of differences:
 
 * ycecream can't colourize the output (a nice feature of IceCream)
 * ycecream runs only on Python 3.6 and higher. (IceCream runs even on Python 2.7).
-* ycecream uses y as the standard interface, whereas IceCream uses ic. For compatibility, ycecream also supports ic.
+* ycecream uses y as the standard interface, whereas IceCream uses ic.
 * yceceam has no dependencies. IceCream on the other hand has many (asttoken, colorize, pyglets, ...).
 * ycecream is just one .py file, whereas IceCream consists of a number of .py files. That makes it possible to use ycecream without even (pip) installing it. Just copy ycecream.py to your work directory.
 * ycecream can be used as a decorator of a function showing the enter and/or exit event as well as the duration.
 * ycecream can be used as a context manager to benchamrk code.
-* ycecream has a PEP8 (Pythonic) API. Less important for the user, the actual code is also (more) PEP8 compatible. IceCream does not follow the PEP8 standard.
-* ycecream uses a completely different API to configure (rather than IceCream's configureOutput method)
+* ycecream has a PEP8 (Pythonic) API. Less important for the user, the actual code is also (more) PEP8 compatible.
+* ycecream uses a different API to configure (rather than IceCream's configureOutput method)
 * ycecream time showing can be controlled independently from context showing
 * ycecream can optionally show a delta (time since start of the program)
-* ycecream does not sort dicts by default. This behaviour can be controlled with the sort_dict parameter. (This is implemented by including the pprint 3.8 source code)
+* ycecream does not sort dicts by default. This behaviour can be controlled with the `sort_dict` parameter. (This is implemented by including the pprint 3.8 source code)
 * ycecream can be configured from a json file, thus overriding some or all default settings at import time.
 * ycecream has a line_length attribute that is observed correctly.
-* ycecream indents output by 4 blanks rather than IceCream's indentation that depends on the length of prefix.
+* ycecream indents output by 4 blanks (overridable) rather than IceCream's indentation that depends on the length of prefix.
 * ycecream uses pytest for the test scripts rather than IceCream's unittest script.
 
 ![Python 3.6](https://img.shields.io/badge/python-3.6-blue.svg) ![Python 3.7](https://img.shields.io/badge/python-3.7-blue.svg) ![Python 3.8](https://img.shields.io/badge/python-3.8-blue.svg) ![Python 3.9](https://img.shields.io/badge/python-3.9-blue.svg)
