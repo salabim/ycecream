@@ -16,6 +16,8 @@ $ pip install ycecream --upgrade
 
 Alternatively, ycecream.py can be juist copied into you current work directory from GitHub (https://github.com/salabim/ycecream).
 
+No dependencies!
+
 
 # Inspect variables and expressions
 
@@ -717,8 +719,8 @@ The ycecream module is a fork of IceCream with a number of differences:
 * ycecream is just one .py file, whereas IceCream consists of a number of .py files. That makes it possible to use ycecream without even (pip) installing it. Just copy ycecream.py to your work directory.
 * ycecream can be used as a decorator of a function showing the enter and/or exit event as well as the duration.
 * ycecream can be used as a context manager to benchamrk code.
-* ycecream has a PEP8 (Pythonic) API. Less important for the user, the actual code is also (more) PEP8 compatible.
-* ycecream uses a different API to configure (rather than IceCream's configureOutput method)
+* ycecream has a PEP8 (Pythonic) API. Less important for the user, the actual code is also fully PEP8 compatible.
+* ycecream uses a different API to configuration (rather than IceCream's configureOutput method)
 * ycecream time showing can be controlled independently from context showing
 * ycecream can optionally show a delta (time since start of the program)
 * ycecream does not sort dicts by default. This behaviour can be controlled with the `sort_dict` parameter. (This is implemented by including the pprint 3.8 source code)
