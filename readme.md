@@ -289,7 +289,10 @@ a number of configuration attributes:
 * `show_exit`
 * `sort_dicts`
 * `enabled`
-* `line_wrap_width`
+* `line_length`
+* `compact`
+* `indent`
+* `depth` 
 * `context_delimiter`
 * `pair_delimiter`
 
