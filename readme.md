@@ -432,7 +432,7 @@ This will allow to specify how argument values are to be
 serialized to displayable strings. The default is pformat (from pprint), but this can be changed to,
 for example, to handle non-standard datatypes in a custom fashion.
 The serialize function should accept at least one parameter.
-The function can optionally accept the keyword arguments `width` and `sort_dicts`, `indent` and `depth`.
+The function can optionally accept the keyword arguments `width` and `sort_dicts`, `compact`, `indent` and `depth`.
 ```
 from ycecream import Y
 
@@ -528,6 +528,33 @@ y|
          'a2': {'a': 1, 'b': 1, 'c': 3},
          'a3': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]}
 y| d: {'a1': 1, 'a2': {'a': 1, 'b': 1, 'c': 3}, 'a3': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]}
+```
+
+## compact
+This attribute is used to specify the comapctparameter for `pformat` (see the pprint documentation
+for details). `compact` is False by default.
+```
+a = 9 * ["0123456789"]
+y(a)
+y(a, compact=True)
+```
+prints
+```
+y|
+    a:
+        ['0123456789',
+         '0123456789',
+         '0123456789',
+         '0123456789',
+         '0123456789',
+         '0123456789',
+         '0123456789',
+         '0123456789',
+         '0123456789']
+y|
+    a:
+        ['0123456789', '0123456789', '0123456789', '0123456789', '0123456789',
+         '0123456789', '0123456789', '0123456789', '0123456789']
 ```
 ## indent
 This attribute is used to specify the indent parameter for `pformat` (see the pprint documentation
@@ -752,10 +779,10 @@ Many thanks to the author Ansgar Grunseid / grunseid.com / grunseid@gmail.com
 
 # Differences with IceCream
 
-The ycecream module is a fork of IceCream with a number of differences:
+The ycecream module was originally a fork of IceCream, but has many differences:
 
-* ycecream can't colourize the output (a nice feature of IceCream)
-* ycecream runs only on Python 3.6 and higher. (IceCream runs even on Python 2.7).
+* ycecream can't colourize the output
+* ycecream runs only on Python 3.6 and higher
 * ycecream uses y as the standard interface, whereas IceCream uses ic.
 * yceceam has no dependencies. IceCream on the other hand has many (asttoken, colorize, pyglets, ...).
 * ycecream is just one .py file, whereas IceCream consists of a number of .py files. That makes it possible to use ycecream without even (pip) installing it. Just copy ycecream.py to your work directory.
@@ -766,6 +793,7 @@ The ycecream module is a fork of IceCream with a number of differences:
 * ycecream time showing can be controlled independently from context showing
 * ycecream can optionally show a delta (time since start of the program)
 * ycecream does not sort dicts by default. This behaviour can be controlled with the `sort_dict` parameter. (This is implemented by including the pprint 3.8 source code)
+* ycecream use the compact, indent and depath parameters of pprint to allow for more formatting flexibility
 * ycecream can be configured from a json file, thus overriding some or all default settings at import time.
 * ycecream has a line_length attribute that is observed correctly.
 * ycecream indents output by 4 blanks (overridable) rather than IceCream's indentation that depends on the length of prefix.
