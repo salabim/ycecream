@@ -429,11 +429,10 @@ to print to stdout.
 
 ## serialize
 This will allow to specify how argument values are to be
-serialized to displayable strings. The default is pprint, but this can be changed to,
+serialized to displayable strings. The default is pformat (from pprint), but this can be changed to,
 for example, to handle non-standard datatypes in a custom fashion.
-The serialize function should accept at least one parameter. The function can optionally (and 
-preferably should) accept the keyword arguments `width` and `sort_dicts`.
-
+The serialize function should accept at least one parameter.
+The function can optionally accept the keyword arguments `width` and `sort_dicts`, `indent` and `depth`.
 ```
 from ycecream import Y
 
@@ -529,6 +528,49 @@ y|
          'a2': {'a': 1, 'b': 1, 'c': 3},
          'a3': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]}
 y| d: {'a1': 1, 'a2': {'a': 1, 'b': 1, 'c': 3}, 'a3': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]}
+```
+## indent
+This attribute is used to specify the indent parameter for `pformat` (see the pprint documentation
+for details). `indent` is 1 by default.
+```
+s = "01234567890012345678900123456789001234567890"
+y( [s, [s]])
+y( [s, [s]], indent=4)
+```
+prints
+```
+y|
+    [s, [s]]:
+        ['01234567890012345678900123456789001234567890',
+         ['01234567890012345678900123456789001234567890']]
+y|
+    [s, [s]]:
+        [   '01234567890012345678900123456789001234567890',
+            ['01234567890012345678900123456789001234567890']]
+```
+
+## depth
+This attribute is used to specify the depth parameter for `pformat` (see the pprint documentation
+for details). `depth` is `None` by default, which means no restrictions. 
+```
+s = "01234567890012345678900123456789001234567890"
+y([s,[s,[s,[s,s]]]])
+y([s,[s,[s,[s,s]]]], depth=3)
+```
+prints
+```
+y|
+    [s,[s,[s,[s,s]]]]:
+        ['01234567890012345678900123456789001234567890',
+         ['01234567890012345678900123456789001234567890',
+          ['01234567890012345678900123456789001234567890',
+           ['01234567890012345678900123456789001234567890',
+            '01234567890012345678900123456789001234567890']]]]
+y|
+    [s,[s,[s,[s,s]]]]:
+        ['01234567890012345678900123456789001234567890',
+         ['01234567890012345678900123456789001234567890',
+          ['01234567890012345678900123456789001234567890', [...]]]]
 ```
 
 ## wrap_indent
