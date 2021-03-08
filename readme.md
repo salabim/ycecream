@@ -170,7 +170,7 @@ That opens the door to simple benchmarking, like:
 from ycecream import y
 import time
 
-@y(show_enter=False,show_context=True)
+@y(show_enter=False,show_line_number=True)
 def do_sort(i):
     n = 10 ** i
     x = sorted(list(range(n)))
@@ -248,7 +248,7 @@ prints
 y| hello: 'world'
 ```
 
-Additionally, ycecreams's output can be entirely disabled, and optionally  later re-enabled, with
+Ycecreams's output can be entirely disabled, and optionally  later re-enabled, with
 `ycecream.enable(False)` and `ycecream.enable(True)` respectively. The function always returns
 the current (new) setting.
 Note that this function refers to ALL output from ycecream.
@@ -282,7 +282,7 @@ a number of configuration attributes:
 * `prefix`
 * `output`
 * `serialize`
-* `show_context`
+* `show_line_numbert`
 * `show_time`
 * `show_delta`
 * `show_enter`
@@ -456,19 +456,19 @@ prints
 y| 7, hello: 'world' [len=5], l: [0, 1, 2, 3, 4, 5, 6] [len=7]
 ```
 
-## show_context
+## show_line_number
 If True, adds the `y()` call's filename, line number, and parent function to `y()`'s output.
 
 ```from ycecream import Y
-y = Y(show_context=True)
+y = Y(show_line_number=True)
 hello="world"
 y(hello)
 ```
 prints something like
 ```
-y| x.py:4 in <module> ==> hello: 'world'
+y| x.py:4 ==> hello: 'world'
 ```
-Note that if you call `y` without any arguments, the context is always shown, regardless of the status `include_context`.
+Note that if you call `y` without any arguments, the line number is always shown, regardless of the status `show_line_number`.
 
 ## show_time
 If True, adds the current time to `y()`'s output.
@@ -661,7 +661,7 @@ y| world: {'DE': 'Welt', 'EN': 'world', 'FR': 'monde', 'NL': 'wereld'}
 ```
 
 ## context_delimiter
-By default the context (and time and delta) are followed by ` ==> `.
+By default the line_number, time and/or delta are followed by ` ==> `.
 It is possible to change this with the attribute `context_delimiter`:
 ```
 a="abcd"
@@ -697,10 +697,10 @@ can contain any attribute configuration overriding the standard settings.
 E.g. if there is an `ycecream.json` file with the following contents
 ```
 {
-    "prefix": "==> ",
     "output": "stdout",
     "show_time": true,
     "line_length": 120`
+    'compact' : true
 }
 ```
 in the same folder as the application, this program:
@@ -711,7 +711,7 @@ y(hello)
 ```
 will print to stdout (rather than stderr):
 ```
-==> @ 14:53:41.392190 ==> hello: 'world'
+y| @ 14:53:41.392190 ==> hello: 'world'
 ```
 At import time the sys.path will be searched for, in that order, to find an `ycecream.json` file and use that. This mean that 
 you can place an `ycecream.json` file in the site-packages folder where `ycecream` is installed to always use
@@ -739,11 +739,11 @@ In either case, attributes can be added to override these:
 ### Example
 ```
 from ycecream import y, Y
-y_with_context = Y(show_context=True)
+y_with_line_number = Y(show_line_number=True)
 y_with_new_prefix = y.new(prefix="==> ")
 y_with_new_prefix_and_time = y_with_new_prefix.clone(show_time=True)
 hello="world"
-y_with_context(hello)
+y_with_line_number(hello)
 y_with_new_prefix(hello)
 y_with_new_prefix_and_time(hello)
 with y(prefix="ycm ") as ycm:
@@ -752,7 +752,7 @@ with y(prefix="ycm ") as ycm:
 ```
 prints
 ```
-y| x.py:6 in <module> ==> hello: 'world'
+y| x.py:6 ==> hello: 'world'
 ==> hello: 'world'
 ==> @ 10:15:41.457879 ==> hello: 'world'
 ycm enter
@@ -760,6 +760,13 @@ ycm hello: 'world'
 y| hello: 'world'
 ycm exit in 0.041361 seconds
 ```
+
+# Test script
+
+On GitHub is a file `test_ycecream.py` that tests (and thus also demonstrates as manyof the functionality
+of ycecream as possible.
+
+It is very useful to have a look at the tests to see the features (some maybe omitted from this readme).
 
 # Alternative installation
 
@@ -776,9 +783,10 @@ It is not possible to use ycecream:
 * when the underlying source code has changed during execution
 
 # Acknowledgement
-The **ycecream** pacakage is based on (forked from) the **IceCream** package. See https://github.com/gruns/icecream
+The **ycecream** pacakage is inspired by the **IceCream** package, but is now a 
+nearly complete rewrite. See https://github.com/gruns/icecream
 
-Many thanks to the author Ansgar Grunseid / grunseid.com / grunseid@gmail.com
+Many thanks to the author Ansgar Grunseid / grunseid.com / grunseid@gmail.com .
 
 # Differences with IceCream
 
@@ -793,7 +801,7 @@ The ycecream module was originally a fork of IceCream, but has many differences:
 * ycecream can be used as a context manager to benchmark code.
 * ycecream has a PEP8 (Pythonic) API. Less important for the user, the actual code is also fully PEP8 compatible.
 * ycecream uses a different API to configuration (rather than IceCream's configureOutput method)
-* ycecream can contol line, time and delta showing independently
+* ycecream can toggle line number, time and delta inclusion independently
 * ycecream does not sort dicts by default. This behaviour can be controlled with the `sort_dict` parameter. (This is implemented by including the pprint 3.8 source code)
 * ycecream can use the compact, indent and depath parameters of pprint to allow for more formatting flexibility
 * ycecream can be configured from a json file, thus overriding some or all default settings at import time.
@@ -804,4 +812,4 @@ The ycecream module was originally a fork of IceCream, but has many differences:
 ![Python 3.6](https://img.shields.io/badge/python-3.6-blue.svg) ![Python 3.7](https://img.shields.io/badge/python-3.7-blue.svg) ![Python 3.8](https://img.shields.io/badge/python-3.8-blue.svg) ![Python 3.9](https://img.shields.io/badge/python-3.9-blue.svg)
 ![Black](https://img.shields.io/badge/code%20style-black-000000.svg)
 
-<a href="https://www.buymeacoffee.com/ruudvanderham" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-red.png" alt="Buy Me A Coffee" height="41" width="174"></a>
+If you like ycecream <a href="https://www.buymeacoffee.com/ruudvanderham" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-red.png" alt="Buy Me A Coffee" height="41" width="174"></a>
