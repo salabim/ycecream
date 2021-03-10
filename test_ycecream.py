@@ -3,7 +3,7 @@ from pathlib import Path
 import sys
 import tempfile
 
-context_start = "y| " + Path(__file__).name + ":"
+context_start = "y| #"
 
 # make a temporary dict and put a dummy ycecream.json file there, to prevent reading any ycecream.json
 with tempfile.TemporaryDirectory() as tmpdir:
@@ -40,18 +40,18 @@ def patch_perf_counter(monkeypatch):
 
     monkeypatch.setattr(time, "perf_counter", myperf_counter)
 
-
 def test_time(patch_datetime_now):
     hello = "world"
     s = y(hello, show_time=True, as_str=True)
     assert s == "y| @ 00:00:00.000000 ==> hello: 'world'\n"
 
 
-def test_no_arguments(capsys):
+def test_no_arguments(capsys):    
     result = y()
     out, err = capsys.readouterr()
     assert err.startswith(context_start)
-    assert result is None
+    assert err.endswith(" in test_no_arguments()\n")
+    assert result is None   
 
 
 def test_one_arguments(capsys):
@@ -70,6 +70,14 @@ def test_two_arguments(capsys):
     assert err == "y| hello: 'world', l: [1, 2, 3]\n"
     assert result == (hello, l)
 
+def test_in_function(capsys):
+    def hello(val):
+        y(val, show_line_number=True)
+    hello("world")
+    out, err = capsys.readouterr()
+    assert err.startswith(context_start)
+    assert err.endswith(" in hello() ==> val: 'world'\n")
+  
 
 def test_prefix(capsys):
     hello = "world"
@@ -93,7 +101,7 @@ def test_dynamic_prefix(capsys):
     assert err == "1)hello: 'world'\n2)hello: 'world'\n"
 
 
-def test_output_to_stdout(capsys, tmpdir):
+def test_output(capsys, tmpdir):
     result = ""
 
     def my_output(s):
@@ -109,11 +117,18 @@ def test_output_to_stdout(capsys, tmpdir):
     out, err = capsys.readouterr()
     assert out == "y| hello: 'world'\n"
     assert err == ""
+    y(hello, output="stdout")
+    out, err = capsys.readouterr()
+    assert out == "y| hello: 'world'\n"
+    assert err == ""    
     y(hello, output="")
     out, err = capsys.readouterr()
     assert out == ""
     assert err == ""
-
+    y(hello, output="null")
+    out, err = capsys.readouterr()
+    assert out == ""
+    assert err == ""
     y(hello, output=print)
     out, err = capsys.readouterr()
     assert out == "y| hello: 'world'\n"
@@ -196,7 +211,7 @@ def test_clone():
     z = y.clone(prefix="z| ")
     sy = y(hello, as_str=True)
     with y.preserve():
-        y.configure(show_context=True)
+        y.configure(show_line_number=True)
         sz = z(hello, as_str=True)
         assert sy.replace("y", "z") == sz
 
@@ -221,7 +236,8 @@ def test_multiline():
     # fmt: on
     assert (
         s
-        == """y|
+        == """\
+y|
     (a, b): (1, 2)
     [l,
     l]:
@@ -231,10 +247,11 @@ def test_multiline():
     )
 
     lines = "\n".join(f"line{i}" for i in range(4))
-    result = y(lines, as_str=Trueimp
+    result = y(lines, as_str=True)
     assert (
         result
-        == """y|
+        == """\
+y|
     lines:
         'line0
         line1
@@ -273,7 +290,8 @@ def test_decorator(capsys, patch_perf_counter):
     out, err = capsys.readouterr()
     assert (
         err
-        == """y| called mul(2, 3)
+        == """\
+y| called mul(2, 3)
 y| returned 6 from mul(2, 3) in 0.000000 seconds
 y| called div(10, 2)
 y| returned 5.0 from div(10, 2) in 0.000000 seconds
@@ -282,7 +300,31 @@ y| called sub(10, 2)
 """
     )
 
-
+def test_decorator_edge_cases(capsys, patch_perf_counter):
+    @y
+    def mul(x, y, factor=1):
+        return x*y*factor
+    assert mul(5, 6) == 30
+    assert mul(5, 6, 10) == 300
+    assert mul(5, 6, factor=10) == 300    
+    out, err = capsys.readouterr()
+    assert (
+        err
+        == """\
+y| called mul(5, 6)
+y| returned 30 from mul(5, 6) in 0.000000 seconds
+y| called mul(5, 6, 10)
+y| returned 300 from mul(5, 6, 10) in 0.000000 seconds
+y| called mul(5, 6, factor=10)
+y| returned 300 from mul(5, 6, factor=10) in 0.000000 seconds
+""") 
+    with pytest.raises(NotImplementedError):
+        @y    
+        def mul(x,y,
+            factor=10):
+                return x*y
+        mul(4,6)          
+    
 def test_decorator_with_methods(capsys):
     class Number:
         def __init__(self, value):
@@ -305,7 +347,8 @@ def test_decorator_with_methods(capsys):
     out, err = capsys.readouterr()
     assert (
         err
-        == """y| called __mul__(Number(2), 2)
+        == """\
+y| called __mul__(Number(2), 2)
 y| called __mul__(Number(2), Number(3))
 """
     )
@@ -317,6 +360,18 @@ y| called __mul__(Number(2), Number(3))
     )
 
 
+def test_context_manager(capsys, patch_perf_counter):
+    with y():
+        y(3)
+    out, err = capsys.readouterr()
+    assert (
+        err
+        == """\
+y| enter
+y| 3
+y| exit in 0.000000 seconds
+""")
+                
 def test_json_reading(tmpdir):
     json_filename = Path(tmpdir) / "ycecream.json"
     with open(json_filename, "w") as f:
@@ -365,5 +420,251 @@ def test_json_reading(tmpdir):
     ycecream.set_defaults()
 
 
+def test_wrapping(capsys):
+    l0 = "".join(f"         {c}" for c in "12345678") + "\n" + "".join(f".........0" for c in "12345678")
+
+    print(l0, file=sys.stderr)
+    ccc = cccc = 3 * ["12345678123456789012"]
+    ccc0 = [cccc[0] + "0"] + cccc[1:]
+    y(ccc)
+    y(cccc)
+    y(ccc0)
+
+    out, err = capsys.readouterr()
+    assert (
+        err
+        == """\
+         1         2         3         4         5         6         7         8
+.........0.........0.........0.........0.........0.........0.........0.........0
+y| ccc: ['12345678123456789012', '12345678123456789012', '12345678123456789012']
+y|
+    cccc:
+        ['12345678123456789012', '12345678123456789012', '12345678123456789012']
+y|
+    ccc0:
+        ['123456781234567890120',
+         '12345678123456789012',
+         '12345678123456789012']
+"""
+    )
+    a = "1234"
+    b = bb = 9 * ["123"]
+    print(l0, file=sys.stderr)
+    y(a, b)
+    y(a, bb)
+    out, err = capsys.readouterr()
+    assert (
+        err
+        == """\
+         1         2         3         4         5         6         7         8
+.........0.........0.........0.........0.........0.........0.........0.........0
+y| a: '1234', b: ['123', '123', '123', '123', '123', '123', '123', '123', '123']
+y|
+    a: '1234'
+    bb: ['123', '123', '123', '123', '123', '123', '123', '123', '123']
+"""
+    )
+    dddd = 10 * ["123"]
+    dddd = ddddd = 10 * ["123"]
+    e = "a\nb"
+    print(l0, file=sys.stderr)
+    y(a, dddd)
+    y(a, ddddd)
+    y(e)
+    out, err = capsys.readouterr()
+    assert (
+        err
+        == """\
+         1         2         3         4         5         6         7         8
+.........0.........0.........0.........0.........0.........0.........0.........0
+y|
+    a: '1234'
+    dddd: ['123', '123', '123', '123', '123', '123', '123', '123', '123', '123']
+y|
+    a: '1234'
+    ddddd:
+        ['123', '123', '123', '123', '123', '123', '123', '123', '123', '123']
+y|
+    e:
+        'a
+        b'
+"""
+    )
+    a = aa = 2 * ["0123456789ABC"]
+    print(l0, file=sys.stderr)
+    y(a, line_length=40)
+    y(aa, line_length=40)
+    y(aa, line_length=41)
+    out, err = capsys.readouterr()
+    assert (
+        err
+        == """\
+         1         2         3         4         5         6         7         8
+.........0.........0.........0.........0.........0.........0.........0.........0
+y| a: ['0123456789ABC', '0123456789ABC']
+y|
+    aa:
+        ['0123456789ABC',
+         '0123456789ABC']
+y| aa: ['0123456789ABC', '0123456789ABC']
+"""
+    )
+
+
+def test_compact(capsys):
+    a = 9 * ["0123456789"]
+    y(a)
+    y(a, compact=True)
+    out, err = capsys.readouterr()
+    assert (
+        err
+        == """\
+y|
+    a:
+        ['0123456789',
+         '0123456789',
+         '0123456789',
+         '0123456789',
+         '0123456789',
+         '0123456789',
+         '0123456789',
+         '0123456789',
+         '0123456789']
+y|
+    a:
+        ['0123456789', '0123456789', '0123456789', '0123456789', '0123456789',
+         '0123456789', '0123456789', '0123456789', '0123456789']
+"""
+    )
+
+def test_depth_indent(capsys):
+    s="=============================================="
+    a=[s+"1",[s+"2",[s+"3",[s+"4"]]],s+"1"]
+    y(a, indent=4)
+    y(a, depth=2,indent=4)
+    out, err = capsys.readouterr()
+    assert (
+        err
+        == """\
+y|
+    a:
+        [   '==============================================1',
+            [   '==============================================2',
+                [   '==============================================3',
+                    ['==============================================4']]],
+            '==============================================1']
+y|
+    a:
+        [   '==============================================1',
+            ['==============================================2', [...]],
+            '==============================================1']
+""")
+
+def test_enable(capsys):
+    with y.preserve():
+        y("One")
+        y.configure(enabled=False)
+        y("Two")
+        s=y("Two", as_str=True)
+        assert s == "y| 'Two'\n"
+        y.configure(enabled=True)
+        y("Three")
+
+        ycecream.enable(False)
+        y("Four")
+        ycecream.enable(True)
+        y("Five")
+
+    out, err = capsys.readouterr()
+    assert (
+        err
+        == """\
+y| 'One'
+y| 'Three'
+y| 'Five'
+""")        
+
+def test_check_output(capsys):
+    with y.preserve():
+        with tempfile.TemporaryDirectory() as tmpdir:
+            x1_file = Path(tmpdir) / "x1.py"
+            with open(x1_file, "w") as f:
+                print("""\
+def check_output():
+    from ycecream import y
+    import x2
+    
+    y.configure(show_line_number=True, show_exit= False)
+    x2.test()
+    y(1)
+    y(
+    1    
+    )
+    with y(prefix="==>"):
+        y()
+    
+    with y(
+        
+        
+        
+        prefix="==>"
+        
+        ):
+        y()
+    
+    @y
+    def x(a, b=1):
+        pass
+    x(2)
+    
+    @y()
+    
+    
+    
+    
+    def x(
+    
+        
+    ):
+        pass
+    
+    x()
+""", file=f)
+                
+                
+            x2_file = Path(tmpdir) / "x2.py"
+            with open(x2_file, "w") as f:
+                print("""\
+from ycecream import y
+
+def test():
+    @y()
+    def myself(x):
+        y(x)
+        return x
+        
+    myself(6)
+    with y():
+        pass        
+""", file=f)
+            sys.path = [tmpdir] + sys.path
+            import x1
+            x1.check_output()
+            sys.path.pop(0)
+    out, err = capsys.readouterr()
+    assert err == """\
+y| #5[x2.py] in test() ==> called myself(6)
+y| #6[x2.py] in myself() ==> x: 6
+y| #10[x2.py] in test() ==> enter
+y| #7[x1.py] in check_output() ==> 1
+y| #8[x1.py] in check_output() ==> 1
+==>#11[x1.py] in check_output() ==> enter
+y| #12[x1.py] in check_output()
+==>#14[x1.py] in check_output() ==> enter
+y| #21[x1.py] in check_output()
+y| #24[x1.py] in check_output() ==> called x(2)
+y| #33[x1.py] in check_output() ==> called x()
+"""
+
 if __name__ == "__main__":
-    pytest.main(["-vv", "-s", __file__])
+    pytest.main(["-vv", "-s", "-x", __file__])

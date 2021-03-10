@@ -1,53 +1,80 @@
 #   _   _   ___   ___   ___  _ __   ___   __ _  _ __ ___
 #  | | | | / __| / _ \ / __|| '__| / _ \ / _` || '_ ` _ \
-#  | |_| || (__ |  __/| (__ | |   |  __/| (_| || | | | | |
-#   \__, | \___| \___| \___||_|    \___| \__,_||_| |_| |_|
-#   |___/                          makes debugging sweeter
+#   \__, || (__ |  __/| (__ | |   |  __/| (_| || | | | | |
+#   |___/  \___| \___| \___||_|    \___| \__,_||_| |_| |_|
+#                       sweeter debugging and benchmarking
 #
 #      See https://github.com/salabim/ycecream for details
 
-__version__ = "1.1.5"
+__version__ = "1.1.6"
 
 """
-Fork of IceCream - Never use print() to debug again
+Inspired by IceCream "Never use print() to debug again"
 Original author: Ansgar Grunseid / grunseid.com / grunseid@gmail.com
 
 (c)2021 Ruud van der Ham - rt.van.der.ham@gmail.com
 """
 
-import ast
 import inspect
 import sys
 import datetime
 import time
 import textwrap
 from pathlib import Path
-from contextlib import contextmanager
-from functools import wraps
+import contextlib
+import functools
 import json
 import logging
-
-YCECREAM = "ycecream"
+import collections
 
 
 class default:
     pass
 
 
-class Pair:
-    def __init__(self, left, right):
-        self.left = left
-        self.right = right
+def assign(dest, source0, source1=None):
+    """
+    Parameters
+    ----------
+    dest : dict or object with attributes
+        destination
 
-    def __repr__(self):
-        return f"Pair({self.left}, {self.right})"
+    source0 : dict or object with attributes 
+        primary source (uses source0's value if is not None)
+
+    source1 : dict or object with attributes, optional
+        secundary source (uses source1's value if source0's value is None)
+
+    Note
+    ----
+    copies all attributes as in default (either as item or as attribute)
+    """
+    for key in vars(default):
+        if not key.startswith("__"):
+            if isinstance(source0, dict):
+                val = source0[key]
+            else:
+                val = getattr(source0, key)
+            if val is None and source1 is not None:
+                if isinstance(source1, dict):
+                    val = source1[key]
+                else:
+                    val = getattr(source1, key)
+            if isinstance(dest, dict):
+                dest[key] = val
+            else:
+                setattr(dest, key, val)
+
+
+def ycecream_pformat(obj, sort_dicts, width, compact, indent, depth):
+    return pformat(obj, sort_dicts=sort_dicts, width=width, compact=compact, indent=indent, depth=depth).replace("\\n", "\n")
 
 
 def set_defaults():
     default.prefix = "y| "
     default.output = "stderr"
-    default.serialize = lambda obj, sort_dicts, width: pformat(obj, sort_dicts=sort_dicts, width=width).replace("\\n", "\n")
-    default.show_context = False
+    default.serialize = ycecream_pformat  # can't use pformat directly as that is defined later
+    default.show_line_number = False
     default.show_time = False
     default.show_delta = False
     default.sort_dicts = False
@@ -55,19 +82,23 @@ def set_defaults():
     default.show_exit = True
     default.enabled = True
     default.line_length = 80
+    default.compact = False
+    default.indent = 1
+    default.depth = None
     default.wrap_indent = "    "
     default.context_delimiter = " ==> "
     default.pair_delimiter = ", "
 
+    ycecream_name = Path(__file__).stem
     config = {}
     for path in sys.path:
         path = Path(path)
-        if (path / f"{YCECREAM}.json").is_file():
-            with open(path / f"{YCECREAM}.json", "r") as f:
+        if (path / f"{ycecream_name}.json").is_file():
+            with open(path / f"{ycecream_name}.json", "r") as f:
                 config = json.load(f)
             break
-        if (path / "YCECREAM" / f"{YCECREAM}.json").is_file():
-            with open(path / {YCECREAM} / f"{YCECREAM}.json", "r") as f:
+        if (path / "ycecream_name" / f"{ycecream_name}.json").is_file():
+            with open(path / {ycecream_name} / f"{ycecream_name}.json", "r") as f:
                 config = json.load(f)
             break
 
@@ -77,74 +108,33 @@ def set_defaults():
 
         elif hasattr(default, k):
             setattr(default, k, v)
-
         else:
             raise ValueError(f"error in {path}: key {k} not recognized")
 
 
-def is_literal(s):
-    try:
-        ast.literal_eval(s)
-    except Exception:
-        return False
-    return True
-
-
-class NoSourceAvailableError(OSError):
-    def __init__(self):
-        fail_message = """
-    Failed to access the underlying source code for analysis. Possible causes:
-    - used from interpreter/REPL (e.g. python -i)
-    - used from a frozen application (e.g. packaged with PyInstaller)
-    - underlying source code was changed during execution"""
-        super().__init__(fail_message)    
-
-
-def call_or_value(obj):
-    return obj() if callable(obj) else obj
+def no_source_error():
+    raise NotImplementedError(
+        """
+Failed to access the underlying source code for analysis. Possible causes:
+- used from interpreter/REPL (e.g. python -i)
+- decorated function/method definition spawns more than one line
+- used from a frozen application (e.g. packaged with PyInstaller)
+- underlying source code was changed during execution"""
+    )
 
 
 def check_output(output):
     if callable(output):
-        return output
+        return
     if isinstance(output, (str, Path)):
-        return output
+        return
     try:
         output.write("")
-        return output
+        return
     except Exception:
         pass
     raise ValueError("output should be a callable, str, Path or open text file.")
 
-
-def do_output(output, s):
-    if callable(output):
-        output(s)
-    elif output == "stderr":
-        print(s, file=sys.stderr)
-    elif output == "stdout":
-        print(s, file=sys.stdout)
-    elif output == "logging.debug":
-        logging.debug(s)
-    elif output == "logging.info":
-        logging.info(s)
-    elif output == "logging.warning":
-        logging.warning(s)
-    elif output == "logging.error":
-        logging.error(s)
-    elif output == "logging.critical":
-        logging.critical(s)
-    elif output in ("", "null"):
-        pass
-
-    elif isinstance(output, (str, Path)):
-        with open(output, "a+", encoding="utf-8") as f:
-            print(s, file=f)
-    else:
-        print(s, file=output)
-
-
-global_enabled = True
 
 
 class Y:
@@ -154,7 +144,7 @@ class Y:
         prefix=None,
         output=None,
         serialize=None,
-        show_context=None,
+        show_line_number=None,
         show_time=None,
         show_delta=None,
         show_enter=None,
@@ -162,25 +152,15 @@ class Y:
         sort_dicts=None,
         enabled=None,
         line_length=None,
+        compact=None,
+        indent=None,
+        depth=None,
         wrap_indent=None,
         context_delimiter=None,
         pair_delimiter=None
     ):
-
-        self.prefix = default.prefix if prefix is None else prefix
-        self.output = default.output if output is None else check_output(output)
-        self.serialize = default.serialize if serialize is None else serialize
-        self.show_context = default.show_context if show_context is None else show_context
-        self.show_time = default.show_time if show_time is None else show_time
-        self.show_delta = default.show_delta if show_delta is None else show_delta
-        self.show_enter = default.show_enter if show_enter is None else show_enter
-        self.show_exit = default.show_exit if show_exit is None else show_exit
-        self.sort_dicts = default.sort_dicts if sort_dicts is None else sort_dicts
-        self.enabled = default.enabled if enabled is None else enabled
-        self.line_length = default.line_length if line_length is None else line_length
-        self.wrap_indent = default.wrap_indent if wrap_indent is None else wrap_indent
-        self.context_delimiter = default.context_delimiter if context_delimiter is None else context_delimiter
-        self.pair_delimiter = default.pair_delimiter if pair_delimiter is None else pair_delimiter
+        assign(self, locals(), default)
+        check_output(self.output)
         self.start_time = time.perf_counter()
 
     def __call__(
@@ -189,7 +169,7 @@ class Y:
         prefix=None,
         output=None,
         serialize=None,
-        show_context=None,
+        show_line_number=None,
         show_time=None,
         show_delta=None,
         show_enter=None,
@@ -197,84 +177,72 @@ class Y:
         sort_dicts=None,
         enabled=None,
         line_length=None,
+        compact=None,
+        indent=None,
+        depth=None,
         wrap_indent=None,
         context_delimiter=None,
         pair_delimiter=None,
         as_str=False
     ):
-        call_frame = inspect.currentframe().f_back
-        frame = inspect.getframeinfo(call_frame, context=1)
-        this_context = frame.code_context
-        if this_context is None:
-            raise NoSourceAvailableError()
-        this_line = frame.code_context[0].strip()
 
-        if this_line.startswith("@"):
-            prefix = self.prefix if prefix is None else prefix
-            output = self.output if output is None else check_output(output)
-            serialize = self.serialize if serialize is None else serialize
-            show_context = self.show_context if show_context is None else show_context
-            show_time = self.show_time if show_time is None else show_time
-            show_delta = self.show_delta if show_delta is None else show_delta
-            show_enter = self.show_enter if show_enter is None else show_enter
-            show_exit = self.show_exit if show_exit is None else show_exit
-            sort_dicts = self.sort_dicts if sort_dicts is None else sort_dicts
-            enabled = self.enabled if enabled is None else enabled
-            line_length = self.line_length if line_length is None else line_length
-            wrap_indent = self.wrap_indent if wrap_indent is None else wrap_indent
-            context_delimiter = self.context_delimiter if context_delimiter is None else context_delimiter
-            pair_delimiter = self.pair_delimiter if pair_delimiter is None else pair_delimiter
+        Pair = collections.namedtuple("Pair", "left right")
+
+        kwargs = {}
+        assign(kwargs, locals(), self)
+        this = Y(**kwargs)
+
+        check_output(this.output)
+        call_frame = inspect.currentframe().f_back
+        filename = call_frame.f_code.co_filename
+
+        if Path(filename).resolve() == main_file_resolved:
+            filename_name = ""
+        else:
+            filename_name = f'[{Path(filename).name}]'
+        if filename not in codes:
+            frame_info = inspect.getframeinfo(call_frame, context=1000000)  # get the full source code
+            if frame_info.code_context is None:
+                no_source_error()
+            codes[filename] = frame_info.code_context
+        code = codes[filename]
+        frame_info = inspect.getframeinfo(call_frame, context=1)
+        parent_function = frame_info.function
+        if parent_function == "<module>":
+            parent_function = ""
+        else:
+            parent_function = f" in {parent_function}()"
+        line_number = frame_info.lineno
+        this_line = code[line_number - 1].strip()
+        this_line_prev = code[line_number - 2].strip()
+        if this_line.startswith("@") or this_line_prev.startswith("@"):
             if as_str:
                 raise TypeError("as_str may not be True when y used as decorator")
-            frame_info = inspect.getframeinfo(call_frame)
-            filename = Path(frame_info.filename).name
-            line_number = frame_info.lineno + 1
-            parent_function = frame_info.function
-            context_info = f"{filename}:{line_number} in {parent_function}"
+            for l, line in enumerate(code[line_number-1:],line_number):
+                if line.strip().startswith("def") or line.strip().startswith("class"):
+                    line_number = l
+                    break
+            else:
+                line_number += 1  
+            this.line_number_with_filename_and_parent = f"#{line_number}{filename_name}{parent_function}"
 
             def real_decorator(function):
-                @wraps(function)
+                @functools.wraps(function)
                 def wrapper(*args, **kwargs):
                     enter_time = time.perf_counter()
-                    if show_context:
-                        parts = [context_info]
-                    else:
-                        parts = []
-                    if show_time:
-                        parts.append(f'@ {datetime.datetime.now().strftime("%H:%M:%S.%f")}')
-
-                    if show_delta:
-                        t0 = time.perf_counter() - self.start_time
-                        parts.append(f"delta={t0:.3f}")
-
-                    context = " ".join(parts)
-                    if context:
-                        context += context_delimiter
+                    context = this.context()
 
                     args_kwargs = [repr(arg) for arg in args] + [f"{str(k)}={repr(v)}" for k, v in kwargs.items()]
                     function_arguments = f"{function.__name__}({', '.join(args_kwargs)})"
 
-                    if global_enabled and enabled and show_enter:
-                        do_output(output, f"{prefix() if callable(prefix) else prefix}{context}called {function_arguments}")
+                    if this.show_enter:
+                        this.do_output(f"{context}called {function_arguments}")
                     result = function(*args, **kwargs)
                     duration = time.perf_counter() - enter_time
-                    if global_enabled and enabled and show_exit:
-                        if show_context:
-                            parts = [context_info]
-                        else:
-                            parts = []
-                        if show_time:
-                            parts.append(f'@ {datetime.datetime.now().strftime("%H:%M:%S.%f")}')
 
-                        if show_delta:
-                            t0 = time.perf_counter() - self.start_time
-                            parts.append(f"delta={t0:.3f}")
-
-                        context = " ".join(parts)
-                        if context:
-                            context += context_delimiter
-
-                        do_output(output, f"{call_or_value(prefix)}{context}returned {repr(result)} from {function_arguments} in {duration:.6f} seconds")
+                    context = this.context()
+                    if this.show_exit:
+                        this.do_output(f"{context}returned {repr(result)} from {function_arguments} in {duration:.6f} seconds")
                     return result
 
                 return wrapper
@@ -285,66 +253,92 @@ class Y:
             if len(args) == 1 and callable(args[0]):
                 return real_decorator(args[0])
             raise TypeError("arguments are not allowed in y used as decorator")
-            return  # not really required
 
-        self._prefix = self.prefix if prefix is None else prefix
-        self._output = self.output if output is None else check_output(output)
-        self._serialize = self.serialize if serialize is None else serialize
-        self._show_context = self.show_context if show_context is None else show_context
-        self._show_time = self.show_time if show_time is None else show_time
-        self._show_delta = self.show_delta if show_delta is None else show_delta
-        self._sort_dicts = self.sort_dicts if sort_dicts is None else sort_dicts
-        self._as_str = as_str
-        self._enabled = self.enabled if enabled is None else enabled
-        self._wrap_indent = self.wrap_indent if wrap_indent is None else wrap_indent
-        self._line_length = self.line_length if line_length is None else line_length
-        self._pair_delimiter = self.pair_delimiter if pair_delimiter is None else pair_delimiter
-        self._context_delimiter = self.context_delimiter if context_delimiter is None else context_delimiter
+        call_node = Source.executing(call_frame).node
+        if call_node is None:
+            no_source_error()
+        line_number = call_node.lineno
+        this_line = code[line_number - 1].strip()   
+
+        this.line_number_with_filename_and_parent = f"#{line_number}{filename_name}{parent_function}"
+
         if this_line.startswith("with ") or this_line.startswith("with\t"):
             if as_str:
                 raise TypeError("as_str may not be True when y used as context manager")
             if args:
                 raise TypeError("non-keyword arguments are not allowed when y used as context manager")
 
-            frame_info = inspect.getframeinfo(call_frame)
-            filename = Path(frame_info.filename).name
-            line_number = frame_info.lineno
-            context_info = f"{filename}:{line_number}"
+            this.is_context_manager = True
+            return this
 
-            self._show_enter = self.show_enter if show_enter is None else show_enter
-            self._show_exit = self.show_exit if show_exit is None else show_exit
-            new_y = self.clone(
-                prefix=prefix,
-                output=output,
-                serialize=serialize,
-                show_context=show_context,
-                show_time=show_time,
-                show_delta=show_delta,
-                show_enter=show_enter,
-                show_exit=show_exit,
-                sort_dicts=sort_dicts,
-                enabled=enabled,
-                line_length=line_length,
-                wrap_indent=wrap_indent,
-                context_delimiter=context_delimiter,
-                pair_delimiter=pair_delimiter,
-            )
-            new_y.cm_info = context_info
-            return new_y
-        out = self._format(call_frame, *args)
-        if self._as_str:
+        if args:
+            context = this.context()
+            source = Source.for_frame(call_frame)
+            pairs = []
+            for node, right in zip(call_node.args, args):
+                left = source.asttokens().get_text(node)
+                if "\n" in left:
+                    left = " " * node.first_token.start[1] + left
+                    left = textwrap.dedent(left)
+
+                try:
+                    ast.literal_eval(left)  # it's indeed a literal
+                    left = ""
+                except ValueError:
+                    left = left + ": "  # not a literal\
+                pairs.append(Pair(left=left, right=right))
+
+            just_one_line = False
+            if not any("\n" in pair.left for pair in pairs):
+                as_one_line = context + this.pair_delimiter.join(pair.left + this.serialize_kwargs(obj=pair.right, width=10000) for pair in pairs)
+                if len(as_one_line) <= this.line_length and "\n" not in as_one_line:
+                    out = as_one_line
+                    just_one_line = True
+
+            if not just_one_line:
+
+                if context.strip():
+                    indent1 = this.wrap_indent
+                    lines = [context]
+                else:
+                    indent1 = ""
+                    lines = []
+
+                for pair in pairs:
+                    do_right = False
+                    if "\n" in pair.left:
+                        for s in pair.left.splitlines():
+                            lines.append(indent1 + s)
+                            do_right = True
+                    else:
+                        start = indent1 + pair.left
+                        line = start + this.serialize_kwargs(obj=pair.right, width=this.line_length - len(start))
+                        if "\n" in line:
+                            lines.append(start)
+                            do_right = True
+                        else:
+                            lines.append(line)
+                    if do_right:
+                        indent2 = indent1 + this.wrap_indent
+                        line = this.serialize_kwargs(obj=pair.right, width=this.line_length - len(indent2))
+                        for s in line.splitlines():
+                            lines.append(indent2 + s)
+
+                out = "\n".join(line.rstrip() for line in lines)
+
+        else:
+            this.show_line_number = True
+            out = this.context(omit_context_delimiter=True)
+
+        if as_str:
             return out + "\n"
-        if global_enabled and self._enabled:
-            do_output(self._output, out)
+        this.do_output(out)
 
         if len(args) == 0:
-            passthrough = None
-        elif len(args) == 1:
-            passthrough = args[0]
-        else:
-            passthrough = args
-
-        return passthrough
+            return None
+        if len(args) == 1:
+            return args[0]
+        return args
 
     def configure(
         self,
@@ -352,7 +346,7 @@ class Y:
         prefix=None,
         output=None,
         serialize=None,
-        show_context=None,
+        show_line_number=None,
         show_time=None,
         show_delta=None,
         show_enter=None,
@@ -360,26 +354,19 @@ class Y:
         sort_dicts=None,
         enabled=None,
         line_length=None,
+        compact=None,
+        indent=None,
+        depth=None,
         wrap_indent=None,
         context_delimiter=None,
         pair_delimiter=None
     ):
-        self.prefix = self.prefix if prefix is None else prefix
-        self.output = self.output if output is None else check_output(output)
-        self.serialize = self.serialize if serialize is None else serialize
-        self.show_context = self.show_context if show_context is None else show_context
-        self.show_time = self.show_time if show_time is None else show_time
-        self.show_delta = self.show_delta if show_delta is None else show_delta
-        self.show_enter = self.show_enter if show_enter is None else show_enter
-        self.show_exit = self.show_exit if show_exit is None else show_exit
-        self.sort_dicts = self.sort_dicts if sort_dicts is None else sort_dicts
-        self.enabled = self.enabled if enabled is None else enabled
-        self.line_length = self.line_length if line_length is None else line_length
-        self.wrap_indent = self.wrap_indent if wrap_indent is None else wrap_indent
-        self.context_delimiter = self.context_delimiter if context_delimiter is None else context_delimiter
-        self.pair_delimiter = self.pair_delimiter if pair_delimiter is None else pair_delimiter
-
+        assign(self, locals(), self)
+        check_output(self.output)
         return self
+
+    def new(self, **kwargs):
+        return Y(**kwargs)
 
     def clone(
         self,
@@ -387,7 +374,7 @@ class Y:
         prefix=None,
         output=None,
         serialize=None,
-        show_context=None,
+        show_line_number=None,
         show_time=None,
         show_delta=None,
         show_enter=None,
@@ -395,60 +382,23 @@ class Y:
         sort_dicts=None,
         enabled=None,
         line_length=None,
+        compact=None,
+        indent=None,
+        depth=None,
         wrap_indent=None,
         context_delimiter=None,
         pair_delimiter=None
     ):
-        return Y(
-            prefix=self.prefix if prefix is None else prefix,
-            output=self.output if output is None else output,
-            serialize=self.serialize if serialize is None else serialize,
-            show_context=self.show_context if show_context is None else show_context,
-            show_time=self.show_time if show_time is None else show_time,
-            show_delta=self.show_delta if show_delta is None else show_delta,
-            show_enter=self.show_enter if show_enter is None else show_enter,
-            show_exit=self.show_exit if show_exit is None else show_exit,
-            sort_dicts=self.sort_dicts if sort_dicts is None else sort_dicts,
-            enabled=self.enabled if enabled is None else enabled,
-            line_length=self.line_length if line_length is None else line_length,
-            wrap_indent=self.wrap_indent if wrap_indent is None else wrap_indent,
-            context_delimiter=self.context_delimiter if context_delimiter is None else context_delimiter,
-            pair_delimiter=self.pair_delimiter if pair_delimiter is None else pair_delimiter,
-        )
+        kwargs = {}
+        assign(kwargs, locals(), self)
+        return Y(**kwargs)
 
-    @contextmanager
+    @contextlib.contextmanager
     def preserve(self):
-        prefix = self.prefix
-        output = self.output
-        serialize = self.serialize
-        show_context = self.show_context
-        show_time = self.show_time
-        show_delta = self.show_delta
-        show_enter = (None,)
-        show_exit = (None,)
-        sort_dicts = self.sort_dicts
-        enabled = self.enabled
-        line_length = self.line_length
-        wrap_indent = self.wrap_indent
-        context_delimiter = self.context_delimiter
-        pair_delimiter = self.pair_delimiter
+        save = {}
+        assign(save, self)
         yield
-        self.configure(
-            prefix=prefix,
-            output=output,
-            serialize=serialize,
-            show_context=show_context,
-            show_time=show_time,
-            show_delta=show_delta,
-            show_enter=show_enter,
-            show_exit=show_exit,
-            sort_dicts=sort_dicts,
-            enabled=enabled,
-            line_length=line_length,
-            wrap_indent=wrap_indent,
-            context_delimiter=context_delimiter,
-            pair_delimiter=pair_delimiter,
-        )
+        self.configure(**save)
 
     @property
     def delta(self):
@@ -458,169 +408,72 @@ class Y:
     def delta(self, t):
         self.start_time = time.perf_counter() + t
 
-    def _serialize_native(self, val, sort_dicts, width):
-        kwargs = {}
-        if "sort_dicts" in inspect.signature(self._serialize).parameters:
-            kwargs["sort_dicts"] = sort_dicts
-        if "width" in inspect.signature(self._serialize).parameters:
-            kwargs["width"] = width
-        return self._serialize(val, **kwargs)
-
-    def _format(self, call_frame, *args):
-        prefix = call_or_value(self._prefix)
-
-        call_node = Source.executing(call_frame).node
-        if call_node is None:
-            raise NoSourceAvailableError()
-
-        if len(args) == 0 or self._show_context:
-            parts = [self._format_context(call_frame, call_node)]
-        else:
-            parts = []
-        if self._show_time:
-            parts.append(f'@ {datetime.datetime.now().strftime("%H:%M:%S.%f")}')
-
-        if self._show_delta:
-            t0 = time.perf_counter() - self.start_time
-            parts.append(f"delta={t0:.6f}")
-
-        context = " ".join(parts)
-
-        if args:
-            return self._format_args(call_frame, call_node, prefix, context, args)
-        else:
-            return prefix + context
-
-    def _format_args(self, call_frame, call_node, prefix, context, args):
-        context_delimiter = self._context_delimiter if context else ""
-        header = prefix + context + context_delimiter
-
-        source = Source.for_frame(call_frame)
-        pairs = []
-        for node, right in zip(call_node.args, args):
-            left = source.asttokens().get_text(node)
-            if "\n" in left:
-                left = " " * node.first_token.start[1] + left
-                left = textwrap.dedent(left)
-
-            if is_literal(left):
-                left = ""
-            else:
-                left = left + ": "
-            pairs.append(Pair(left=left, right=right))
-
-        if not any("\n" in pair.left for pair in pairs):
-            as_one_line = header + self._pair_delimiter.join(
-                pair.left + self._serialize_native(pair.right, sort_dicts=self._sort_dicts, width=10000) for pair in pairs
-            )
-            if len(as_one_line) <= self._line_length and "\n" not in as_one_line:
-                return as_one_line
-
-        if header.strip():
-            indent1 = self._wrap_indent
-            lines = [header]
-        else:
-            indent1 = ""
-            lines = []
-
-        for pair in pairs:
-            do_right = False
-            if "\n" in pair.left:
-                for s in pair.left.splitlines():
-                    lines.append(indent1 + s)
-                    do_right = True
-            else:
-                start = indent1 + pair.left
-                line = start + self._serialize_native(pair.right, sort_dicts=self._sort_dicts, width=self._line_length - len(start))
-                if "\n" in line:
-                    lines.append(start)
-                    do_right = True
-                else:
-                    lines.append(line)
-            if do_right:
-                indent2 = indent1 + self._wrap_indent
-                line = self._serialize_native(pair.right, sort_dicts=self._sort_dicts, width=self._line_length - len(indent2))
-                for s in line.splitlines():
-                    lines.append(indent2 + s)
-
-        return "\n".join(line.rstrip() for line in lines)
-
-        out = self._construct_argument_output(prefix, context, pairs)
-        return out
-
-    def _format_context(self, call_frame, call_node):
-        filename, line_number, parent_function = self._get_context(call_frame, call_node)
-
-        if parent_function != "<module>":
-            parent_function = f"{parent_function}()"
-
-        context = f"{filename}:{line_number} in {parent_function}"
-        return context
-
-    def _get_context(self, call_frame, call_node):
-        line_number = call_node.lineno
-        frame_info = inspect.getframeinfo(call_frame)
-        parent_function = frame_info.function
-
-        filename = Path(frame_info.filename).name
-
-        return filename, line_number, parent_function
-
     def __enter__(self):
-        if not hasattr(self, "cm_info"):
+        if not hasattr(self, "is_context_manager"):
             raise ValueError("not allowed as context_manager")
         self.enter_time = time.perf_counter()
         if self.show_enter:
-            if self.show_context:
-                parts = [self.cm_info]
-            else:
-                parts = []
-            if self.show_time:
-                parts.append(f'@ {datetime.datetime.now().strftime("%H:%M:%S.%f")}')
-
-            if self.show_delta:
-                t0 = time.perf_counter() - self.start_time
-                parts.append(f"delta={t0:.3f}")
-
-            context = " ".join(parts)
-            if context:
-                context += self.context_delimiter
-            do_output(self.output, f"{self.prefix() if callable(self.prefix) else self.prefix}{context}enter")
+            context = self.context()
+            self.do_output(f"{context}enter")
         return self
 
     def __exit__(self, *args):
         if self.show_exit:
-            if self.show_context:
-                parts = [self.cm_info]
-            else:
-                parts = []
-            if self.show_time:
-                parts.append(f'@ {datetime.datetime.now().strftime("%H:%M:%S.%f")}')
-
-            if self.show_delta:
-                t0 = time.perf_counter() - self.start_time
-                parts.append(f"delta={t0:.3f}")
-
-            context = " ".join(parts)
-            if context:
-                context += self.context_delimiter
+            context = self.context()
             duration = time.perf_counter() - self.enter_time
-            do_output(self.output, f"{self._prefix() if callable(self.prefix) else self.prefix}{context}exit in {duration:.6f} seconds")
-            delattr(self, "cm_info")
+            self.do_output(f"{context}exit in {duration:.6f} seconds")
+        delattr(self, "is_context_manager")
 
+    def context(self, omit_context_delimiter=False):
+        if self.show_line_number:
+            parts = [self.line_number_with_filename_and_parent]
+        else:
+            parts = []
+        if self.show_time:
+            parts.append(f'@ {datetime.datetime.now().strftime("%H:%M:%S.%f")}')
 
-try:
-    builtins = __import__("__builtin__")
-except ImportError:
-    builtins = __import__("builtins")
+        if self.show_delta:
+            t0 = time.perf_counter() - self.start_time
+            parts.append(f"delta={t0:.3f}")
 
+        context = " ".join(parts)
+        if not omit_context_delimiter and context:
+            context += self.context_delimiter
 
-def install(y="y"):
-    setattr(builtins, y, getattr("ycecream", y))
+        return (self.prefix() if callable(self.prefix) else self.prefix) + context
 
+    def do_output(self, s):
+        if global_enabled and self.enabled:
+            if callable(self.output):
+                self.output(s)
+            elif self.output == "stderr":
+                print(s, file=sys.stderr)
+            elif self.output == "stdout":
+                print(s, file=sys.stdout)
+            elif self.output == "logging.debug":
+                logging.debug(s)
+            elif self.output == "logging.info":
+                logging.info(s)
+            elif self.output == "logging.warning":
+                logging.warning(s)
+            elif self.output == "logging.error":
+                logging.error(s)
+            elif self.output == "logging.critical":
+                logging.critical(s)
+            elif self.output in ("", "null"):
+                pass
 
-def uninstall(y="y"):
-    delattr(builtins, y)
+            elif isinstance(self.output, (str, Path)):
+                with open(self.output, "a+", encoding="utf-8") as f:
+                    print(s, file=f)
+            else:
+                print(s, file=self.output)
+
+    def serialize_kwargs(self, obj, width):
+        kwargs = {key: getattr(self, key) for key in ("sort_dicts", "compact", "indent", "depth") if key in inspect.signature(self.serialize).parameters}
+        if "width" in inspect.signature(self.serialize).parameters:
+            kwargs["width"] = width
+        return self.serialize(obj, **kwargs)
 
 
 def enable(value=None):
@@ -629,10 +482,13 @@ def enable(value=None):
         global_enabled = value
     return global_enabled
 
+global_enabled = True
+main_file_resolved = Path(sys.modules["__main__"].__file__).resolve()
+
+codes = {}
 
 set_defaults()
 
-ic = Y(prefix="ic| ")
 y = Y()
 
 # source of asttokens.util
@@ -2678,4 +2534,3 @@ def _extract_ipython_statement(stmts, tree):
 
 
 # end of source of executing module
-

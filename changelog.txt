@@ -1,3 +1,81 @@
+version 1.1.6  2021-03-10
+=========================
+New functionality (0)
+---------------------
+    It is now possible to use the compact option of pprint.pformat:
+    
+    |a = 9 * ['0123456789']
+    |y(a)
+    |y(a, compact=True) 
+    
+    prints  
+    |y|
+    |    a:
+    |        ['0123456789',
+    |         '0123456789',
+    |         '0123456789',
+    |         '0123456789',
+    |         '0123456789',
+    |         '0123456789',
+    |         '0123456789',
+    |         '0123456789',
+    |         '0123456789']    
+    |y|
+    |    a:
+    |        ['0123456789', '0123456789', '0123456789', '0123456789', '0123456789',
+    |         '0123456789', '0123456789', '0123456789', '0123456789']
+    
+New functionality (1)
+---------------------
+    Also made availabe the indent and depth parameters of pprint.format, so we can now say
+    |s="=============================================="
+    |a=[40 * "1",[40 * "2",[40 * "3",[40 * "4",[40*'5']]]],40 * "1"]
+    |y(a, depth=3,indent=4)
+    to get
+    |y|
+    |    a:
+    |        [   '1111111111111111111111111111111111111111',
+    |            [   '2222222222222222222222222222222222222222',
+    |                ['3333333333333333333333333333333333333333', [...]]],
+    |            '1111111111111111111111111111111111111111']
+        
+API change (0)
+--------------
+    The 'show_context' attribute has been changed to 'show_line_number'.
+
+Change of functionality (0)
+---------------------------
+    The NoSourceCodeAvailable exception has been changed to NotImplementedError with a clear message.
+   
+Changed output (0)
+------------------
+    The line number is now prefixed by a #, whereas the filename is now suppressed if this concerns the current
+    program. If it is in another file, the filename will follow the line number, like #12[foo.py]
+
+Bug fix (0)
+-----------
+    It is now possible to have keyword arguments in functions/methods decorated with y.
+    
+Tests (0)
+---------
+    Added many tests, including testing for line numbers.
+    
+Documentation update (0)
+------------------------
+    The readme file now clearly mentions that the @y is discouraged as it can't reliably detect the source
+    when decorating a function definition of more than one line. Instead use @y() that works always as expected.
+
+Internal change (0)
+-------------------
+    Made the code much more linear, thus avoiding many calls and a clearer structure (IMHO).
+    
+    Complete overhaul of line numbers and source code. Now all code is cached in a codes dict (per file)
+    
+    Y.__call__() now always works on a new Y instance that is used in the actual processing, thus making
+    the code shorter and more stable
+    
+    Mass assignment of attributes now via assign function, thus improving stability and shortening code.
+
 version 1.1.5  2021-02-05
 =========================
 Now, the line_length is properly observed and indentation is not anymore dependent on prefix. 
