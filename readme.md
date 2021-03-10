@@ -101,8 +101,8 @@ y(add2(1000))
 
 prints something like
 ```
-y| x.py:3 in add2()
-y| x.py:5 in add2()
+y| #3 in add2()
+y| #5 in add2()
 y| add2(1000): 1002
 ```
 Just call `y()` and you're done. Isn't that sweet?
@@ -127,12 +127,12 @@ y| b: 1002
 ```
 # Debug entry and exit of function calls
 
-When you apply `y` as a decorator to a function or method, both the entry and exit can be tracked.
+When you apply `y()` as a decorator to a function or method, both the entry and exit can be tracked.
 The (keyword) arguments passed will be shown and upon return, the return value.
 
 ```
 from ycecream import y
-@y
+@y()
 def mul(x, y):
     return x * y
     
@@ -160,6 +160,14 @@ prints
 y| called mul(5, 7)
 35
 ```
+Note that it is possible to use `y` as a decorator without the parentheses, like
+```
+@y
+def diode(x):
+    return 0 if x<0 else x
+```
+, but this might not work correctly when the def/class definition spawns more than one line. So, always use `y()` or
+`y(<parameters>)` when used as a decorator.  
 
 # Benchmarking with ycecream
 
@@ -181,14 +189,14 @@ for i in range(8):
 ```
 the ouput will show the effects of the population size on the sort speed:
 ```
-y| x7.py:7 in <module> ==> returned '        1' from do_sort(0) in 0.000020 seconds
-y| x7.py:7 in <module> ==> returned '       10' from do_sort(1) in 0.000019 seconds
-y| x7.py:7 in <module> ==> returned '      100' from do_sort(2) in 0.000023 seconds
-y| x7.py:7 in <module> ==> returned '     1000' from do_sort(3) in 0.000077 seconds
-y| x7.py:7 in <module> ==> returned '    10000' from do_sort(4) in 0.000743 seconds
-y| x7.py:7 in <module> ==> returned '   100000' from do_sort(5) in 0.009779 seconds
-y| x7.py:7 in <module> ==> returned '  1000000' from do_sort(6) in 0.095857 seconds
-y| x7.py:7 in <module> ==> returned ' 10000000' from do_sort(7) in 0.645205 seconds
+y| #5 ==> returned '        1' from do_sort(0) in 0.000027 seconds
+y| #5 ==> returned '       10' from do_sort(1) in 0.000060 seconds
+y| #5 ==> returned '      100' from do_sort(2) in 0.000748 seconds
+y| #5 ==> returned '     1000' from do_sort(3) in 0.001897 seconds
+y| #5 ==> returned '    10000' from do_sort(4) in 0.002231 seconds
+y| #5 ==> returned '   100000' from do_sort(5) in 0.024014 seconds
+y| #5 ==> returned '  1000000' from do_sort(6) in 0.257504 seconds
+y| #5 ==> returned ' 10000000' from do_sort(7) in 1.553495 seconds
 ```
 
 It is also possible to time any code by using y as a context manager, e.g.
@@ -466,9 +474,11 @@ y(hello)
 ```
 prints something like
 ```
-y| x.py:4 ==> hello: 'world'
+y| #4 ==> hello: 'world'
 ```
 Note that if you call `y` without any arguments, the line number is always shown, regardless of the status `show_line_number`.
+
+See below for an explanation of the information provided.
 
 ## show_time
 If True, adds the current time to `y()`'s output.
@@ -689,6 +699,20 @@ prints
 ```
 y| a: 'abcd', (b,c): (1, 1000), d: ['y', 'c', 'e', 'c', 'r', 'e', 'a', 'm']
 y| a: 'abcd' | (b,c): (1, 1000) | d: ['y', 'c', 'e', 'c', 'r', 'e', 'a', 'm']
+```
+
+# Interpreting the line number information
+When `show_line_number` is True or y() is used without any parameters, the output will contain the line number like:
+```
+y| #3 ==> a: 'abcd'
+```
+If the line resides in another file than the main file, the filename (without the path) will be shown as well:
+```
+y| #30[foo.py] ==> foo: 'Foo'
+```
+And finally when used in a function or method, that functiuon/method will be shown as well:
+```
+y| #456[foo.py] in square_root ==> x: 123
 ```
 
 # Configuring at import time
