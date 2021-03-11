@@ -216,8 +216,8 @@ with y(show_context=True, show_time=True):
 ```
 will print somethink like:
 ```
-y| x7.py:8 @ 13:20:32.605903 ==> enter
-y| x7.py:8 @ 13:20:33.609519 ==> exit in 1.003358 seconds
+y| #8 @ 13:20:32.605903 ==> enter
+y| #8 @ 13:20:33.609519 ==> exit in 1.003358 seconds
 ```
 
 Finally, to help with timing code, you can request the current delta with
@@ -423,7 +423,7 @@ Finally, you can specify the following strings:
 ```
 "stderr"           to print to stderr
 "stdput"           to print to stdout
-"null"             to completely ignore (dummy) output 
+"null" or ""       to completely ignore (dummy) output 
 "logging.debug"    to use logging.debug
 "logging.info"     to use logging.info
 "logging.warning"  to use logging.warning
@@ -467,12 +467,13 @@ y| 7, hello: 'world' [len=5], l: [0, 1, 2, 3, 4, 5, 6] [len=7]
 ## show_line_number
 If True, adds the `y()` call's filename, line number, and parent function to `y()`'s output.
 
-```from ycecream import Y
+```
+from ycecream import Y
 y = Y(show_line_number=True)
 hello="world"
 y(hello)
 ```
-prints something like
+prints like
 ```
 y| #4 ==> hello: 'world'
 ```
@@ -615,6 +616,7 @@ y|
 
 ## wrap_indent
 This can control how to indent if the output does not fit in the line_length (has to be wrapped).
+The default is 4 blanks.
 E.g.
 ```
 d = dict(a1=1,a2=dict(a=1,b=1,c=3),a3=list(range(10)))
@@ -716,7 +718,7 @@ y| #456[foo.py] in square_root ==> x: 123
 ```
 
 # Configuring at import time
-It can be useful to configure ycecream at import time. This can be done writing a `ycecream.json` file which
+It can be useful to configure ycecream at import time. This can be done by providing a `ycecream.json` file which
 can contain any attribute configuration overriding the standard settings.
 E.g. if there is an `ycecream.json` file with the following contents
 ```
@@ -787,10 +789,10 @@ ycm exit in 0.041361 seconds
 
 # Test script
 
-On GitHub is a file `test_ycecream.py` that tests (and thus also demonstrates as manyof the functionality
-of ycecream as possible.
+On GitHub is a file `test_ycecream.py` that tests (and thus also demonstrates) most of the functionality
+of ycecream.
 
-It is very useful to have a look at the tests to see the features (some maybe omitted from this readme).
+It is very useful to have a look at the tests to see the features (some may be not covered in this readme).
 
 # Alternative installation
 
@@ -807,7 +809,7 @@ It is not possible to use ycecream:
 * when the underlying source code has changed during execution
 
 # Acknowledgement
-The **ycecream** pacakage is inspired by the **IceCream** package, but is now a 
+The **ycecream** pacakage is inspired by the **IceCream** package, but is a 
 nearly complete rewrite. See https://github.com/gruns/icecream
 
 Many thanks to the author Ansgar Grunseid / grunseid.com / grunseid@gmail.com .
