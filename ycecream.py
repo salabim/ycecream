@@ -204,7 +204,6 @@ class Y:
                 filename_name = ""
             else:
                 filename_name = f'[{Path(filename).name}]'
-        print(codes)
         if filename not in codes:
             frame_info = inspect.getframeinfo(call_frame, context=1000000)  # get the full source code
             if frame_info.code_context is None:
