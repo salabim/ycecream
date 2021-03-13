@@ -545,7 +545,7 @@ y| d: {'a1': 1, 'a2': {'a': 1, 'b': 1, 'c': 3}, 'a3': [0, 1, 2, 3, 4, 5, 6, 7, 8
 ```
 
 ## compact
-This attribute is used to specify the comapctparameter for `pformat` (see the pprint documentation
+This attribute is used to specify the compact parameter for `pformat` (see the pprint documentation
 for details). `compact` is False by default.
 ```
 a = 9 * ["0123456789"]
