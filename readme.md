@@ -816,6 +816,15 @@ It is not possible to use ycecream:
 * from a frozen application (e.g. packaged with PyInstaller)
 * when the underlying source code has changed during execution
 
+# Implementation details
+Although not important for using the package, here are some implementation details:
+* ycecream.py contains the complete (slightly modifief) source of the asttokens and executing, in
+   order to offer the required source lookups
+* ycecream.py contains the complete source of pprint as of Python 3.8 in order to support the sort_dicts parameter
+* in order to support using y() as a decorator and a context manager, ycecream caches the complete source of any source
+    file that uses y()h   
+
+
 # Acknowledgement
 The **ycecream** pacakage is inspired by the **IceCream** package, but is a 
 nearly complete rewrite. See https://github.com/gruns/icecream
