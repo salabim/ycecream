@@ -6,7 +6,7 @@
 #
 #      See https://github.com/salabim/ycecream for details
 
-__version__ = "1.1.6"
+__version__ = "1.1.7"
 
 """
 Inspired by IceCream "Never use print() to debug again"
@@ -20,13 +20,14 @@ import sys
 import datetime
 import time
 import textwrap
-from pathlib import Path
+import pathlib
 import contextlib
 import functools
 import json
 import logging
 import collections
 
+Path = pathlib.Path
 
 class default:
     pass
@@ -136,7 +137,6 @@ def check_output(output):
     raise ValueError("output should be a callable, str, Path or open text file.")
 
 
-
 class Y:
     def __init__(
         self,
@@ -199,7 +199,7 @@ class Y:
         if Path(filename).resolve() == main_file_resolved:
             filename_name = ""
         else:
-            filename_name = f'[{Path(filename).name}]'
+            filename_name = f"[{Path(filename).name}]"
         if filename not in codes:
             frame_info = inspect.getframeinfo(call_frame, context=1000000)  # get the full source code
             if frame_info.code_context is None:
@@ -218,12 +218,12 @@ class Y:
         if this_line.startswith("@") or this_line_prev.startswith("@"):
             if as_str:
                 raise TypeError("as_str may not be True when y used as decorator")
-            for l, line in enumerate(code[line_number-1:],line_number):
+            for l, line in enumerate(code[line_number - 1 :], line_number):
                 if line.strip().startswith("def") or line.strip().startswith("class"):
                     line_number = l
                     break
             else:
-                line_number += 1  
+                line_number += 1
             this.line_number_with_filename_and_parent = f"#{line_number}{filename_name}{parent_function}"
 
             def real_decorator(function):
@@ -258,7 +258,7 @@ class Y:
         if call_node is None:
             no_source_error()
         line_number = call_node.lineno
-        this_line = code[line_number - 1].strip()   
+        this_line = code[line_number - 1].strip()
 
         this.line_number_with_filename_and_parent = f"#{line_number}{filename_name}{parent_function}"
 
@@ -284,7 +284,7 @@ class Y:
                 try:
                     ast.literal_eval(left)  # it's indeed a literal
                     left = ""
-                except ValueError:
+                except Exception:
                     left = left + ": "  # not a literal\
                 pairs.append(Pair(left=left, right=right))
 
@@ -296,9 +296,14 @@ class Y:
                     just_one_line = True
 
             if not just_one_line:
+                try:
+                    wrap_indent = int(this.wrap_indent) * ' '
+                except ValueError:
+                    wrap_indent = this.wrap_indent
+                
 
                 if context.strip():
-                    indent1 = this.wrap_indent
+                    indent1 = wrap_indent
                     lines = [context]
                 else:
                     indent1 = ""
@@ -319,7 +324,7 @@ class Y:
                         else:
                             lines.append(line)
                     if do_right:
-                        indent2 = indent1 + this.wrap_indent
+                        indent2 = indent1 + wrap_indent
                         line = this.serialize_kwargs(obj=pair.right, width=this.line_length - len(indent2))
                         for s in line.splitlines():
                             lines.append(indent2 + s)
@@ -482,8 +487,13 @@ def enable(value=None):
         global_enabled = value
     return global_enabled
 
+
 global_enabled = True
-main_file_resolved = Path(sys.modules["__main__"].__file__).resolve()
+try:
+    main_file_resolved = Path(sys.modules["__main__"].__file__).resolve()
+except AttributeError:
+    ycecream_name = Path(__file__).stem    
+    raise NotImplementedError(f'Importing {ycecream_name} from REPL is not supported.') from None
 
 codes = {}
 

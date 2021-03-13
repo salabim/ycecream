@@ -1,3 +1,21 @@
+version 1.1.7
+=========================
+Added functionality (0)
+-----------------------
+'wrap_indent' can now be
+- a string
+- an integer, in which case the indent will be that amount of blanks
+
+Added check for REPL (0)
+------------------------
+Ycecream now checks explicitely whether it is run from a REPL. If so, a NotImplementedError is raised
+immediately at import time.
+
+Bug fix (0)
+-----------
+Some arguments to y could cause an exception other than ValueError. Fixed.
+
+
 version 1.1.6  2021-03-10
 =========================
 New functionality (0)
