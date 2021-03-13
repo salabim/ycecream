@@ -613,13 +613,16 @@ y|
 ```
 
 ## wrap_indent
-This can control how to indent if the output does not fit in the line_length (has to be wrapped).
+This specifies the indent string if the output does not fit in the line_length (has to be wrapped).
+Rather than a string, wrap_indent can be also be an integer, in which case the wrap_indent will be that amount of blanks.
 The default is 4 blanks.
+
 E.g.
 ```
 d = dict(a1=1,a2=dict(a=1,b=1,c=3),a3=list(range(10)))
 y(d, wrap_indent="  ")
 y(d, wrap_indent="....")
+y(d, wrap_indent=2)
 ```
 prints
 ```
@@ -633,7 +636,14 @@ y|
 ........{'a1': 1,
 ........ 'a2': {'a': 1, 'b': 1, 'c': 3},
 ........ 'a3': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]}
+y|
+  d:
+    {'a1': 1,
+     'a2': {'a': 1, 'b': 1, 'c': 3},
+     'a3': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]}
 ```
+
+
 
 ## enable
 Can be used to disable the output:
