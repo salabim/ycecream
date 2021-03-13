@@ -40,18 +40,19 @@ def patch_perf_counter(monkeypatch):
 
     monkeypatch.setattr(time, "perf_counter", myperf_counter)
 
+
 def test_time(patch_datetime_now):
     hello = "world"
     s = y(hello, show_time=True, as_str=True)
     assert s == "y| @ 00:00:00.000000 ==> hello: 'world'\n"
 
 
-def test_no_arguments(capsys):    
+def test_no_arguments(capsys):
     result = y()
     out, err = capsys.readouterr()
     assert err.startswith(context_start)
     assert err.endswith(" in test_no_arguments()\n")
-    assert result is None   
+    assert result is None
 
 
 def test_one_arguments(capsys):
@@ -70,14 +71,16 @@ def test_two_arguments(capsys):
     assert err == "y| hello: 'world', l: [1, 2, 3]\n"
     assert result == (hello, l)
 
+
 def test_in_function(capsys):
     def hello(val):
         y(val, show_line_number=True)
+
     hello("world")
     out, err = capsys.readouterr()
     assert err.startswith(context_start)
     assert err.endswith(" in hello() ==> val: 'world'\n")
-  
+
 
 def test_prefix(capsys):
     hello = "world"
@@ -100,7 +103,18 @@ def test_dynamic_prefix(capsys):
     out, err = capsys.readouterr()
     assert err == "1)hello: 'world'\n2)hello: 'world'\n"
 
-
+def test_calls():
+    with pytest.raises(TypeError):
+        ycecream.Y(a=1)
+    with pytest.raises(TypeError):
+        y.clone(a=1)
+    with pytest.raises(TypeError):
+        y.configure(a=1)     
+    with pytest.raises(TypeError):
+        y(12, a=1)
+    with pytest.raises(TypeError):
+        y(a=1)        
+                   
 def test_output(capsys, tmpdir):
     result = ""
 
@@ -120,7 +134,7 @@ def test_output(capsys, tmpdir):
     y(hello, output="stdout")
     out, err = capsys.readouterr()
     assert out == "y| hello: 'world'\n"
-    assert err == ""    
+    assert err == ""
     y(hello, output="")
     out, err = capsys.readouterr()
     assert out == ""
@@ -196,7 +210,6 @@ def test_show_delta(capsys):
     out, err = capsys.readouterr()
     assert err.endswith("hello: 'world'\n")
     assert "delta=" in err
-
 
 def test_as_str(capsys):
     hello = "world"
@@ -300,13 +313,15 @@ y| called sub(10, 2)
 """
     )
 
+
 def test_decorator_edge_cases(capsys, patch_perf_counter):
     @y
     def mul(x, y, factor=1):
-        return x*y*factor
+        return x * y * factor
+
     assert mul(5, 6) == 30
     assert mul(5, 6, 10) == 300
-    assert mul(5, 6, factor=10) == 300    
+    assert mul(5, 6, factor=10) == 300
     out, err = capsys.readouterr()
     assert (
         err
@@ -317,14 +332,9 @@ y| called mul(5, 6, 10)
 y| returned 300 from mul(5, 6, 10) in 0.000000 seconds
 y| called mul(5, 6, factor=10)
 y| returned 300 from mul(5, 6, factor=10) in 0.000000 seconds
-""") 
-    with pytest.raises(NotImplementedError):
-        @y    
-        def mul(x,y,
-            factor=10):
-                return x*y
-        mul(4,6)          
-    
+"""
+    )
+
 def test_decorator_with_methods(capsys):
     class Number:
         def __init__(self, value):
@@ -370,8 +380,10 @@ def test_context_manager(capsys, patch_perf_counter):
 y| enter
 y| 3
 y| exit in 0.000000 seconds
-""")
-                
+"""
+    )
+
+
 def test_json_reading(tmpdir):
     json_filename = Path(tmpdir) / "ycecream.json"
     with open(json_filename, "w") as f:
@@ -537,11 +549,12 @@ y|
 """
     )
 
+
 def test_depth_indent(capsys):
-    s="=============================================="
-    a=[s+"1",[s+"2",[s+"3",[s+"4"]]],s+"1"]
+    s = "=============================================="
+    a = [s + "1", [s + "2", [s + "3", [s + "4"]]], s + "1"]
     y(a, indent=4)
-    y(a, depth=2,indent=4)
+    y(a, depth=2, indent=4)
     out, err = capsys.readouterr()
     assert (
         err
@@ -558,14 +571,16 @@ y|
         [   '==============================================1',
             ['==============================================2', [...]],
             '==============================================1']
-""")
+"""
+    )
+
 
 def test_enable(capsys):
     with y.preserve():
         y("One")
         y.configure(enabled=False)
         y("Two")
-        s=y("Two", as_str=True)
+        s = y("Two", as_str=True)
         assert s == "y| 'Two'\n"
         y.configure(enabled=True)
         y("Three")
@@ -582,14 +597,17 @@ def test_enable(capsys):
 y| 'One'
 y| 'Three'
 y| 'Five'
-""")        
+"""
+    )
+
 
 def test_check_output(capsys):
     with y.preserve():
         with tempfile.TemporaryDirectory() as tmpdir:
             x1_file = Path(tmpdir) / "x1.py"
             with open(x1_file, "w") as f:
-                print("""\
+                print(
+                    """\
 def check_output():
     from ycecream import y
     import x2
@@ -629,12 +647,14 @@ def check_output():
         pass
     
     x()
-""", file=f)
-                
-                
+""",
+                    file=f,
+                )
+
             x2_file = Path(tmpdir) / "x2.py"
             with open(x2_file, "w") as f:
-                print("""\
+                print(
+                    """\
 from ycecream import y
 
 def test():
@@ -646,13 +666,18 @@ def test():
     myself(6)
     with y():
         pass        
-""", file=f)
+""",
+                    file=f,
+                )
             sys.path = [tmpdir] + sys.path
             import x1
+
             x1.check_output()
             sys.path.pop(0)
     out, err = capsys.readouterr()
-    assert err == """\
+    assert (
+        err
+        == """\
 y| #5[x2.py] in test() ==> called myself(6)
 y| #6[x2.py] in myself() ==> x: 6
 y| #10[x2.py] in test() ==> enter
@@ -665,6 +690,8 @@ y| #21[x1.py] in check_output()
 y| #24[x1.py] in check_output() ==> called x(2)
 y| #33[x1.py] in check_output() ==> called x()
 """
+    )
+
 
 if __name__ == "__main__":
     pytest.main(["-vv", "-s", "-x", __file__])
