@@ -445,8 +445,7 @@ for example, to handle non-standard datatypes in a custom fashion.
 The serialize function should accept at least one parameter.
 The function can optionally accept the keyword arguments `width` and `sort_dicts`, `compact`, `indent` and `depth`.
 ```
-from ycecream import Y
-
+from ycecream import y
 def add_len(obj):
     if hasattr(obj, "__len__"):
         add = f" [len={len(obj)}]"
@@ -454,10 +453,9 @@ def add_len(obj):
         add = ""
     return f"{repr(obj)}{add}"
 
-y = Y(serialize=add_len)
 l = list(range(7))
 hello = "world"
-y(7, hello, l)
+y(7, hello, l, serialize=add_len)
 ```   
 prints
 ```
@@ -498,9 +496,9 @@ y| @ 13:01:47.588125 ==> hello: 'world'
 ## show_delta
 If True, adds the number of seconds since the start of the program to `y()`'s output.
 ```
-from ycecream import Y
+from ycecream import y
 import time
-y = Y(show_delta=True)
+y.configure(show_delta=True)
 allô="monde"
 hallo
 y(hello)
