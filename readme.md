@@ -818,11 +818,11 @@ It is not possible to use ycecream:
 
 # Implementation details
 Although not important for using the package, here are some implementation details:
-* ycecream.py contains the complete (slightly modifief) source of the asttokens and executing, in
-   order to offer the required source lookups
+* ycecream.py contains the complete (slightly modified) source of the asttokens and executing packages, in
+   order to offer the required source lookups, without any depenencies
 * ycecream.py contains the complete source of pprint as of Python 3.8 in order to support the sort_dicts parameter
 * in order to support using y() as a decorator and a context manager, ycecream caches the complete source of any source
-    file that uses y()h   
+    file that uses y()
 
 
 # Acknowledgement
