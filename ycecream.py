@@ -39,7 +39,7 @@ def assign(dest, source0, source1=None):
     dest : dict or object with attributes
         destination
 
-    source0 : dict or object with attributes 
+    source0 : dict or object with attributes
         primary source (uses source0's value if is not None)
 
     source1 : dict or object with attributes, optional
@@ -196,6 +196,9 @@ class Y:
         call_frame = inspect.currentframe().f_back
         filename = call_frame.f_code.co_filename
 
+        if filename == "<stdin>":
+            no_source_error()
+            # Placeholder for REPL support
         if Path(filename).resolve() == main_file_resolved:
             filename_name = ""
         else:
@@ -223,7 +226,7 @@ class Y:
                     line_number = l
                     break
             else:
-                line_number += 1  
+                line_number += 1
             this.line_number_with_filename_and_parent = f"#{line_number}{filename_name}{parent_function}"
 
             def real_decorator(function):
@@ -258,7 +261,7 @@ class Y:
         if call_node is None:
             no_source_error()
         line_number = call_node.lineno
-        this_line = code[line_number - 1].strip()   
+        this_line = code[line_number - 1].strip()
 
         this.line_number_with_filename_and_parent = f"#{line_number}{filename_name}{parent_function}"
 
@@ -483,8 +486,17 @@ def enable(value=None):
     return global_enabled
 
 global_enabled = True
-main_file_resolved = Path(sys.modules["__main__"].__file__).resolve()
-
+try:
+    main_file  = Path(sys.modules["__main__"].__file__)
+except AttributeError:
+    # https://stackoverflow.com/a/35120690/7971585
+    from pkgutil import iter_modules
+    main_file = [p for p in iter_modules() if p.name == "ycecream"][0]
+    main_file = Path(main_file.module_finder.path).absolute()
+    if main_file.stem != "ycecream":
+        main_file /= "ycecream"
+    main_file /= "ycecream.py"
+main_file_resolved = main_file.resolve()
 codes = {}
 
 set_defaults()
