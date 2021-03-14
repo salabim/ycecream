@@ -1,3 +1,23 @@
+version 1.1.8  2021-03-14
+=========================
+Added functionality (0)
+-----------------------
+Ycecream now supports REPLs, be it with extremely limited functionality:
+- all arguments are just presented as such, i.e. no left-hand side, e.g.
+  >>> hello = "world"
+  >>> y(hello, hello * 2)
+  y| 'hello', 'hellohello'
+  ('hello', 'hellohello')
+- line numbers are never shown  
+- use as a decorator is not supported
+- use as a context manager is not supported
+  
+Bug fix (0)
+-----------
+Since version 1.1.6, delta was not calculated properly. Fixed.
+Added a test to detect this type of bug.
+
+
 version 1.1.7  2021-03-13
 =========================
 Added functionality (0)
@@ -94,6 +114,7 @@ Internal change (0)
     
     Mass assignment of attributes now via assign function, thus improving stability and shortening code.
 
+
 version 1.1.5  2021-02-05
 =========================
 Now, the line_length is properly observed and indentation is not anymore dependent on prefix. 
@@ -104,6 +125,7 @@ The attributes context_delimiter and pair_delimiter are now documented.
 Exception NoSourceAvailableError is now correctly raised.
 
 Internal change: complete overhaul of formatting.
+
 
 version 1.1.4  2021-02-03 
 =========================

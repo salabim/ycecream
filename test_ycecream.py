@@ -88,7 +88,15 @@ def test_prefix(capsys):
     out, err = capsys.readouterr()
     assert err == "==> hello: 'world'\n"
 
-
+def test_time_delta():
+    sdelta0 = y(1, show_delta=True, as_str=True)
+    stime0 = y(1, show_time=True, as_str=True)  
+    time.sleep(0.001) 
+    sdelta1 = y(1, show_delta=True, as_str=True)
+    stime1 = y(1, show_time=True, as_str=True) 
+    assert sdelta0 != sdelta1     
+    assert stime0 != stime1
+             
 def test_dynamic_prefix(capsys):
     i = 0
 
