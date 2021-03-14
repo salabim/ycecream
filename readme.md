@@ -803,16 +803,28 @@ of ycecream.
 It is very useful to have a look at the tests to see the features (some may be not covered in this readme).
 
 # Alternative installation
-
 With `install ycecream from github.py`, you can install the ycecream.py directly from GitHub to the site packages (as if it was a pip install).
 
 With `install ycecream.py`, you can install the ycecream.py in your current directory to the site packages (as if it were a pip install).
 
 Both files can be found in the GitHub repository (https://github.com/salabim/ycecream).
 
+# Using ycecream in a REPL
+
+Ycecream may be used in a REPL, but with extremely limited functionality:
+* all arguments are just presented as such, i.e. no left-hand side, e.g.
+  ```
+  >> hello = "world"
+  >>> y(hello, hello * 2)
+  y| 'hello', 'hellohello'
+  ('hello', 'hellohello')
+  ```
+* line numbers are never shown  
+* use as a decorator is not supported
+* use as a context manager is not supported
+
 # Limitations
 It is not possible to use ycecream:
-* in a REPL or other interactive environment
 * from a frozen application (e.g. packaged with PyInstaller)
 * when the underlying source code has changed during execution
 
