@@ -802,13 +802,6 @@ of ycecream.
 
 It is very useful to have a look at the tests to see the features (some may be not covered in this readme).
 
-# Alternative installation
-With `install ycecream from github.py`, you can install the ycecream.py directly from GitHub to the site packages (as if it was a pip install).
-
-With `install ycecream.py`, you can install the ycecream.py in your current directory to the site packages (as if it were a pip install).
-
-Both files can be found in the GitHub repository (https://github.com/salabim/ycecream).
-
 # Using ycecream in a REPL
 
 Ycecream may be used in a REPL, but with extremely limited functionality:
@@ -822,6 +815,14 @@ Ycecream may be used in a REPL, but with extremely limited functionality:
 * line numbers are never shown  
 * use as a decorator is not supported
 * use as a context manager is not supported
+
+# Alternative installation
+With `install ycecream from github.py`, you can install the ycecream.py directly from GitHub to the site packages (as if it was a pip install).
+
+With `install ycecream.py`, you can install the ycecream.py in your current directory to the site packages (as if it were a pip install).
+
+Both files can be found in the GitHub repository (https://github.com/salabim/ycecream).
+
 
 # Limitations
 It is not possible to use ycecream:
@@ -845,24 +846,7 @@ Many thanks to the author Ansgar Grunseid / grunseid.com / grunseid@gmail.com .
 
 # Differences with IceCream
 
-The ycecream module was originally a fork of IceCream, but has many differences:
-
-* ycecream can't colourize the output
-* ycecream runs only on Python 3.6 and higher
-* ycecream uses y as the standard interface, whereas IceCream uses ic.
-* yceceam has no dependencies. IceCream on the other hand has many (asttoken, colorize, pyglets, ...).
-* ycecream is just one .py file, whereas IceCream consists of a number of .py files. That makes it possible to use ycecream without even (pip) installing it. Just copy ycecream.py to your work directory.
-* ycecream can be used as a decorator of a function showing the enter and/or exit event as well as the duration.
-* ycecream can be used as a context manager to benchmark code.
-* ycecream has a PEP8 (Pythonic) API. Less important for the user, the actual code is also fully PEP8 compatible.
-* ycecream uses a different API to configuration (rather than IceCream's configureOutput method)
-* ycecream can toggle line number, time and delta inclusion independently
-* ycecream does not sort dicts by default. This behaviour can be controlled with the `sort_dict` parameter. (This is implemented by including the pprint 3.8 source code)
-* ycecream can use the compact, indent and depath parameters of pprint to allow for more formatting flexibility
-* ycecream can be configured from a json file, thus overriding some or all default settings at import time.
-* ycecream has a line_length attribute that is observed correctly.
-* ycecream indents output by 4 blanks (overridable) rather than IceCream's indentation that depends on the length of prefix.
-* ycecream uses pytest for the test scripts rather than IceCream's unittest script.
+![Click here](./differences_with_icecream.md)
 
 ![Python 3.6](https://img.shields.io/badge/python-3.6-blue.svg) ![Python 3.7](https://img.shields.io/badge/python-3.7-blue.svg) ![Python 3.8](https://img.shields.io/badge/python-3.8-blue.svg) ![Python 3.9](https://img.shields.io/badge/python-3.9-blue.svg)
 ![Black](https://img.shields.io/badge/code%20style-black-000000.svg)
