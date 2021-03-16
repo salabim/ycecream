@@ -658,7 +658,7 @@ y(s + 'on fire.')
 ```
 prints
 ```
-==> hello: world = 'on fire'
+y| s + 'on fire.': 'the world is on fire.'
 ```
 and nothing about a perfect world.
 
