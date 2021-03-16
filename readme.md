@@ -281,7 +281,7 @@ y| 5
 y| delta=0.044893 ==> 6
 True
 ```
-Note that `y()` continues to return its arguments when disabled, of course.
+Of course `y()` continues to return its arguments when disabled, of course.
 
 # Configuration
 
@@ -645,17 +645,16 @@ y|
 
 
 
-## enable
+## enabled
 Can be used to disable the output:
-
 ```
 from ycecream import y
 
-y.configure(prefix="==> ", enable=False)
-world = "perfect"
-y(hello)
-y.configure(enable=True)
-world = "on fire"
+y.configure(enabled=False)
+s = 'the world is '
+y(s + 'perfect.')
+y.configure(enabled=True)
+y(s + 'on fire.')
 ```
 prints
 ```
