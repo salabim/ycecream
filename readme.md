@@ -240,49 +240,6 @@ might print:
 y| duration: 1.0001721999999997
 ```
 
-# Miscellaneous
-
-`y(*args, as_str=True)` is like `y(*args)` but the output is returned as a string instead
-of written to output.
-
-```
-from ycecream import y
-hello = "world"
-s = y(hello, as_str=True)
-print(s, end="")
-```
-prints
-```
-y| hello: 'world'
-```
-
-Ycecreams's output can be entirely disabled, and optionally  later re-enabled, with
-`ycecream.enable(False)` and `ycecream.enable(True)` respectively. The function always returns
-the current (new) setting.
-Note that this function refers to ALL output from ycecream.
-```
-from ycecream import y, enable
-yd = y.clone(show_delta=True)
-y(1)
-yd(2)
-enable(False)
-y(3)
-yd(4)
-enable(True)
-y(5)
-yd(6)
-print(enable())
-```
-prints
-```
-y| 1
-y| delta=0.011826 ==> 2
-y| 5
-y| delta=0.044893 ==> 6
-True
-```
-Of course `y()` continues to return its arguments when disabled, of course.
-
 # Configuration
 
 For the configuration, it is important to realize that `y` is an instance of the `ycecream.Y` class, which has
@@ -302,7 +259,8 @@ a number of configuration attributes:
 * `indent`
 * `depth` 
 * `context_delimiter`
-* `pair_delimiter`
+* `pair_delimiter
+* `values_only`
 
 It is perfectly ok to set/get any of these attributes directly.
 
@@ -708,6 +666,90 @@ prints
 ```
 y| a: 'abcd', (b,c): (1, 1000), d: ['y', 'c', 'e', 'c', 'r', 'e', 'a', 'm']
 y| a: 'abcd' | (b,c): (1, 1000) | d: ['y', 'c', 'e', 'c', 'r', 'e', 'a', 'm']
+```
+## values_only
+If False (the default), both the left-hand side (if possible) and the
+value will be printed. If True, the left_hand side will be suppressed:
+```
+hello = "world"
+y(hello, 2 * hello)
+y(hello, 2 * hello, values_only=True)
+```
+prints
+```
+y| hello: 'world', 2 * hello = 'worldworld'
+y| 'world', 'worldworld'
+```
+The values=True version of y can be seen as a supercharged print/pprint.
+
+# Return a string instead of sending to output
+
+`y(*args, as_str=True)` is like `y(*args)` but the output is returned as a string instead
+of written to output.
+
+```
+from ycecream import y
+hello = "world"
+s = y(hello, as_str=True)
+print(s, end="")
+```
+prints
+```
+y| hello: 'world'
+```
+# Disabling ycecream's output
+Apart from the attribute `enabled`, it is possible to disable
+ycecreams's output entirely (and of course later re-enabled it) with
+`ycecream.enable(False)` and `ycecream.enable(True)` respectively. The function always returns
+the current (new) setting.
+Note that this function refers to ALL output from ycecream.
+```
+from ycecream import y, enable
+yd = y.clone(show_delta=True)
+y(1)
+yd(2)
+enable(False)
+y(3)
+yd(4)
+enable(True)
+y(5)
+yd(6)
+print(enable())
+```
+prints
+```
+y| 1
+y| delta=0.011826 ==> 2
+y| 5
+y| delta=0.044893 ==> 6
+True
+```
+Of course `y()` continues to return its arguments when disabled, of course.
+
+## Speeding up disabled ycecream
+When output is disabled, either via `y.configure(enbabled=False)` or `ycecream.enable(False)`,
+ycecream still has to check for usage as a decorator or context manager, which can be rather time
+consuming.
+In order to speed up a program with disabled ycecream calls, it is possible to specify
+`y.configure(enabled=[])` or `ycecream.enabled([])`, in which case `y` will always just return
+the given arguments. If ycecream is disabled this way, usage as a `@y()` decorator  or as a `with y():`
+context manager will raise a runtime error, though. The `@y` decorator without parentheses will
+not raise any exception, though.
+
+Note that calls with `as_str=True` will not be affected at all by the enabled flag.
+
+The table below shows it all.
+```
+---------------------------------------------------------------------
+                     enabled=True      enabled=False       enabled=[]
+---------------------------------------------------------------------
+execution speed            normal             normal             fast     
+y()                  as specified          no output        no output
+@y()                 as specified          no output        TypeError
+@y                   as specified          no output        no output
+with y():            as specified          no output   AttributeError
+y(as_str=True)       as specified       as specified     as specified
+---------------------------------------------------------------------
 ```
 
 # Interpreting the line number information

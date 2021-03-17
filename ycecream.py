@@ -3,16 +3,17 @@
 #   \__, || (__ |  __/| (__ | |   |  __/| (_| || | | | | |
 #   |___/  \___| \___| \___||_|    \___| \__,_||_| |_| |_|
 #                       sweeter debugging and benchmarking
-#
-#      See https://github.com/salabim/ycecream for details
 
-__version__ = "1.1.8"
+__version__ = "1.1.9"
 
 """
-Inspired by IceCream "Never use print() to debug again"
-Original author: Ansgar Grunseid / grunseid.com / grunseid@gmail.com
+See https://github.com/salabim/ycecream for details
 
 (c)2021 Ruud van der Ham - rt.van.der.ham@gmail.com
+
+Inspired by IceCream "Never use print() to debug again". 
+Also contains some of the original code.
+IceCream was written by Ansgar Grunseid / grunseid.com / grunseid@gmail.com
 """
 
 import inspect
@@ -26,8 +27,10 @@ import functools
 import json
 import logging
 import collections
+import numbers
 
 Path = pathlib.Path
+
 
 class default:
     pass
@@ -89,6 +92,7 @@ def set_defaults():
     default.wrap_indent = "    "
     default.context_delimiter = " ==> "
     default.pair_delimiter = ", "
+    default.values_only = False
 
     ycecream_name = Path(__file__).stem
     config = {}
@@ -98,8 +102,8 @@ def set_defaults():
             with open(path / f"{ycecream_name}.json", "r") as f:
                 config = json.load(f)
             break
-        if (path / "ycecream_name" / f"{ycecream_name}.json").is_file():
-            with open(path / {ycecream_name} / f"{ycecream_name}.json", "r") as f:
+        if (path / f"{ycecream_name}" / f"{ycecream_name}.json").is_file():
+            with open(path / f"{ycecream_name}" / f"{ycecream_name}.json", "r") as f:
                 config = json.load(f)
             break
 
@@ -113,7 +117,9 @@ def set_defaults():
             raise ValueError(f"error in {path}: key {k} not recognized")
 
 
-def no_source_error():
+def no_source_error(s=None):
+    if s is not None:
+        print(s)  # for debugging only
     raise NotImplementedError(
         """
 Failed to access the underlying source code for analysis. Possible causes:
@@ -136,7 +142,13 @@ def check_output(output):
         pass
     raise ValueError("output should be a callable, str, Path or open text file.")
 
-
+def return_args(args):
+    if len(args) == 0:
+        return None
+    if len(args) == 1:
+        return args[0]
+    return args
+    
 class Y:
     def __init__(
         self,
@@ -157,7 +169,8 @@ class Y:
         depth=None,
         wrap_indent=None,
         context_delimiter=None,
-        pair_delimiter=None
+        pair_delimiter=None,
+        values_only=None
     ):
         assign(self, locals(), default)
         check_output(self.output)
@@ -183,6 +196,7 @@ class Y:
         wrap_indent=None,
         context_delimiter=None,
         pair_delimiter=None,
+        values_only=None,
         as_str=False
     ):
 
@@ -190,19 +204,23 @@ class Y:
 
         kwargs = {}
         assign(kwargs, locals(), self)
+        
         this = Y(**kwargs)
+        if (this.enabled == [] or global_enabled == []) and not as_str:
+            return return_args(args)        
         this.start_time = self.start_time
 
         check_output(this.output)
+
         if not repl:
             call_frame = inspect.currentframe().f_back
-            filename = call_frame.f_code.co_filename            
+            filename = call_frame.f_code.co_filename
             if Path(filename).resolve() == main_file_resolved:
-                 filename_name = ""
+                filename_name = ""
             else:
-                 filename_name = f'[{Path(filename).name}]'
+                filename_name = f"[{Path(filename).name}]"
 
-            if filename not in codes :
+            if filename not in codes:
                 frame_info = inspect.getframeinfo(call_frame, context=1000000)  # get the full source code
                 if frame_info.code_context is None:
                     no_source_error()
@@ -215,8 +233,14 @@ class Y:
             else:
                 parent_function = f" in {parent_function}()"
             line_number = frame_info.lineno
-            this_line = code[line_number - 1].strip()
-            this_line_prev = code[line_number - 2].strip()
+            if 0 <= line_number-1 < len(code):
+                this_line = code[line_number - 1].strip()
+            else:
+                this_line = ""
+            if 0 <= line_number-2 < len(code):
+                this_line_prev = code[line_number - 2].strip()
+            else:
+                this_line_prev = ""
             if this_line.startswith("@") or this_line_prev.startswith("@"):
                 if as_str:
                     raise TypeError("as_str may not be True when y used as decorator")
@@ -227,58 +251,61 @@ class Y:
                 else:
                     line_number += 1
                 this.line_number_with_filename_and_parent = f"#{line_number}{filename_name}{parent_function}"
-    
+
                 def real_decorator(function):
                     @functools.wraps(function)
                     def wrapper(*args, **kwargs):
                         enter_time = time.perf_counter()
                         context = this.context()
-    
+
                         args_kwargs = [repr(arg) for arg in args] + [f"{str(k)}={repr(v)}" for k, v in kwargs.items()]
                         function_arguments = f"{function.__name__}({', '.join(args_kwargs)})"
-    
+
                         if this.show_enter:
                             this.do_output(f"{context}called {function_arguments}")
                         result = function(*args, **kwargs)
                         duration = time.perf_counter() - enter_time
-    
+
                         context = this.context()
                         if this.show_exit:
                             this.do_output(f"{context}returned {repr(result)} from {function_arguments} in {duration:.6f} seconds")
                         return result
-    
+
                     return wrapper
-    
+
                 if len(args) == 0:
                     return real_decorator
-    
+
                 if len(args) == 1 and callable(args[0]):
                     return real_decorator(args[0])
                 raise TypeError("arguments are not allowed in y used as decorator")
-    
+
             call_node = Source.executing(call_frame).node
             if call_node is None:
                 no_source_error()
             line_number = call_node.lineno
             this_line = code[line_number - 1].strip()
-    
+
             this.line_number_with_filename_and_parent = f"#{line_number}{filename_name}{parent_function}"
-    
+
             if this_line.startswith("with ") or this_line.startswith("with\t"):
                 if as_str:
                     raise TypeError("as_str may not be True when y used as context manager")
                 if args:
                     raise TypeError("non-keyword arguments are not allowed when y used as context manager")
-    
+
                 this.is_context_manager = True
                 return this
+        
+        if (not this.enabled or not global_enabled) and not as_str:
+            return return_args(args)
 
         if args:
             context = this.context()
             pairs = []
-            if repl:
+            if repl or this.values_only:
                 for right in args:
-                    pairs.append(Pair(left='', right=right))                
+                    pairs.append(Pair(left="", right=right))
             else:
                 source = Source.for_frame(call_frame)
                 for node, right in zip(call_node.args, args):
@@ -286,14 +313,13 @@ class Y:
                     if "\n" in left:
                         left = " " * node.first_token.start[1] + left
                         left = textwrap.dedent(left)
-    
+
                     try:
                         ast.literal_eval(left)  # it's indeed a literal
                         left = ""
                     except Exception:
                         left = left + ": "  # not a literal\
                     pairs.append(Pair(left=left, right=right))
-                        
 
             just_one_line = False
             if not any("\n" in pair.left for pair in pairs):
@@ -303,11 +329,10 @@ class Y:
                     just_one_line = True
 
             if not just_one_line:
-                try:
-                    wrap_indent = int(this.wrap_indent) * ' '
-                except ValueError:
-                    wrap_indent = this.wrap_indent
-                
+                if isinstance(this.wrap_indent, numbers.Number):
+                    wrap_indent = int(this.wrap_indent) * " "
+                else:
+                    wrap_indent = str(this.wrap_indent)
 
                 if context.strip():
                     indent1 = wrap_indent
@@ -342,15 +367,11 @@ class Y:
             this.show_line_number = True
             out = this.context(omit_context_delimiter=True)
 
-        if as_str:
+        if as_str:     
             return out + "\n"
         this.do_output(out)
 
-        if len(args) == 0:
-            return None
-        if len(args) == 1:
-            return args[0]
-        return args
+        return return_args(args)
 
     def configure(
         self,
@@ -371,7 +392,8 @@ class Y:
         depth=None,
         wrap_indent=None,
         context_delimiter=None,
-        pair_delimiter=None
+        pair_delimiter=None,
+        values_only=None,
     ):
         assign(self, locals(), self)
         check_output(self.output)
@@ -399,7 +421,8 @@ class Y:
         depth=None,
         wrap_indent=None,
         context_delimiter=None,
-        pair_delimiter=None
+        pair_delimiter=None,
+        values_only=None
     ):
         kwargs = {}
         assign(kwargs, locals(), self)
@@ -494,10 +517,9 @@ def enable(value=None):
         global_enabled = value
     return global_enabled
 
-
-global_enabled = True
 codes = {}
-    
+global_enabled = True
+
 try:
     main_file_resolved = Path(sys.modules["__main__"].__file__).resolve()
 except AttributeError:

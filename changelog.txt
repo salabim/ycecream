@@ -1,8 +1,52 @@
+version 1.1.9  2021-03-17
+=========================
+New functionality (0)
+---------------------
+Added the values_only attribute. If False (the default), both the left-hand side (if possible) and the
+value will be printed. If True, the left_hand side will be suppressed:
+    |hello = "world"
+    |y(hello, 2 * hello)
+    |y(hello, 2 * hello, values_only=True)
+prints
+    |y| hello: 'world', 2 * hello = 'worldworld'
+    |y| 'world', 'worldworld'
+The values=True version of y can be seen as a supercharged print/pprint.
+
+New functionality (1)
+---------------------
+When ycecream is disabled, either via y.configure(enbabled=False) or ycecream.enable(False),
+ycecream still has to check for usage as a decorator or context manager, which can be rather time
+consuming.
+In order to speed up a program with disabled ycecream calls, it is now possible to specify
+y.configure(enabled=[]) or ycecream.enabled([]), in which case y will always just return
+the given arguments. If ycecream is disabled this way, usage as a @y() decorator  or as a with y():
+context manager will raise a runtime error, though. The @y decorator without parentheses will
+not raise any exception, though.
+Note that calls with as_str=True will not be affected at all by the enabled flag.
+
+The table below shows it all.
+---------------------------------------------------------------------
+                     enabled=True      enabled=False       enabled=[]
+---------------------------------------------------------------------
+execution speed            normal             normal             fast     
+y()                  as specified          no output        no output
+@y()                 as specified          no output        TypeError
+@y                   as specified          no output        no output
+with y():            as specified          no output   AttributeError
+y(as_str=True)       as specified       as specified     as specified
+---------------------------------------------------------------------
+
+ 
+Bug fix (0)
+-----------
+A file ycecream.json could not be found in the site_packages installation. Fixed.
+Added tests to check proper ycecream.json search functionality.
+
 version 1.1.8  2021-03-14
 =========================
 Added functionality (0)
 -----------------------
-Ycecream now supports REPLs, be it with extremely limited functionality:
+Ycecream now supports REPLs, be it with limited functionality:
 - all arguments are just presented as such, i.e. no left-hand side, e.g.
   >>> hello = "world"
   >>> y(hello, hello * 2)
@@ -40,13 +84,13 @@ version 1.1.6  2021-03-10
 =========================
 New functionality (0)
 ---------------------
-    It is now possible to use the compact option of pprint.pformat:
+It is now possible to use the compact option of pprint.pformat:
     
     |a = 9 * ['0123456789']
     |y(a)
     |y(a, compact=True) 
     
-    prints  
+prints  
     |y|
     |    a:
     |        ['0123456789',
