@@ -12,16 +12,14 @@ with tempfile.TemporaryDirectory() as tmpdir:
         print("{}", file=f)
     sys.path = [tmpdir] + sys.path
     from ycecream import y
-
+    import ycecream
     sys.path.pop(0)
 
-import ycecream
 import datetime
 import time
 import pytest
 
 FAKE_TIME = datetime.datetime(2021, 1, 1, 0, 0, 0)
-
 
 @pytest.fixture
 def patch_datetime_now(monkeypatch):
@@ -41,6 +39,49 @@ def patch_perf_counter(monkeypatch):
     monkeypatch.setattr(time, "perf_counter", myperf_counter)
 
 
+def test_read_json():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        org_line_length = ycecream.default.line_length
+        json_filename0 = Path(tmpdir) / "ycecream.json"
+        with open(json_filename0, "w") as f:
+            print('{"line_length":-1}', file=f)    
+        tmpdir1 = Path(tmpdir) / "ycecream"
+        tmpdir1.mkdir()
+        json_filename1 = Path(tmpdir1) / "ycecream.json"        
+        with open(json_filename1, "w") as f:
+            print('{"line_length":-2}', file=f)    
+        save_sys_path = sys.path
+        
+        sys.path = [tmpdir] + [tmpdir1]
+        ycecream.set_defaults() 
+        assert ycecream.default.line_length == -1
+        
+        sys.path = [tmpdir1] + [tmpdir]
+        ycecream.set_defaults()
+        assert ycecream.default.line_length == -2
+                
+        sys.path = []
+        ycecream.set_defaults()
+        assert ycecream.default.line_length == 80
+
+        with open(json_filename0, "w") as f:
+            print('{"error":0}', file=f)    
+        
+        sys.path = [tmpdir]                
+        with pytest.raises(ValueError):
+            ycecream.set_defaults()        
+                                                                        
+        sys.path = save_sys_path       
+                
+        json_filename = Path(tmpdir) / "ycecream.json"
+        with open(json_filename, "w") as f:        
+            print('{}', file=f)    
+        sys.path = [tmpdir] + sys.path
+        ycecream.set_defaults()
+        sys.path.pop()
+        assert ycecream.default.line_length == org_line_length
+    
+    
 def test_time(patch_datetime_now):
     hello = "world"
     s = y(hello, show_time=True, as_str=True)
@@ -110,6 +151,14 @@ def test_dynamic_prefix(capsys):
     y(hello, prefix=prefix)
     out, err = capsys.readouterr()
     assert err == "1)hello: 'world'\n2)hello: 'world'\n"
+    
+        
+def test_values_only():
+    with y.preserve():
+        y.configure(values_only=True)
+        hello = 'world'
+        s = y(hello, as_str=True)
+        assert s == "y| 'world'\n"
 
 def test_calls():
     with pytest.raises(TypeError):
@@ -225,8 +274,18 @@ def test_as_str(capsys):
     y(hello)
     out, err = capsys.readouterr()
     assert err == s
+    
+    with pytest.raises(TypeError):
+        @y(as_str=True)
+        def add2(x):
+            return x + 2
+    
+    with pytest.raises(TypeError):
+        with y(as_str=True):
+            pass
+    
 
-
+            
 def test_clone():
     hello = "world"
     z = y.clone(prefix="z| ")
@@ -392,7 +451,7 @@ y| exit in 0.000000 seconds
     )
 
 
-def test_json_reading(tmpdir):
+def test_json_read(tmpdir):
     json_filename = Path(tmpdir) / "ycecream.json"
     with open(json_filename, "w") as f:
         print('{"prefix": "xxx"}', file=f)
@@ -583,7 +642,7 @@ y|
     )
 
 
-def test_enable(capsys):
+def test_enabled(capsys):
     with y.preserve():
         y("One")
         y.configure(enabled=False)
@@ -608,8 +667,72 @@ y| 'Five'
 """
     )
 
-
+def test_enabled2(capsys):
+    with y.preserve():
+        y.configure(enabled=False)
+        line0 = y('line0')
+        noline0 = y(prefix='no0')       
+        pair0 = y('p0', 'p0')
+        s0 = y('s0', as_str=True)
+        y.configure(enabled=[])
+        line1 = y('line1')
+        noline1 = y(prefix='no1')       
+        pair1 = y('p1', 'p1')    
+        s1 = y('s1', as_str=True)
+        y.configure(enabled=True)
+        line2 = y('line2')
+        noline2 = y(prefix='no2')       
+        pair2 = y('p2', 'p2')     
+        s2 = y('s2', as_str=True)               
+        out, err = capsys.readouterr()
+        assert 'line0' not in err and 'p0' not in err and 'no0' not in err     
+        assert 'line1' not in err and 'p1' not in err and 'no1' not in err      
+        assert 'line2' in err and 'p2' in err and 'no2' in err
+        assert line0 == 'line0'             
+        assert line1 == 'line1'     
+        assert line2 == 'line2'                     
+        assert noline0 is None            
+        assert noline1 is None     
+        assert noline2 is None
+        assert pair0 == ('p0', 'p0')                                             
+        assert pair1 == ('p1', 'p1')                                             
+        assert pair2 == ('p2', 'p2')            
+        assert s0=="y| 's0'\n"                               
+        assert s1=="y| 's1'\n"                               
+        assert s2=="y| 's2'\n"   
+        
+def test_enabled3(capsys):
+    with y.preserve():
+        y.configure(enabled=[])
+        y(2)
+        with pytest.raises(TypeError):
+            @y()
+            def add2(x):
+                return x + 2
+        with pytest.raises(AttributeError):
+            with y():
+                pass     
+                
+def test_wrap_indent():
+    s = 4* ['*******************']
+    res = y(s, compact=True, as_str=True)
+    assert res.splitlines()[1].startswith('    s')
+    res = y(s, compact=True, as_str=True, wrap_indent='....')
+    assert res.splitlines()[1].startswith('....s')
+    res = y(s, compact=True, as_str=True, wrap_indent=2)
+    assert res.splitlines()[1].startswith('  s')    
+    res = y(s, compact=True, as_str=True, wrap_indent=[])
+    assert res.splitlines()[1].startswith('[]s')    
+                                                                                                                                                                                                                                          
 def test_check_output(capsys):
+    ''' special Pythonista code, as that does not reload x1 and x2 '''
+    if 'x1' in sys.modules:
+        del sys.modules['x1']
+    if 'x2' in sys.modules:
+        del sys.modules['x2']    
+    del sys.modules['ycecream']  
+    from ycecream import y
+    ''' end of special Pythonista code '''
     with y.preserve():
         with tempfile.TemporaryDirectory() as tmpdir:
             x1_file = Path(tmpdir) / "x1.py"
