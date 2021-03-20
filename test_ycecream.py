@@ -1,4 +1,3 @@
-import pytest
 from pathlib import Path
 import sys
 import tempfile
@@ -224,7 +223,7 @@ def test_output(capsys, tmpdir):
     path = Path(tmpdir) / "x2"
     with open(path, "a+") as f:
         y(hello, output=f)
-    with pytest.raises(ValueError):  # closed file
+    with pytest.raises(TypeError):  # closed file
         y(hello, output=f)
     out, err = capsys.readouterr()
     assert out == ""
@@ -232,7 +231,7 @@ def test_output(capsys, tmpdir):
     with open(path, "r") as f:
         assert f.read() == "y| hello: 'world'\n"
 
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         y(hello, output=1)
 
     y(hello, output=my_output)
@@ -450,6 +449,17 @@ y| exit in 0.000000 seconds
 """
     )
 
+def test_return_none(capsys):
+    a = 2
+    result = y(a, a)
+    assert result == (a,a)
+    result = y(a,a, return_none=True) 
+    assert result is None
+    out, err = capsys.readouterr()
+    assert err =='''\
+y| a: 2, a: 2
+y| a: 2, a: 2
+'''
 
 def test_json_read(tmpdir):
     json_filename = Path(tmpdir) / "ycecream.json"
@@ -712,7 +722,20 @@ def test_enabled3(capsys):
         with pytest.raises(AttributeError):
             with y():
                 pass     
-                
+        @y(decorator=True)
+        def add2(x):
+            return x + 2
+        with y(context_manager=True):
+            pass    
+        
+def test_multiple_as():
+    with pytest.raises(TypeError):
+        y(1,decorator=True, context_manager=True)
+    with pytest.raises(TypeError):
+        y(1, decorator=True, as_str=True)
+    with pytest.raises(TypeError):
+        y(1, context_manager=True, as_str=True)
+
 def test_wrap_indent():
     s = 4* ['*******************']
     res = y(s, compact=True, as_str=True)

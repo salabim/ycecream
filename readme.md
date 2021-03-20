@@ -87,7 +87,7 @@ def add2(i):
     return result
 ```
 then `y()` helps here, too. Without arguments, `y()` inspects itself and
-prints the calling filename, line number, and parent function.
+prints the calling line number and -if applicable- the file name and parent function.
 
 ```
 from ycecream import y
@@ -259,8 +259,11 @@ a number of configuration attributes:
 * `indent`
 * `depth` 
 * `context_delimiter`
-* `pair_delimiter
+* `pair_delimiter`
 * `values_only`
+*  `return_none`
+*  `decorator`
+*  `context_manager`
 
 It is perfectly ok to set/get any of these attributes directly.
 
@@ -682,6 +685,86 @@ y| 'world', 'worldworld'
 ```
 The values=True version of y can be seen as a supercharged print/pprint.
 
+## return_none
+Normally, `y()`returns the values passed directly, which is usually fine. However, when used in a notebook
+or REPL, that value will be shown, and that can be annoying. Therefore, if `return_none`is True, `y()`will
+return None and thus not show anything.
+```
+a = 3
+print(y(a, a + 1))
+y.configure(return_none=True)
+print(y(a, a + 1))
+```
+prints
+```
+y| (3, 4)
+(3, 4)
+y| (3, 4)
+None
+```
+
+## decorator
+Normally, an ycecream instance can be used as to show values, as a decorator and as a
+context manager.
+
+However, when used from a REPL the usage as a decorator can't be detected properly and in that case,
+specify `decorator=True`. E.g. 
+```
+>>>@y(decorator=True)
+>>>def add2(x):
+>>>    return x + 2
+>>>print(add2(10))
+y| called add2(10)
+y| returned 12 from add2(10) in 0.000548 seconds
+12
+```
+
+The `decorator` attribute is also required when using `y()` as a decorator
+witb *fast disabling* (see below).
+```
+    |y.enabled([])
+    |@y()
+    |def add2(x):
+    |    return x + 2
+```
+would fail witn`TypeError: 'NoneType' object is not callable`, but
+```
+    |y.enabled([])
+    |@y(decorator=True)
+    |def add2(x):
+    |    return x + 2
+```
+would run correctly.
+
+
+## context_manager
+Normally, an ycecream instance can be used as to show values, as a decorator and as a
+context manager.
+
+However, when used from a REPL the usage as a context manager can't be detected properly and in that case,
+specify `context_manager=True`. E.g. 
+```
+>>>with y(context_manager=True)
+>>>    pass
+y| enter
+y| exit in 0.008644 seconds
+```
+
+The `context_manager` attribute is also required when using `y():` as a context manager
+witb *fast disabling* (see below).
+```
+    |y.enabled([])
+    |with y:
+    |    pass
+```
+would fail witn`AttributeError: __enter__`, but
+```
+    |y.enabled([])
+    |with y(context_manager=True):
+    |    pass
+```
+would run correctly.
+
 # Return a string instead of sending to output
 
 `y(*args, as_str=True)` is like `y(*args)` but the output is returned as a string instead
@@ -730,25 +813,42 @@ Of course `y()` continues to return its arguments when disabled, of course.
 When output is disabled, either via `y.configure(enbabled=False)` or `ycecream.enable(False)`,
 ycecream still has to check for usage as a decorator or context manager, which can be rather time
 consuming.
+
 In order to speed up a program with disabled ycecream calls, it is possible to specify
 `y.configure(enabled=[])` or `ycecream.enabled([])`, in which case `y` will always just return
 the given arguments. If ycecream is disabled this way, usage as a `@y()` decorator  or as a `with y():`
 context manager will raise a runtime error, though. The `@y` decorator without parentheses will
 not raise any exception, though.
 
+To use `y` as a decorator and still want *fast disabling*:
+```
+y.configure(enabled=[])
+@y(decorator=True):
+def add2(x):
+     return x + 2
+x34 = add2(30)
+```
+And, similarly, to use `y` as a context manager  combined with *fast disabling*:
+```
+y.configure(enabled=[])
+with @y(context_manager=True):
+    pass
+```
 Note that calls with `as_str=True` will not be affected at all by the enabled flag.
 
 The table below shows it all.
-```
+```                123456789012345 123456789012345 123456789012345 
 ---------------------------------------------------------------------
-                     enabled=True      enabled=False       enabled=[]
+                         enabled=True   enabled=False      enabled=[]
 ---------------------------------------------------------------------
-execution speed            normal             normal             fast     
-y()                  as specified          no output        no output
-@y()                 as specified          no output        TypeError
-@y                   as specified          no output        no output
-with y():            as specified          no output   AttributeError
-y(as_str=True)       as specified       as specified     as specified
+execution speed                normal          normal            fast     
+y()                            normal       no output       no output
+@y                             normal       no output       no output
+y(decorator=True)              normal       no output       no output
+y(context_manager=True)        normal       no output       no output
+@y()                           normal       no output       TypeError
+with y():                      normal       no output  AttributeError
+y(as_str=True)                 normal          normal          normal
 ---------------------------------------------------------------------
 ```
 
@@ -792,6 +892,17 @@ At import time the sys.path will be searched for, in that order, to find an `yce
 you can place an `ycecream.json` file in the site-packages folder where `ycecream` is installed to always use
 these modified settings.
 
+Please observe that json values are slightly different from their Python equivalents:
+```
+-------------------------------
+Python     json
+-------------------------------
+True       true
+False      false
+None       none
+strings    always double quoted
+-------------------------------
+```
 Note that not-specified attributes will remain the default settings.
 
 For obvious reasons, it is not possible to specify `serialize` in an ycecream.json file.
@@ -845,7 +956,7 @@ It is very useful to have a look at the tests to see the features (some may be n
 
 # Using ycecream in a REPL
 
-Ycecream may be used in a REPL, but with extremely limited functionality:
+Ycecream may be used in a REPL, but with limited functionality:
 * all arguments are just presented as such, i.e. no left-hand side, e.g.
   ```
   >> hello = "world"
@@ -854,8 +965,8 @@ Ycecream may be used in a REPL, but with extremely limited functionality:
   ('hello', 'hellohello')
   ```
 * line numbers are never shown  
-* use as a decorator is not supported
-* use as a context manager is not supported
+* use as a decorator is only supported when you used as `y(decorator=True)`
+* use as a context manager is only supported when used as `y(context_manager=True)`
 
 # Alternative installation
 With `install ycecream from github.py`, you can install the ycecream.py directly from GitHub to the site packages (as if it was a pip install).
@@ -875,8 +986,8 @@ Although not important for using the package, here are some implementation detai
 * ycecream.py contains the complete (slightly modified) source of the asttokens and executing packages, in
    order to offer the required source lookups, without any depenencies
 * ycecream.py contains the complete source of pprint as of Python 3.8 in order to support the sort_dicts parameter
-* in order to support using y() as a decorator and a context manager, ycecream caches the complete source of any source
-    file that uses y()
+* in order to support using y() as a decorator and a context manager, ycecream caches the complete source of`
+any source file that uses y()
 
 
 # Acknowledgement
@@ -889,7 +1000,8 @@ Many thanks to the author Ansgar Grunseid / grunseid.com / grunseid@gmail.com .
 
 ![Click here](./differences_with_icecream.md)
 
-![Python 3.6](https://img.shields.io/badge/python-3.6-blue.svg) ![Python 3.7](https://img.shields.io/badge/python-3.7-blue.svg) ![Python 3.8](https://img.shields.io/badge/python-3.8-blue.svg) ![Python 3.9](https://img.shields.io/badge/python-3.9-blue.svg)
-![Black](https://img.shields.io/badge/code%20style-black-000000.svg)
+<svg height="20" width="160.6" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><linearGradient id="smooth" x2="0" y2="100%"><stop offset="0" stop-color="#bbb" stop-opacity=".1"/><stop offset="1" stop-opacity=".1"/></linearGradient><clipPath id="round"><rect fill="#fff" height="20" rx="3" width="160.6"/></clipPath><g clip-path="url(#round)"><rect fill="#555" height="20" width="48.5"/><rect fill="#007ec6" height="20" width="112.1" x="48.5"/><rect fill="url(#smooth)" height="20" width="160.6"/></g><g fill="#fff" font-family="DejaVu Sans,Verdana,Geneva,sans-serif" font-size="110" text-anchor="middle"><text fill="#010101" fill-opacity=".3" lengthAdjust="spacing" textLength="385.0" transform="scale(0.1)" x="252.5" y="150">python</text><text lengthAdjust="spacing" textLength="385.0" transform="scale(0.1)" x="252.5" y="140">python</text><text fill="#010101" fill-opacity=".3" lengthAdjust="spacing" textLength="1021.0" transform="scale(0.1)" x="1035.5" y="150">3.6 | 3.7 | 3.8 | 3.9</text><text lengthAdjust="spacing" textLength="1021.0" transform="scale(0.1)" x="1035.5" y="140">3.6 | 3.7 | 3.8 | 3.9</text></g></svg> <svg height="20" width="92.7" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><linearGradient id="smooth" x2="0" y2="100%"><stop offset="0" stop-color="#bbb" stop-opacity=".1"/><stop offset="1" stop-opacity=".1"/></linearGradient><clipPath id="round"><rect fill="#fff" height="20" rx="3" width="92.7"/></clipPath><g clip-path="url(#round)"><rect fill="#555" height="20" width="37.0"/><rect fill="#007ec6" height="20" width="55.7" x="37.0"/><rect fill="url(#smooth)" height="20" width="92.7"/></g><g fill="#fff" font-family="DejaVu Sans,Verdana,Geneva,sans-serif" font-size="110" text-anchor="middle"><text fill="#010101" fill-opacity=".3" lengthAdjust="spacing" textLength="270.0" transform="scale(0.1)" x="195.0" y="150">pypy</text><text lengthAdjust="spacing" textLength="270.0" transform="scale(0.1)" x="195.0" y="140">pypy</text><text fill="#010101" fill-opacity=".3" lengthAdjust="spacing" textLength="457.0" transform="scale(0.1)" x="638.5" y="150">3.6 | 3.7</text><text lengthAdjust="spacing" textLength="457.0" transform="scale(0.1)" x="638.5" y="140">3.6 | 3.7</text></g></svg> <svg height="20" width="143.8" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><linearGradient id="smooth" x2="0" y2="100%"><stop offset="0" stop-color="#bbb" stop-opacity=".1"/><stop offset="1" stop-opacity=".1"/></linearGradient><clipPath id="round"><rect fill="#fff" height="20" rx="3" width="143.8"/></clipPath><g clip-path="url(#round)"><rect fill="#555" height="20" width="57.9"/><rect fill="#fe7d37" height="20" width="85.9" x="57.9"/><rect 
+fill="url(#smooth)" height="20" width="143.8"/></g><g fill="#fff" font-family="DejaVu Sans,Verdana,Geneva,sans-serif" font-size="110" text-anchor="middle"><text fill="#010101" fill-opacity=".3" lengthAdjust="spacing" textLength="479.0" transform="scale(0.1)" x="299.5" y="150">supports</text><text lengthAdjust="spacing" textLength="479.0" transform="scale(0.1)" x="299.5" y="140">supports</text><text fill="#010101" fill-opacity=".3" lengthAdjust="spacing" 
+textLength="759.0" transform="scale(0.1)" x="998.5" y="150">jupyter|REPL*</text><text lengthAdjust="spacing" textLength="759.0" transform="scale(0.1)" x="998.5" y="140">jupyter|REPL*</text></g></svg> <svg height="20" width="105.60000000000001" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><linearGradient id="smooth" x2="0" y2="100%"><stop offset="0" stop-color="#bbb" stop-opacity=".1"/><stop offset="1" stop-opacity=".1"/></linearGradient><clipPath id="round"><rect fill="#fff" height="20" rx="3" width="105.60000000000001"/></clipPath><g clip-path="url(#round)"><rect fill="#555" height="20" width="66.4"/><rect fill="black" height="20" width="39.2" x="66.4"/><rect fill="url(#smooth)" height="20" width="105.60000000000001"/></g><g fill="#fff" font-family="DejaVu Sans,Verdana,Geneva,sans-serif" font-size="110" text-anchor="middle"><text fill="#010101" fill-opacity=".3" lengthAdjust="spacing" textLength="564.0" transform="scale(0.1)" x="342.0" y="150">code style</text><text lengthAdjust="spacing" textLength="564.0" transform="scale(0.1)" x="342.0" y="140">code style</text><text fill="#010101" fill-opacity=".3" lengthAdjust="spacing" textLength="292.0" transform="scale(0.1)" x="850.0" y="150">black</text><text lengthAdjust="spacing" textLength="292.0" transform="scale(0.1)" x="850.0" y="140">black</text></g></svg>
 
-If you like ycecream <a href="https://www.buymeacoffee.com/ruudvanderham" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-red.png" alt="Buy Me A Coffee" height="41" width="174"></a>
+If you like ycecream <a href="https://www.buymeacoffee.com/ruudvanderham" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-red.png" alt="Buy Me A Coffee" height="25" width="120"></a>

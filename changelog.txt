@@ -1,3 +1,88 @@
+version 1.1.10  2021-03-20
+==========================
+New functionality (0)
+---------------------
+Added as_decorator and as_context_manager parameters to Y.__call__.
+These can be used to use 'fast disabling' and still use y() as a decorator or context manager.
+So, the table presented with version 1.1.9 should read now:
+---------------------------------------------------------------------
+                      enabled=True      enabled=False       enabled=[]
+---------------------------------------------------------------------
+execution speed             normal             normal             fast     
+y()                         normal          no output        no output
+@y                          normal          no output        no output
+y(as_decorator=True)        normal          no output        no output
+y(as_context_manager=True)  normal          no output        no output
+@y()                        normal          no output        TypeError
+with y():                   normal          no output   AttributeError
+y(as_str=True)              normal             normal           normal
+----------------------------------------------------------------------
+
+If you want to use a y as a decorator and still want 'fast disabling':
+    |y.configure(enabled=[])
+    |@y(as_decorator=True):
+    |def add2(x):
+    |     return x + 2
+    |x34 = add2(30)
+prints nothing, whereas
+    |y.configure(enabled=[])
+    |@y():
+    |def add2(x):
+    |     return x + 2
+    |x34 = add2(30)
+would raise a TypeError.
+On the other hand
+    |y.configure(enabled=False)
+    |@y():
+    |def add2(x):
+    |     return x + 2
+    |x34 = add2(30)
+would also print nothing. It would however not run as fast as possible for ordinary y() calls.
+
+
+New functionality (1)
+---------------------
+Added a new attribute `return_none`, which is False by default.
+If True, `y(<arguments>)` will return None, rather than <parameter>. This can be useful when 
+using ycecream in notebooks. E.g.
+    |hello = "world"
+    |print(y(hello))
+    |y.configure(return_none=True)
+    |print(y(hello))
+prints
+    |y| hello: 'world'
+    |world
+    |y| hello: 'world'
+    |None    
+    
+
+Improved functionality (0)
+--------------------------
+Ycecream is now fully compatible with (Jupyter) notebooks.
+
+Improved functionality (1)
+--------------------------
+When used from a REPL, usage as a decorator is now possible with the as_decorator parameter, like:
+    >>>@y(as_decorator)
+    >>>def add2(x):
+    >>>    return x + 2
+    >>>print(add2(x))
+    y| called add2(10)
+    y| returned 12 from add2(10) in 0.000312 seconds
+    12
+
+When used from a REPL, usage as a context manager is now possible with the as_context_manager,like
+    >>>with y():
+    >>>    pass 
+    y| enter
+    y| exit in 0.000241 seconds
+
+Note that line number are not available in the REPL.
+
+Bug fix (0)
+-----------
+y.configure() returned the the instance itself rather than None. Fixed.
+
 version 1.1.9  2021-03-17
 =========================
 New functionality (0)

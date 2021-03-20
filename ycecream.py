@@ -4,7 +4,7 @@
 #   |___/  \___| \___| \___||_|    \___| \__,_||_| |_| |_|
 #                       sweeter debugging and benchmarking
 
-__version__ = "1.1.9"
+__version__ = "1.1.10"
 
 """
 See https://github.com/salabim/ycecream for details
@@ -93,6 +93,9 @@ def set_defaults():
     default.context_delimiter = " ==> "
     default.pair_delimiter = ", "
     default.values_only = False
+    default.return_none = False
+    default.decorator = False
+    default.context_manager = False
 
     ycecream_name = Path(__file__).stem
     config = {}
@@ -123,32 +126,23 @@ def no_source_error(s=None):
     raise NotImplementedError(
         """
 Failed to access the underlying source code for analysis. Possible causes:
-- used from interpreter/REPL (e.g. python -i)
 - decorated function/method definition spawns more than one line
 - used from a frozen application (e.g. packaged with PyInstaller)
 - underlying source code was changed during execution"""
     )
 
 
-def check_output(output):
-    if callable(output):
-        return
-    if isinstance(output, (str, Path)):
-        return
-    try:
-        output.write("")
-        return
-    except Exception:
-        pass
-    raise ValueError("output should be a callable, str, Path or open text file.")
 
-def return_args(args):
+def return_args(args, return_none):
+    if return_none:
+        return None
     if len(args) == 0:
         return None
     if len(args) == 1:
         return args[0]
     return args
-    
+
+
 class Y:
     def __init__(
         self,
@@ -170,10 +164,13 @@ class Y:
         wrap_indent=None,
         context_delimiter=None,
         pair_delimiter=None,
-        values_only=None
+        values_only=None,
+        return_none=None,
+        decorator=None,
+        context_manager=None,
     ):
         assign(self, locals(), default)
-        check_output(self.output)
+        self.check()
         self.start_time = time.perf_counter()
 
     def __call__(
@@ -197,25 +194,42 @@ class Y:
         context_delimiter=None,
         pair_delimiter=None,
         values_only=None,
-        as_str=False
+        return_none=None,
+        decorator=None,
+        context_manager=None,
+        as_str=None,
     ):
+        as_str = False if as_str is None else bool(as_str)
 
         Pair = collections.namedtuple("Pair", "left right")
 
         kwargs = {}
         assign(kwargs, locals(), self)
-        
+
         this = Y(**kwargs)
-        if (this.enabled == [] or global_enabled == []) and not as_str:
-            return return_args(args)        
+
+        if (this.enabled == [] or global_enabled == []) and not (as_str or this.decorator or this.context_manager):
+            return return_args(args, this.return_none)
         this.start_time = self.start_time
 
-        check_output(this.output)
+        this.check()
 
-        if not repl:
-            call_frame = inspect.currentframe().f_back
-            filename = call_frame.f_code.co_filename
-            if Path(filename).resolve() == main_file_resolved:
+        call_frame = inspect.currentframe().f_back
+        filename = call_frame.f_code.co_filename
+        if filename in ("<stdin>", "<string>"):
+            filename_name = ""
+            code = "\n\n"
+            this_line = ""
+            this_line_prev = ""
+            line_number = 0
+            parent_function = ""
+        else:
+            try:
+                main_file_resolved = Path(sys.modules["__main__"].__file__).resolve()
+            except AttributeError:
+                main_file_resolved = None
+
+            if (filename.startswith("<") and filename.endswith(">")) or (main_file_resolved is None) or (Path(filename).resolve() == main_file_resolved):
                 filename_name = ""
             else:
                 filename_name = f"[{Path(filename).name}]"
@@ -233,53 +247,57 @@ class Y:
             else:
                 parent_function = f" in {parent_function}()"
             line_number = frame_info.lineno
-            if 0 <= line_number-1 < len(code):
+            if 0 <= line_number - 1 < len(code):
                 this_line = code[line_number - 1].strip()
             else:
                 this_line = ""
-            if 0 <= line_number-2 < len(code):
+            if 0 <= line_number - 2 < len(code):
                 this_line_prev = code[line_number - 2].strip()
             else:
                 this_line_prev = ""
-            if this_line.startswith("@") or this_line_prev.startswith("@"):
-                if as_str:
-                    raise TypeError("as_str may not be True when y used as decorator")
-                for l, line in enumerate(code[line_number - 1 :], line_number):
-                    if line.strip().startswith("def") or line.strip().startswith("class"):
-                        line_number = l
-                        break
-                else:
-                    line_number += 1
-                this.line_number_with_filename_and_parent = f"#{line_number}{filename_name}{parent_function}"
+        if this_line.startswith("@") or this_line_prev.startswith("@") or this.decorator:
+            if as_str:
+                raise TypeError("as_str may not be True when y used as decorator")
 
-                def real_decorator(function):
-                    @functools.wraps(function)
-                    def wrapper(*args, **kwargs):
-                        enter_time = time.perf_counter()
-                        context = this.context()
+            for l, line in enumerate(code[line_number - 1 :], line_number):
+                if line.strip().startswith("def") or line.strip().startswith("class"):
+                    line_number = l
+                    break
+            else:
+                line_number += 1
+            this.line_number_with_filename_and_parent = f"#{line_number}{filename_name}{parent_function}"
 
-                        args_kwargs = [repr(arg) for arg in args] + [f"{str(k)}={repr(v)}" for k, v in kwargs.items()]
-                        function_arguments = f"{function.__name__}({', '.join(args_kwargs)})"
+            def real_decorator(function):
+                @functools.wraps(function)
+                def wrapper(*args, **kwargs):
+                    enter_time = time.perf_counter()
+                    context = this.context()
 
-                        if this.show_enter:
-                            this.do_output(f"{context}called {function_arguments}")
-                        result = function(*args, **kwargs)
-                        duration = time.perf_counter() - enter_time
+                    args_kwargs = [repr(arg) for arg in args] + [f"{str(k)}={repr(v)}" for k, v in kwargs.items()]
+                    function_arguments = f"{function.__name__}({', '.join(args_kwargs)})"
 
-                        context = this.context()
-                        if this.show_exit:
-                            this.do_output(f"{context}returned {repr(result)} from {function_arguments} in {duration:.6f} seconds")
-                        return result
+                    if this.show_enter:
+                        this.do_output(f"{context}called {function_arguments}")
+                    result = function(*args, **kwargs)
+                    duration = time.perf_counter() - enter_time
 
-                    return wrapper
+                    context = this.context()
+                    if this.show_exit:
+                        this.do_output(f"{context}returned {repr(result)} from {function_arguments} in {duration:.6f} seconds")
+                    return result
 
-                if len(args) == 0:
-                    return real_decorator
+                return wrapper
 
-                if len(args) == 1 and callable(args[0]):
-                    return real_decorator(args[0])
-                raise TypeError("arguments are not allowed in y used as decorator")
+            if len(args) == 0:
+                return real_decorator
 
+            if len(args) == 1 and callable(args[0]):
+                return real_decorator(args[0])
+            raise TypeError("arguments are not allowed in y used as decorator")
+
+        if filename in ("<stdin>", "<string>"):
+            this.line_number_with_filename_and_parent = ""
+        else:
             call_node = Source.executing(call_frame).node
             if call_node is None:
                 no_source_error()
@@ -288,22 +306,22 @@ class Y:
 
             this.line_number_with_filename_and_parent = f"#{line_number}{filename_name}{parent_function}"
 
-            if this_line.startswith("with ") or this_line.startswith("with\t"):
-                if as_str:
-                    raise TypeError("as_str may not be True when y used as context manager")
-                if args:
-                    raise TypeError("non-keyword arguments are not allowed when y used as context manager")
+        if this_line.startswith("with ") or this_line.startswith("with\t") or this.context_manager:
+            if as_str:
+                raise TypeError("as_str may not be True when y used as context manager")
+            if args:
+                raise TypeError("non-keyword arguments are not allowed when y used as context manager")
 
-                this.is_context_manager = True
-                return this
-        
+            this.is_context_manager = True
+            return this
+
         if (not this.enabled or not global_enabled) and not as_str:
-            return return_args(args)
+            return return_args(args, this.return_none)
 
         if args:
             context = this.context()
             pairs = []
-            if repl or this.values_only:
+            if filename in ("<stdin>", "<string>") or this.values_only:
                 for right in args:
                     pairs.append(Pair(left="", right=right))
             else:
@@ -367,11 +385,11 @@ class Y:
             this.show_line_number = True
             out = this.context(omit_context_delimiter=True)
 
-        if as_str:     
+        if as_str:
             return out + "\n"
         this.do_output(out)
 
-        return return_args(args)
+        return return_args(args, this.return_none)
 
     def configure(
         self,
@@ -394,10 +412,13 @@ class Y:
         context_delimiter=None,
         pair_delimiter=None,
         values_only=None,
+        return_none=None,
+        decorator=None,
+        context_manager=None,
+
     ):
         assign(self, locals(), self)
-        check_output(self.output)
-        return self
+        self.check()
 
     def new(self, **kwargs):
         return Y(**kwargs)
@@ -422,7 +443,11 @@ class Y:
         wrap_indent=None,
         context_delimiter=None,
         pair_delimiter=None,
-        values_only=None
+        values_only=None,
+        return_none=None,
+        decorator=None,
+        context_manager=None,
+
     ):
         kwargs = {}
         assign(kwargs, locals(), self)
@@ -460,7 +485,7 @@ class Y:
         delattr(self, "is_context_manager")
 
     def context(self, omit_context_delimiter=False):
-        if self.show_line_number and not repl:
+        if self.show_line_number and self.line_number_with_filename_and_parent != "":
             parts = [self.line_number_with_filename_and_parent]
         else:
             parts = []
@@ -504,6 +529,23 @@ class Y:
             else:
                 print(s, file=self.output)
 
+    def check(self):
+        if self.decorator and self.context_manager:
+            raise TypeError("decorator and context_manager can't be specified both.")
+
+        if callable(self.output):
+            return
+        if isinstance(self.output, (str, Path)):
+            return
+        try:
+            self.output.write("")
+            return
+        except Exception:
+            pass
+        raise TypeError("output should be a callable, str, Path or open text file.")
+
+
+
     def serialize_kwargs(self, obj, width):
         kwargs = {key: getattr(self, key) for key in ("sort_dicts", "compact", "indent", "depth") if key in inspect.signature(self.serialize).parameters}
         if "width" in inspect.signature(self.serialize).parameters:
@@ -517,14 +559,9 @@ def enable(value=None):
         global_enabled = value
     return global_enabled
 
+
 codes = {}
 global_enabled = True
-
-try:
-    main_file_resolved = Path(sys.modules["__main__"].__file__).resolve()
-except AttributeError:
-    main_file_resolved = None
-repl = main_file_resolved is None
 
 set_defaults()
 
