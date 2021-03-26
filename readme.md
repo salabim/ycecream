@@ -42,7 +42,7 @@ then `y()` is here to help. With arguments, `y()` inspects itself and prints
 both its own arguments and the values of those arguments.
 
 ```
-from ycecream import y
+import ycecream as y
 
 def add2(i):
     return i + 2
@@ -58,7 +58,7 @@ y| add2(1000): 1002
 Similarly,
 
 ```
-from ycecream import y
+import ycecream as y
 class X:
     a = 3
 world = {"EN": "world", "NL": "wereld", "FR": "monde", "DE": "Welt"}
@@ -90,7 +90,7 @@ then `y()` helps here, too. Without arguments, `y()` inspects itself and
 prints the calling line number and -if applicable- the file name and parent function.
 
 ```
-from ycecream import y
+import ycecream as y
 def add2(i):
     y()
     result = i + 2
@@ -114,7 +114,7 @@ Just call `y()` and you're done. Isn't that sweet?
 pre-existing code.
 
 ```
-from ycecream import y
+import ycecream as y
 def add2(i):
     return i + 2
 b = y(add2(1000))
@@ -131,7 +131,7 @@ When you apply `y()` as a decorator to a function or method, both the entry and 
 The (keyword) arguments passed will be shown and upon return, the return value.
 
 ```
-from ycecream import y
+import ycecream as y
 @y()
 def mul(x, y):
     return x * y
@@ -148,7 +148,7 @@ It is possible to suppress the print-out of either the enter or the exit informa
 the show_enter and show_exit parameters, like:
 
 ```
-from ycecream import y
+inport ycecream as y
 @y(show_exit=False)
 def mul(x, y):
     return x * y
@@ -175,7 +175,7 @@ If you decorate a function or method with y, you will be offered the duration be
 
 That opens the door to simple benchmarking, like:
 ```
-from ycecream import y
+import ycecream as y
 import time
 
 @y(show_enter=False,show_line_number=True)
@@ -244,33 +244,33 @@ y| duration: 1.0001721999999997
 
 For the configuration, it is important to realize that `y` is an instance of the `ycecream.Y` class, which has
 a number of configuration attributes:
-* `prefix`
-* `output`
+* `prefix`/ p
+* `output`/ o
 * `serialize`
-* `show_line_numbert`
-* `show_time`
-* `show_delta`
-* `show_enter`
-* `show_exit`
-* `sort_dicts`
-* `enabled`
-* `line_length`
+* `show_line_number / sln
+* `show_time`/ st
+* `show_delta`/ sd
+* `show_enter`/ se
+* `show_exit`/ sx
+* `sort_dicts
+* `enabled`/ e
+* `line_length`/ ll
 * `compact`
 * `indent`
 * `depth` 
-* `context_delimiter`
-* `pair_delimiter`
-* `values_only`
-*  `return_none`
-*  `decorator`
-*  `context_manager`
+* `context_delimiter`/ cd
+* `pair_delimiter`/ pd
+* `values_only`/ vo
+*  return_none /rn
+*  decorator / d
+*  context_manager / cm
 
 It is perfectly ok to set/get any of these attributes directly.
 
 But, it is also possible to apply configuration directly in the call to `y`:
 So, it is possible to say
 ```
-from ycecream import y
+import ycecream as y
 y(12, prefix="==> ")
 ```
 , which will print
@@ -291,13 +291,18 @@ It is arguably easier to say:
 y.prefix = "==> "
 y(12)
 ```
+or even
+```
+y.p = "==> "
+y(12)
+```
 to print
 ```
 ==> 12
 ```
 Yet another way to configure y is by instantiating Y with the required configuration:
 ```
-y = Y(prefix="==> ")
+y = y.(prefix="==> ")
 y(12)
 ```
 will print
@@ -313,9 +318,9 @@ yd2.cunfigure(show_date=True)
 ```
 After this `yd1` and `yd2` will behave similarly.
 
-## prefix
+## prefix / p
 ```
-from ycecream import y
+import ycecream as y
 y('world', prefix='hello -> ')
 ```
 prints
@@ -327,7 +332,7 @@ hello -> 'world'
 
 ```
 import time
-from ycecream import y
+import ycecream as y
 def unix_timestamp():
     return f"{int(time.time())} "
 hello = "world"
@@ -339,7 +344,7 @@ prints
 1613635601 hello: 'world'
 ```
 
-## output
+## output / o
 This will allow the output to be handled by something else than the default (output being written to stderr).
 
 The `output` attribute can be
@@ -350,7 +355,7 @@ The `output` attribute can be
 
 In the example below, 
 ```
-from ycecream import y
+import ycecream as y
 import sys
 y(1, output=print)
 y(2, output=sys.stdout
@@ -365,7 +370,7 @@ y(4, output="")
 
 As `output` may be any callable, you can even use this to automatically log any `y` output:
 ```
-from ycecream import y
+import ycecream as y
 import logging
 logging.basicConfig(level="INFO")
 log = logging.getLogger("demo")
@@ -393,7 +398,7 @@ Finally, you can specify the following strings:
 ```
 E.g.
 ```
-from ycecream import y
+import ycecream as y
 import sys
 y.configure(output="stdout")
 ```
@@ -406,7 +411,7 @@ for example, to handle non-standard datatypes in a custom fashion.
 The serialize function should accept at least one parameter.
 The function can optionally accept the keyword arguments `width` and `sort_dicts`, `compact`, `indent` and `depth`.
 ```
-from ycecream import y
+import ycecream as y
 def add_len(obj):
     if hasattr(obj, "__len__"):
         add = f" [len={len(obj)}]"
@@ -423,11 +428,11 @@ prints
 y| 7, hello: 'world' [len=5], l: [0, 1, 2, 3, 4, 5, 6] [len=7]
 ```
 
-## show_line_number
+## show_line_number / sln
 If True, adds the `y()` call's filename, line number, and parent function to `y()`'s output.
 
 ```
-from ycecream import Y
+import ycecream as y
 y = Y(show_line_number=True)
 hello="world"
 y(hello)
@@ -440,11 +445,11 @@ Note that if you call `y` without any arguments, the line number is always shown
 
 See below for an explanation of the information provided.
 
-## show_time
+## show_time / st
 If True, adds the current time to `y()`'s output.
 
 ```
-from ycecream import Y
+import ycecream as y
 y =  Y(show_time=True)
 hello="world"
 y(hello)
@@ -454,10 +459,10 @@ prints something like
 y| @ 13:01:47.588125 ==> hello: 'world'
 ```
 
-## show_delta
+## show_delta / sd
 If True, adds the number of seconds since the start of the program to `y()`'s output.
 ```
-from ycecream import y
+import ycecream as y
 import time
 y.configure(show_delta=True)
 allô="monde"
@@ -472,20 +477,20 @@ y| delta=0.021002 ==> hello: 'world'
 y| delta=1.053234 ==> âllo: 'monde'
 ```
 
-## show_enter
+## show_enter / se
 When used as a decorator or context manager, by default, ycecream ouputs a line when the decorated the
 function is called  or the context manager is entered.
 
 With `show_enter=False` this line can be suppressed.
 
-## show_exit
+## show_exit / sx
 When used as a decorator or context manager, by default, ycecream ouputs a line when the decorated the
 function returned or the context manager is exited.
 
 With `show_exit=False` this line can be suppressed.
 
 
-## line_length
+## line_length / ll
 This attribute is used to specify the line length (for wrapping). The default is 80.
 Ycecream always tries to keep all output on one line, but if it can't it will wrap:
 ```
@@ -551,7 +556,7 @@ y|
 
 ## depth
 This attribute is used to specify the depth parameter for `pformat` (see the pprint documentation
-for details). `depth` is `None` by default, which means no restrictions. 
+for details). `depth` is `1000000` by default. 
 ```
 s = "01234567890012345678900123456789001234567890"
 y([s,[s,[s,[s,s]]]])
@@ -606,10 +611,10 @@ y|
 
 
 
-## enabled
+## enabled / e
 Can be used to disable the output:
 ```
-from ycecream import y
+import ycecream as y
 
 y.configure(enabled=False)
 s = 'the world is '
@@ -640,7 +645,7 @@ y| world: {'EN': 'world', 'NL': 'wereld', 'FR': 'monde', 'DE': 'Welt'}
 y| world: {'DE': 'Welt', 'EN': 'world', 'FR': 'monde', 'NL': 'wereld'}
 ```
 
-## context_delimiter
+## context_delimiter / cd
 By default the line_number, time and/or delta are followed by ` ==> `.
 It is possible to change this with the attribute `context_delimiter`:
 ```
@@ -654,7 +659,7 @@ y| @ 12:56:11.341650 ==> a: 'abcd'
 y| @ 12:56:11.485567 ➜ a: 'abcd'
 ```
 
-## pair_delimiter
+## pair_delimiter / pd
 By default, pairs (on one line) are separated by `, `.
 It is possible to change this with the attribute ` pair_delimiter`:
 ```
@@ -670,7 +675,7 @@ prints
 y| a: 'abcd', (b,c): (1, 1000), d: ['y', 'c', 'e', 'c', 'r', 'e', 'a', 'm']
 y| a: 'abcd' | (b,c): (1, 1000) | d: ['y', 'c', 'e', 'c', 'r', 'e', 'a', 'm']
 ```
-## values_only
+## values_only / vo
 If False (the default), both the left-hand side (if possible) and the
 value will be printed. If True, the left_hand side will be suppressed:
 ```
@@ -685,7 +690,7 @@ y| 'world', 'worldworld'
 ```
 The values=True version of y can be seen as a supercharged print/pprint.
 
-## return_none
+## return_none / rn
 Normally, `y()`returns the values passed directly, which is usually fine. However, when used in a notebook
 or REPL, that value will be shown, and that can be annoying. Therefore, if `return_none`is True, `y()`will
 return None and thus not show anything.
@@ -703,7 +708,7 @@ y| (3, 4)
 None
 ```
 
-## decorator
+## decorator / d
 Normally, an ycecream instance can be used as to show values, as a decorator and as a
 context manager.
 
@@ -737,7 +742,7 @@ would fail witn`TypeError: 'NoneType' object is not callable`, but
 would run correctly.
 
 
-## context_manager
+## context_manager / cm
 Normally, an ycecream instance can be used as to show values, as a decorator and as a
 context manager.
 
@@ -771,7 +776,7 @@ would run correctly.
 of written to output.
 
 ```
-from ycecream import y
+import ycecream as y
 hello = "world"
 s = y(hello, as_str=True)
 print(s, end="")
@@ -781,23 +786,19 @@ prints
 y| hello: 'world'
 ```
 # Disabling ycecream's output
-Apart from the attribute `enabled`, it is possible to disable
-ycecreams's output entirely (and of course later re-enabled it) with
-`ycecream.enable(False)` and `ycecream.enable(True)` respectively. The function always returns
-the current (new) setting.
-Note that this function refers to ALL output from ycecream.
+
 ```
-from ycecream import y, enable
-yd = y.clone(show_delta=True)
+import ycecream as y
+yd = y.fork(show_delta=True)
 y(1)
 yd(2)
-enable(False)
+y.enabled = False
 y(3)
 yd(4)
-enable(True)
+y.enabled = True
 y(5)
 yd(6)
-print(enable())
+print(y.enabled)
 ```
 prints
 ```
@@ -815,7 +816,7 @@ ycecream still has to check for usage as a decorator or context manager, which c
 consuming.
 
 In order to speed up a program with disabled ycecream calls, it is possible to specify
-`y.configure(enabled=[])` or `ycecream.enabled([])`, in which case `y` will always just return
+`y.configure(enabled=[]), in which case `y` will always just return
 the given arguments. If ycecream is disabled this way, usage as a `@y()` decorator  or as a `with y():`
 context manager will raise a runtime error, though. The `@y` decorator without parentheses will
 not raise any exception, though.
@@ -880,7 +881,7 @@ E.g. if there is an `ycecream.json` file with the following contents
 ```
 in the same folder as the application, this program:
 ```
-from ycecream import y
+import ycecream as y
 hello = "world"
 y(hello)
 ```
@@ -907,16 +908,16 @@ Note that not-specified attributes will remain the default settings.
 
 For obvious reasons, it is not possible to specify `serialize` in an ycecream.json file.
 
-# Working with multiple instances of Y
-Normally, only the `y()` object (which is an instance of Y) is used.
+# Working with multiple instances of y
+Normally, only the `y()` object is used.
 
 It can be useful to have multiple instances, e.g. when some of the debugging has to be done with context information
 and others requires an alternative prefix.
 
-THere are several ways to obtain a new instance of Y:
+THere are several ways to obtain a new instance of ycecream:
 
-*    by using `Y()`
-*    by using `y.new()`, which is essentially the same as Y, but there's no need to import Y explicitely
+*    by using `y.new()
+*    by using `y.fork()`
 *    by using `y.clone()`, which copies all attributes from y()
 *    with y() used as a context manager
     
@@ -924,8 +925,8 @@ In either case, attributes can be added to override these:
 
 ### Example
 ```
-from ycecream import y, Y
-y_with_line_number = Y(show_line_number=True)
+import ycecream as y
+y_with_line_number = y.clone(show_line_number=True)
 y_with_new_prefix = y.new(prefix="==> ")
 y_with_new_prefix_and_time = y_with_new_prefix.clone(show_time=True)
 hello="world"
@@ -947,6 +948,17 @@ y| hello: 'world'
 ycm exit in 0.041361 seconds
 ```
 
+#Alternative way of importing
+The old style way (and the way IceCream was used) is still available.
+So, instead of
+```
+import ycecream as y
+```
+you can also use
+```
+from ycecream import y
+```
+
 # Test script
 
 On GitHub is a file `test_ycecream.py` that tests (and thus also demonstrates) most of the functionality
@@ -965,8 +977,8 @@ Ycecream may be used in a REPL, but with limited functionality:
   ('hello', 'hellohello')
   ```
 * line numbers are never shown  
-* use as a decorator is only supported when you used as `y(decorator=True)`
-* use as a context manager is only supported when used as `y(context_manager=True)`
+* use as a decorator is only supported when you used as `y(decorator=True)` or `y(d=1)`
+* use as a context manager is only supported when used as `y(context_manager=True)`or `y(cm=1)`
 
 # Alternative installation
 With `install ycecream from github.py`, you can install the ycecream.py directly from GitHub to the site packages (as if it was a pip install).

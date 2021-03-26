@@ -10,7 +10,8 @@ with tempfile.TemporaryDirectory() as tmpdir:
     with open(json_filename, "w") as f:
         print("{}", file=f)
     sys.path = [tmpdir] + sys.path
-    from ycecream import y
+    import ycecream as y
+    from ycecream import y as z
     import ycecream
     sys.path.pop(0)
 
@@ -98,8 +99,12 @@ def test_no_arguments(capsys):
 def test_one_arguments(capsys):
     hello = "world"
     result = y(hello)
+    z(hello)
     out, err = capsys.readouterr()
-    assert err == "y| hello: 'world'\n"
+    assert err == """\
+y| hello: 'world'
+y| hello: 'world'
+"""
     assert result == hello
 
 
@@ -161,7 +166,7 @@ def test_values_only():
 
 def test_calls():
     with pytest.raises(TypeError):
-        ycecream.Y(a=1)
+        y.new(a=1)
     with pytest.raises(TypeError):
         y.clone(a=1)
     with pytest.raises(TypeError):
@@ -287,7 +292,8 @@ def test_as_str(capsys):
             
 def test_clone():
     hello = "world"
-    z = y.clone(prefix="z| ")
+    z = y.clone()
+    z.configure(prefix="z| ")
     sy = y(hello, as_str=True)
     with y.preserve():
         y.configure(show_line_number=True)
@@ -470,7 +476,7 @@ def test_json_read(tmpdir):
     ycecream.set_defaults()
     sys.path.pop(0)
 
-    y1 = ycecream.Y()
+    y1 = y.new()
 
     s = y1(3, as_str=True)
     assert s == "xxx3\n"
@@ -501,12 +507,20 @@ def test_json_read(tmpdir):
     ycecream.set_defaults()
     sys.path.pop(0)
 
-    y1 = ycecream.Y()
+    y1 = y.new()
 
     s = y1(3, as_str=True)
     assert s == "yyy3\n"
-    sys.modules["_ycecream_ignore_json_"] = True  # indicator for ycecream to not read from ycecream.json
+    
+    tmpdir = Path(tmpdir) / "ycecream"
+    tmpdir.mkdir()
+    json_filename = Path(tmpdir) / "ycecream.json"
+    with open(json_filename, "w") as f:
+        print('{}', file=f)
+
+    sys.path = [tmpdir] + sys.path
     ycecream.set_defaults()
+    sys.path.pop(0)    
 
 
 def test_wrapping(capsys):
@@ -662,10 +676,7 @@ def test_enabled(capsys):
         y.configure(enabled=True)
         y("Three")
 
-        ycecream.enable(False)
-        y("Four")
-        ycecream.enable(True)
-        y("Five")
+
 
     out, err = capsys.readouterr()
     assert (
@@ -673,7 +684,6 @@ def test_enabled(capsys):
         == """\
 y| 'One'
 y| 'Three'
-y| 'Five'
 """
     )
 

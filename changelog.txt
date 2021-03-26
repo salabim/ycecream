@@ -1,3 +1,85 @@
+version 1.2.0  2021-03-2
+==========================
+New functionality (0)
+---------------------
+Instead of
+    from ycecream import y
+it is now possible to use
+    import ycecream as y
+, which is arguably easier to remember and saves 2 keystrokes: every little bit helps.
+
+The readme now uses the 'import ycecream as y' style, although the
+'from ycecream import y' is still available.
+
+New functionality (1)
+---------------------
+From this version on, it is possible to fork an ycecream instance.
+The forked instance will depend on (ingherit from) the attributes of the parent instance.
+That means that, unless overridden in the forked instance, a change of an attribute in the
+parent instance will be propagated into the forked instance. E.g.
+    |y1 = y.fork()
+    |y2 = y.fork()
+    |y2.configure(prefix="y2| ")
+    |y1(1000)
+    |y2(2000)
+    |y.configure(prefix="==>")  # this also affects y1.prefix
+    |y1(1001)
+    |y2(2001)
+prints
+    |y| 1000
+    |y2| 2000
+    |==>1001
+    |y2| 2001
+Because of this new functionality, the ycecream.enable() functionality is not required anymore
+and phased out:
+    |y1 = y.fork(show_line_numbers=True, prefix="y1| ")
+    |y2 = y.fork(show_delta=True, prefix="y2| ")
+    |y1(1000)
+    |y2(2000)
+    |y.enabled = False
+    |y1(1001)
+    |y2(2001)
+    |y.configure(enabled=True)
+    |y1(1002)
+    |y2(2002)
+prints
+    |y1| #16 ==> 1000
+    |y2| delta=0.052 ==> 2000
+    |y1| #22 ==> 1002
+    |y2| delta=0.235 ==> 2002
+
+New functionality (2)
+---------------------
+A number of shortcuts for attributes have been defined:
+    p   prefix
+    o   output
+    s   serialize
+    sln show_line_number
+    st  show_time
+    sd  show_delta
+    se  show_enter
+    sx  show_exit
+    e   enabled
+    ll  line_length
+    vo  values_only
+    rn  return_none
+    d   decorator
+    cm  context_manager
+So, 
+    |y.configure(prefix="==>", show_time=True)
+is equivalent to    
+    |y.configure(p="==>", st=True)
+This functionality is also present directly on 'attributes':
+    |y.prefix = "==>"
+is equivalent to
+    |y.p = "==>"
+
+Internal changes (0)
+====================
+Complete overhaul of the attributes and inheritance of instances.
+Arguments do not default to None, but to ycecream.nv .
+The __init__.py file in PyPI is different from before to support
+
 version 1.1.10  2021-03-20
 ==========================
 New functionality (0)
@@ -23,7 +105,7 @@ If you want to use a y as a decorator and still want 'fast disabling':
     |@y(as_decorator=True):
     |def add2(x):
     |     return x + 2
-    |x34 = add2(30)
+    |x34 = add2(30)  
 prints nothing, whereas
     |y.configure(enabled=[])
     |@y():

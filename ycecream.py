@@ -4,7 +4,7 @@
 #   |___/  \___| \___| \___||_|    \___| \__,_||_| |_| |_|
 #                       sweeter debugging and benchmarking
 
-__version__ = "1.1.10"
+__version__ = "1.2.0"
 
 """
 See https://github.com/salabim/ycecream for details
@@ -15,7 +15,6 @@ Inspired by IceCream "Never use print() to debug again".
 Also contains some of the original code.
 IceCream was written by Ansgar Grunseid / grunseid.com / grunseid@gmail.com
 """
-
 import inspect
 import sys
 import datetime
@@ -29,45 +28,30 @@ import logging
 import collections
 import numbers
 
+
+
 Path = pathlib.Path
 
+nv = object()
 
 class default:
     pass
 
 
-def assign(dest, source0, source1=None):
-    """
-    Parameters
-    ----------
-    dest : dict or object with attributes
-        destination
-
-    source0 : dict or object with attributes 
-        primary source (uses source0's value if is not None)
-
-    source1 : dict or object with attributes, optional
-        secundary source (uses source1's value if source0's value is None)
-
-    Note
-    ----
-    copies all attributes as in default (either as item or as attribute)
-    """
-    for key in vars(default):
-        if not key.startswith("__"):
-            if isinstance(source0, dict):
-                val = source0[key]
-            else:
-                val = getattr(source0, key)
-            if val is None and source1 is not None:
-                if isinstance(source1, dict):
-                    val = source1[key]
-                else:
-                    val = getattr(source1, key)
-            if isinstance(dest, dict):
-                dest[key] = val
-            else:
-                setattr(dest, key, val)
+shortcut_to_name = {
+    "p": "prefix",
+    "sln": "show_line_number",
+    "st": "show_time",
+    "sd": "show_delta",
+    "se": "show_enter",
+    "sx": "show_exit",
+    "e": "enabled",
+    "ll": "line_length",
+    "vo": "values_only",
+    "rn": "return_none",
+    "d": "decorator",
+    "cm": "context_manager",
+}
 
 
 def ycecream_pformat(obj, sort_dicts, width, compact, indent, depth):
@@ -88,7 +72,7 @@ def set_defaults():
     default.line_length = 80
     default.compact = False
     default.indent = 1
-    default.depth = None
+    default.depth = 1000000
     default.wrap_indent = "    "
     default.context_delimiter = " ==> "
     default.pair_delimiter = ", "
@@ -119,6 +103,8 @@ def set_defaults():
         else:
             raise ValueError(f"error in {path}: key {k} not recognized")
 
+def __call__(*args, **kwargs):
+    return y(*args, **kwargs)
 
 def no_source_error(s=None):
     if s is not None:
@@ -132,7 +118,6 @@ Failed to access the underlying source code for analysis. Possible causes:
     )
 
 
-
 def return_args(args, return_none):
     if return_none:
         return None
@@ -143,79 +128,151 @@ def return_args(args, return_none):
     return args
 
 
-class Y:
+class _Y:
     def __init__(
         self,
         *,
-        prefix=None,
-        output=None,
-        serialize=None,
-        show_line_number=None,
-        show_time=None,
-        show_delta=None,
-        show_enter=None,
-        show_exit=None,
-        sort_dicts=None,
-        enabled=None,
-        line_length=None,
-        compact=None,
-        indent=None,
-        depth=None,
-        wrap_indent=None,
-        context_delimiter=None,
-        pair_delimiter=None,
-        values_only=None,
-        return_none=None,
-        decorator=None,
-        context_manager=None,
+        prefix=nv,
+        output=nv,
+        serialize=nv,
+        show_line_number=nv,
+        show_time=nv,
+        show_delta=nv,
+        show_enter=nv,
+        show_exit=nv,
+        sort_dicts=nv,
+        enabled=nv,
+        line_length=nv,
+        compact=nv,
+        indent=nv,
+        depth=nv,
+        wrap_indent=nv,
+        context_delimiter=nv,
+        pair_delimiter=nv,
+        values_only=nv,
+        return_none=nv,
+        decorator=nv,
+        context_manager=nv,
+        _parent=nv,
+        **kwargs
     ):
-        assign(self, locals(), default)
+        self._attributes = {}
+        if _parent is nv:
+            self._parent = default
+        else:
+            self._parent = _parent
+        for key in vars(default):
+            setattr(self, key, None)
+
+        if _parent == default:
+            func = "y.new()"
+        else:
+            func = "y.fork()"
+        self.assign(kwargs, locals(), func=func)
+
         self.check()
         self.start_time = time.perf_counter()
+
+    def __repr__(self):
+        pairs = []
+        for key in vars(default):
+            if not key.startswith("__"):
+                value = getattr(self, key)
+                if not callable(value):
+                    pairs.append(f"{key}={repr(value)}")
+        return f"y.new({', '.join(pairs)})"
+
+    def __getattr__(self, item):
+        if item in shortcut_to_name:
+            item = shortcut_to_name[item]
+        if item in self._attributes:
+            if self._attributes[item] is None:
+                return getattr(self._parent, item)
+            else:
+                return self._attributes[item]
+        raise AttributeError(f"{item} not found")
+
+    def __setattr__(self, item, value):
+        if item in shortcut_to_name:
+            item = shortcut_to_name[item]
+
+        if item in ["_attributes"]:
+            super().__setattr__(item, value)
+        else:
+            self._attributes[item] = value
+
+
+
+    def assign(self, shortcuts, source, func):
+        for key, value in shortcuts.items():
+            if key in shortcut_to_name:
+                if value is not nv:
+                    full_name = shortcut_to_name[key]
+                    if source[full_name] is nv:
+                        source[full_name] = value
+                    else:
+                        raise ValueError(f"can't use {key} and {full_name} in {func}")
+            else:
+                raise TypeError(f"{func} got an unexpected keyword argument {key}")
+        for key, value in source.items():
+            if value is not nv:
+                setattr(self, key, value)
+
+    def fork(self, **kwargs):
+        return _Y(**kwargs, _parent=self)
 
     def __call__(
         self,
         *args,
-        prefix=None,
-        output=None,
-        serialize=None,
-        show_line_number=None,
-        show_time=None,
-        show_delta=None,
-        show_enter=None,
-        show_exit=None,
-        sort_dicts=None,
-        enabled=None,
-        line_length=None,
-        compact=None,
-        indent=None,
-        depth=None,
-        wrap_indent=None,
-        context_delimiter=None,
-        pair_delimiter=None,
-        values_only=None,
-        return_none=None,
-        decorator=None,
-        context_manager=None,
-        as_str=None,
+        prefix=nv,
+        output=nv,
+        serialize=nv,
+        show_line_number=nv,
+        show_time=nv,
+        show_delta=nv,
+        show_enter=nv,
+        show_exit=nv,
+        sort_dicts=nv,
+        enabled=nv,
+        line_length=nv,
+        compact=nv,
+        indent=nv,
+        depth=nv,
+        wrap_indent=nv,
+        context_delimiter=nv,
+        pair_delimiter=nv,
+        values_only=nv,
+        return_none=nv,
+        decorator=nv,
+        context_manager=nv,
+        as_str=nv,
+        **kwargs
     ):
-        as_str = False if as_str is None else bool(as_str)
+        as_str = False if as_str is nv else bool(as_str)
+
+        self.is_context_manager = False
 
         Pair = collections.namedtuple("Pair", "left right")
 
-        kwargs = {}
-        assign(kwargs, locals(), self)
+        this = self.fork()
+        this.assign(kwargs, locals(), func="__call__")
 
-        this = Y(**kwargs)
-
-        if (this.enabled == [] or global_enabled == []) and not (as_str or this.decorator or this.context_manager):
+        if this.enabled == [] and not (as_str or this.decorator or this.context_manager):
             return return_args(args, this.return_none)
         this.start_time = self.start_time
 
         this.check()
 
-        call_frame = inspect.currentframe().f_back
+        call_frame = inspect.currentframe()
+        filename0 = call_frame.f_code.co_filename
+
+        call_frame = call_frame.f_back
         filename = call_frame.f_code.co_filename
+
+        if filename == filename0:
+            call_frame = call_frame.f_back
+            filename = call_frame.f_code.co_filename
+
         if filename in ("<stdin>", "<string>"):
             filename_name = ""
             code = "\n\n"
@@ -315,7 +372,7 @@ class Y:
             this.is_context_manager = True
             return this
 
-        if (not this.enabled or not global_enabled) and not as_str:
+        if not this.enabled and not as_str:
             return return_args(args, this.return_none)
 
         if args:
@@ -394,71 +451,73 @@ class Y:
     def configure(
         self,
         *,
-        prefix=None,
-        output=None,
-        serialize=None,
-        show_line_number=None,
-        show_time=None,
-        show_delta=None,
-        show_enter=None,
-        show_exit=None,
-        sort_dicts=None,
-        enabled=None,
-        line_length=None,
-        compact=None,
-        indent=None,
-        depth=None,
-        wrap_indent=None,
-        context_delimiter=None,
-        pair_delimiter=None,
-        values_only=None,
-        return_none=None,
-        decorator=None,
-        context_manager=None,
-
+        prefix=nv,
+        output=nv,
+        serialize=nv,
+        show_line_number=nv,
+        show_time=nv,
+        show_delta=nv,
+        show_enter=nv,
+        show_exit=nv,
+        sort_dicts=nv,
+        enabled=nv,
+        line_length=nv,
+        compact=nv,
+        indent=nv,
+        depth=nv,
+        wrap_indent=nv,
+        context_delimiter=nv,
+        pair_delimiter=nv,
+        values_only=nv,
+        return_none=nv,
+        decorator=nv,
+        context_manager=nv,
+        **kwargs
     ):
-        assign(self, locals(), self)
+        self.assign(kwargs, locals(), "configure()")
         self.check()
+        return self
 
     def new(self, **kwargs):
-        return Y(**kwargs)
+        return _Y(**kwargs)
 
     def clone(
         self,
         *,
-        prefix=None,
-        output=None,
-        serialize=None,
-        show_line_number=None,
-        show_time=None,
-        show_delta=None,
-        show_enter=None,
-        show_exit=None,
-        sort_dicts=None,
-        enabled=None,
-        line_length=None,
-        compact=None,
-        indent=None,
-        depth=None,
-        wrap_indent=None,
-        context_delimiter=None,
-        pair_delimiter=None,
-        values_only=None,
-        return_none=None,
-        decorator=None,
-        context_manager=None,
+        prefix=nv,
+        output=nv,
+        serialize=nv,
+        show_line_number=nv,
+        show_time=nv,
+        show_delta=nv,
+        show_enter=nv,
+        show_exit=nv,
+        sort_dicts=nv,
+        enabled=nv,
+        line_length=nv,
+        compact=nv,
+        indent=nv,
+        depth=nv,
+        wrap_indent=nv,
+        context_delimiter=nv,
+        pair_delimiter=nv,
+        values_only=nv,
+        return_none=nv,
+        decorator=nv,
+        context_manager=nv,
+        **kwargs):
+        this = _Y(_parent=self._parent)
+        this.assign({}, self._attributes, func="clone()")
+        this.assign(kwargs, locals(), func="clone()")
 
-    ):
-        kwargs = {}
-        assign(kwargs, locals(), self)
-        return Y(**kwargs)
+
+        return this
 
     @contextlib.contextmanager
     def preserve(self):
-        save = {}
-        assign(save, self)
+        save = dict(self._attributes)
         yield
-        self.configure(**save)
+        self._attributes = save
 
     @property
     def delta(self):
@@ -482,7 +541,7 @@ class Y:
             context = self.context()
             duration = time.perf_counter() - self.enter_time
             self.do_output(f"{context}exit in {duration:.6f} seconds")
-        delattr(self, "is_context_manager")
+        self.is_context_manager = False
 
     def context(self, omit_context_delimiter=False):
         if self.show_line_number and self.line_number_with_filename_and_parent != "":
@@ -503,7 +562,7 @@ class Y:
         return (self.prefix() if callable(self.prefix) else self.prefix) + context
 
     def do_output(self, s):
-        if global_enabled and self.enabled:
+        if self.enabled:
             if callable(self.output):
                 self.output(s)
             elif self.output == "stderr":
@@ -530,6 +589,7 @@ class Y:
                 print(s, file=self.output)
 
     def check(self):
+
         if self.decorator and self.context_manager:
             raise TypeError("decorator and context_manager can't be specified both.")
 
@@ -544,8 +604,6 @@ class Y:
             pass
         raise TypeError("output should be a callable, str, Path or open text file.")
 
-
-
     def serialize_kwargs(self, obj, width):
         kwargs = {key: getattr(self, key) for key in ("sort_dicts", "compact", "indent", "depth") if key in inspect.signature(self.serialize).parameters}
         if "width" in inspect.signature(self.serialize).parameters:
@@ -553,19 +611,42 @@ class Y:
         return self.serialize(obj, **kwargs)
 
 
-def enable(value=None):
-    global global_enabled
-    if value is not None:
-        global_enabled = value
-    return global_enabled
-
-
 codes = {}
-global_enabled = True
 
 set_defaults()
+y = _Y()
 
-y = Y()
+class YcecreamModule():
+
+    def __init__(self, wrapped):
+        self._wrapped = wrapped
+
+    def __getattr__(self, attr):
+        return object.__getattribute__(self._wrapped, attr)
+
+    def __call__(self, *args, **kwargs):
+        return self._wrapped.y(*args, **kwargs)
+
+    def fork(self, *args, **kwargs):
+        return self._wrapped.y.fork(*args, **kwargs)
+
+    def configure(self, *args, **kwargs):
+        return self._wrapped.y.configure(*args, **kwargs)
+
+    def clone(self, *args, **kwargs):
+        return self._wrapped.y.clone(*args, **kwargs)
+
+    def new(self, *args, **kwargs):
+        return self._wrapped.y.new(*args, **kwargs)
+
+    def preserve(self, *args, **kwargs):
+        return self._wrapped.y.preserve(*args, **kwargs)
+
+sys.modules[__name__] = YcecreamModule(sys.modules[__name__])
+
+
+
+
 
 # source of asttokens.util
 
