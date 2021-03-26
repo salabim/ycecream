@@ -127,9 +127,14 @@ def _install(files, url=None):
 
     file = "__init__.py"
     if file not in file_contents:
-        file_contents[file] = ("from ." + package + " import *\n").encode()
-        if version != "unknown":
-            file_contents[file] += ("from ." + package + " import __version__\n").encode()
+        file_contents[file] = '''\
+from .ycecream import YcecreamModule, y, default, set_defaults
+from .ycecream import __version__
+import sys
+
+sys.modules[__name__] = YcecreamModule(sys.modules[__name__])
+'''.encode()
+
     if sys.platform.startswith("linux") or (sys.platform == "ios"):
         search_in = sys.path
     else:
