@@ -42,7 +42,7 @@ then `y()` is here to help. With arguments, `y()` inspects itself and prints
 both its own arguments and the values of those arguments.
 
 ```
-import ycecream as y
+from ycecream import y
 
 def add2(i):
     return i + 2
@@ -58,7 +58,7 @@ y| add2(1000): 1002
 Similarly,
 
 ```
-import ycecream as y
+from ycecream import y
 class X:
     a = 3
 world = {"EN": "world", "NL": "wereld", "FR": "monde", "DE": "Welt"}
@@ -90,7 +90,7 @@ then `y()` helps here, too. Without arguments, `y()` inspects itself and
 prints the calling line number and -if applicable- the file name and parent function.
 
 ```
-import ycecream as y
+from ycecream import y
 def add2(i):
     y()
     result = i + 2
@@ -114,7 +114,7 @@ Just call `y()` and you're done. Isn't that sweet?
 pre-existing code.
 
 ```
-import ycecream as y
+from ycecream import y
 def add2(i):
     return i + 2
 b = y(add2(1000))
@@ -131,7 +131,7 @@ When you apply `y()` as a decorator to a function or method, both the entry and 
 The (keyword) arguments passed will be shown and upon return, the return value.
 
 ```
-import ycecream as y
+from ycecream import y
 @y()
 def mul(x, y):
     return x * y
@@ -175,7 +175,7 @@ If you decorate a function or method with y, you will be offered the duration be
 
 That opens the door to simple benchmarking, like:
 ```
-import ycecream as y
+from ycecream import y
 import time
 
 @y(show_enter=False,show_line_number=True)
@@ -270,7 +270,7 @@ It is perfectly ok to set/get any of these attributes directly.
 But, it is also possible to apply configuration directly in the call to `y`:
 So, it is possible to say
 ```
-import ycecream as y
+from ycecream import y
 y(12, prefix="==> ")
 ```
 , which will print
@@ -320,7 +320,7 @@ After this `yd1` and `yd2` will behave similarly.
 
 ## prefix / p
 ```
-import ycecream as y
+from ycecream import y
 y('world', prefix='hello -> ')
 ```
 prints
@@ -332,7 +332,7 @@ hello -> 'world'
 
 ```
 import time
-import ycecream as y
+from ycecream import y
 def unix_timestamp():
     return f"{int(time.time())} "
 hello = "world"
@@ -355,7 +355,7 @@ The `output` attribute can be
 
 In the example below, 
 ```
-import ycecream as y
+from ycecream import y
 import sys
 y(1, output=print)
 y(2, output=sys.stdout
@@ -370,7 +370,7 @@ y(4, output="")
 
 As `output` may be any callable, you can even use this to automatically log any `y` output:
 ```
-import ycecream as y
+from ycecream import y
 import logging
 logging.basicConfig(level="INFO")
 log = logging.getLogger("demo")
@@ -398,7 +398,7 @@ Finally, you can specify the following strings:
 ```
 E.g.
 ```
-import ycecream as y
+from ycecream import y
 import sys
 y.configure(output="stdout")
 ```
@@ -411,7 +411,7 @@ for example, to handle non-standard datatypes in a custom fashion.
 The serialize function should accept at least one parameter.
 The function can optionally accept the keyword arguments `width` and `sort_dicts`, `compact`, `indent` and `depth`.
 ```
-import ycecream as y
+from ycecream import y
 def add_len(obj):
     if hasattr(obj, "__len__"):
         add = f" [len={len(obj)}]"
@@ -432,7 +432,7 @@ y| 7, hello: 'world' [len=5], l: [0, 1, 2, 3, 4, 5, 6] [len=7]
 If True, adds the `y()` call's filename, line number, and parent function to `y()`'s output.
 
 ```
-import ycecream as y
+from ycecream import y
 y = Y(show_line_number=True)
 hello="world"
 y(hello)
@@ -449,7 +449,7 @@ See below for an explanation of the information provided.
 If True, adds the current time to `y()`'s output.
 
 ```
-import ycecream as y
+from ycecream import y
 y =  Y(show_time=True)
 hello="world"
 y(hello)
@@ -462,7 +462,7 @@ y| @ 13:01:47.588125 ==> hello: 'world'
 ## show_delta / sd
 If True, adds the number of seconds since the start of the program to `y()`'s output.
 ```
-import ycecream as y
+from ycecream import y
 import time
 y.configure(show_delta=True)
 allô="monde"
@@ -614,7 +614,7 @@ y|
 ## enabled / e
 Can be used to disable the output:
 ```
-import ycecream as y
+from ycecream import y
 
 y.configure(enabled=False)
 s = 'the world is '
@@ -776,7 +776,7 @@ would run correctly.
 of written to output.
 
 ```
-import ycecream as y
+from ycecream import y
 hello = "world"
 s = y(hello, as_str=True)
 print(s, end="")
@@ -788,7 +788,7 @@ y| hello: 'world'
 # Disabling ycecream's output
 
 ```
-import ycecream as y
+from ycecream import y
 yd = y.fork(show_delta=True)
 y(1)
 yd(2)
@@ -881,7 +881,7 @@ E.g. if there is an `ycecream.json` file with the following contents
 ```
 in the same folder as the application, this program:
 ```
-import ycecream as y
+from ycecream import y
 hello = "world"
 y(hello)
 ```
@@ -925,7 +925,7 @@ In either case, attributes can be added to override these:
 
 ### Example
 ```
-import ycecream as y
+from ycecream import y
 y_with_line_number = y.clone(show_line_number=True)
 y_with_new_prefix = y.new(prefix="==> ")
 y_with_new_prefix_and_time = y_with_new_prefix.clone(show_time=True)
@@ -952,7 +952,7 @@ ycm exit in 0.041361 seconds
 The old style way (and the way IceCream was used) is still available.
 So, instead of
 ```
-import ycecream as y
+from ycecream import y
 ```
 you can also use
 ```

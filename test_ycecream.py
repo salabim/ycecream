@@ -10,8 +10,7 @@ with tempfile.TemporaryDirectory() as tmpdir:
     with open(json_filename, "w") as f:
         print("{}", file=f)
     sys.path = [tmpdir] + sys.path
-    import ycecream as y
-    from ycecream import y as z
+    from ycecream import y
     import ycecream
     sys.path.pop(0)
 
@@ -99,7 +98,7 @@ def test_no_arguments(capsys):
 def test_one_arguments(capsys):
     hello = "world"
     result = y(hello)
-    z(hello)
+    y(hello)
     out, err = capsys.readouterr()
     assert err == """\
 y| hello: 'world'
@@ -141,6 +140,9 @@ def test_time_delta():
     stime1 = y(1, show_time=True, as_str=True) 
     assert sdelta0 != sdelta1     
     assert stime0 != stime1
+    y.delta = 10
+    time.sleep(0.001)
+    assert 10.001 < y.delta < 11
              
 def test_dynamic_prefix(capsys):
     i = 0

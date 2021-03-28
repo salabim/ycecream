@@ -4,7 +4,7 @@
 #   |___/  \___| \___| \___||_|    \___| \__,_||_| |_| |_|
 #                       sweeter debugging and benchmarking
 
-__version__ = "1.2.0"
+__version__ = "1.2.1"
 
 """
 See https://github.com/salabim/ycecream for details
@@ -29,10 +29,10 @@ import collections
 import numbers
 
 
-
 Path = pathlib.Path
 
 nv = object()
+
 
 class default:
     pass
@@ -80,6 +80,7 @@ def set_defaults():
     default.return_none = False
     default.decorator = False
     default.context_manager = False
+    default.start_time = time.perf_counter()
 
     ycecream_name = Path(__file__).stem
     config = {}
@@ -103,8 +104,10 @@ def set_defaults():
         else:
             raise ValueError(f"error in {path}: key {k} not recognized")
 
+
 def __call__(*args, **kwargs):
     return y(*args, **kwargs)
+
 
 def no_source_error(s=None):
     if s is not None:
@@ -171,7 +174,6 @@ class _Y:
         self.assign(kwargs, locals(), func=func)
 
         self.check()
-        self.start_time = time.perf_counter()
 
     def __repr__(self):
         pairs = []
@@ -183,6 +185,8 @@ class _Y:
         return f"y.new({', '.join(pairs)})"
 
     def __getattr__(self, item):
+        if item == "delta":
+            return time.perf_counter() - self.start_time
         if item in shortcut_to_name:
             item = shortcut_to_name[item]
         if item in self._attributes:
@@ -193,6 +197,12 @@ class _Y:
         raise AttributeError(f"{item} not found")
 
     def __setattr__(self, item, value):
+        if item == "delta":
+            if value is None:
+                self.start_time = None
+            else:
+                self.start_time = time.perf_counter() - value
+            return
         if item in shortcut_to_name:
             item = shortcut_to_name[item]
 
@@ -200,8 +210,6 @@ class _Y:
             super().__setattr__(item, value)
         else:
             self._attributes[item] = value
-
-
 
     def assign(self, shortcuts, source, func):
         for key, value in shortcuts.items():
@@ -505,11 +513,11 @@ class _Y:
         return_none=nv,
         decorator=nv,
         context_manager=nv,
-        **kwargs):
+        **kwargs
+    ):
         this = _Y(_parent=self._parent)
         this.assign({}, self._attributes, func="clone()")
         this.assign(kwargs, locals(), func="clone()")
-
 
         return this
 
@@ -518,14 +526,6 @@ class _Y:
         save = dict(self._attributes)
         yield
         self._attributes = save
-
-    @property
-    def delta(self):
-        return time.perf_counter() - self.start_time
-
-    @delta.setter
-    def delta(self, t):
-        self.start_time = time.perf_counter() + t
 
     def __enter__(self):
         if not hasattr(self, "is_context_manager"):
@@ -615,38 +615,6 @@ codes = {}
 
 set_defaults()
 y = _Y()
-
-class YcecreamModule():
-
-    def __init__(self, wrapped):
-        self._wrapped = wrapped
-
-    def __getattr__(self, attr):
-        return object.__getattribute__(self._wrapped, attr)
-
-    def __call__(self, *args, **kwargs):
-        return self._wrapped.y(*args, **kwargs)
-
-    def fork(self, *args, **kwargs):
-        return self._wrapped.y.fork(*args, **kwargs)
-
-    def configure(self, *args, **kwargs):
-        return self._wrapped.y.configure(*args, **kwargs)
-
-    def clone(self, *args, **kwargs):
-        return self._wrapped.y.clone(*args, **kwargs)
-
-    def new(self, *args, **kwargs):
-        return self._wrapped.y.new(*args, **kwargs)
-
-    def preserve(self, *args, **kwargs):
-        return self._wrapped.y.preserve(*args, **kwargs)
-
-sys.modules[__name__] = YcecreamModule(sys.modules[__name__])
-
-
-
-
 
 # source of asttokens.util
 

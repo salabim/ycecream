@@ -1,5 +1,19 @@
-version 1.2.0  2021-03-2
-==========================
+version 1.2.1  2021-03-28
+=========================
+New functionality (0)
+---------------------
+Assigning delta a value is now alo propogated to any forked instances.
+Also the delta value is copied to a cloned version.
+
+Removed functionality (0)
+-------------------------
+The just introduced way of importing y with
+    import ycecream as y
+has been removed as it caused a lot of problems and was not very stable.
+
+
+version 1.2.0  2021-03-26
+=========================
 New functionality (0)
 ---------------------
 Instead of
