@@ -947,7 +947,7 @@ ycm hello: 'world'
 y| hello: 'world'
 ycm exit in 0.041361 seconds
 ```
-```
+
 
 # Test script
 
