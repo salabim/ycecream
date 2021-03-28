@@ -947,16 +947,6 @@ ycm hello: 'world'
 y| hello: 'world'
 ycm exit in 0.041361 seconds
 ```
-
-#Alternative way of importing
-The old style way (and the way IceCream was used) is still available.
-So, instead of
-```
-from ycecream import y
-```
-you can also use
-```
-from ycecream import y
 ```
 
 # Test script
