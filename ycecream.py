@@ -6,7 +6,7 @@ from __future__ import print_function
 #   |___/  \___| \___| \___||_|    \___| \__,_||_| |_| |_|
 #                       sweeter debugging and benchmarking
 
-__version__ = "1.3.0"
+__version__ = "1.3.1"
 
 """
 See https://github.com/salabim/ycecream for details
