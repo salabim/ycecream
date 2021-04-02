@@ -1,3 +1,41 @@
+version 1.3.0  2021-04-02
+=========================
+New functionality (0)
+---------------------
+The ycecream.json file may now also contain shorthand names,
+like p for prefix.
+
+New functionality (1)
+---------------------
+The attribute compact now has a shorthand name: c
+So,
+    y(d, compact=True)
+is equivalent to
+    y(d, c=1) 
+
+Changes in install ycecream.py (0)
+----------------------------------
+install ycecream.py will now also copy ycecream.json to site-packages, if present.
+
+
+Older versions of Python support (0)
+------------------------------------
+Ycecream now runs also under Python 2.7.
+The implementation required a lot of changes, most notably phasing out pathlib, f-strings,
+some syntax incompatibilities and function signatures.
+Under Python 2.7, the compact and sort_dicts attributes are ignored as the 2.7 version of
+pprint.pformat (which is imported) does not support these parameters. 
+
+Also, the test script needed a lot of changes to be compatible with Python 2.7 and Python 3.x
+
+Under Python 2.7, the scripts
+    install ycecream.py
+and
+    install ycecream from github.py
+require pathlib to be installed.
+
+It is most likely that ycecream will run under Python 3.4 and 3.5, but that has not been tested (yet).
+
 version 1.2.1  2021-03-28
 =========================
 New functionality (0)
@@ -79,9 +117,9 @@ A number of shortcuts for attributes have been defined:
     rn  return_none
     d   decorator
     cm  context_manager
-So, 
+So,
     |y.configure(prefix="==>", show_time=True)
-is equivalent to    
+is equivalent to
     |y.configure(p="==>", st=True)
 This functionality is also present directly on 'attributes':
     |y.prefix = "==>"
@@ -104,7 +142,7 @@ So, the table presented with version 1.1.9 should read now:
 ---------------------------------------------------------------------
                       enabled=True      enabled=False       enabled=[]
 ---------------------------------------------------------------------
-execution speed             normal             normal             fast     
+execution speed             normal             normal             fast
 y()                         normal          no output        no output
 @y                          normal          no output        no output
 y(as_decorator=True)        normal          no output        no output
@@ -119,7 +157,7 @@ If you want to use a y as a decorator and still want 'fast disabling':
     |@y(as_decorator=True):
     |def add2(x):
     |     return x + 2
-    |x34 = add2(30)  
+    |x34 = add2(30)
 prints nothing, whereas
     |y.configure(enabled=[])
     |@y():
@@ -139,7 +177,7 @@ would also print nothing. It would however not run as fast as possible for ordin
 New functionality (1)
 ---------------------
 Added a new attribute `return_none`, which is False by default.
-If True, `y(<arguments>)` will return None, rather than <parameter>. This can be useful when 
+If True, `y(<arguments>)` will return None, rather than <parameter>. This can be useful when
 using ycecream in notebooks. E.g.
     |hello = "world"
     |print(y(hello))
@@ -149,7 +187,7 @@ prints
     |y| hello: 'world'
     |world
     |y| hello: 'world'
-    |None    
+    |None
     
 
 Improved functionality (0)
@@ -169,7 +207,7 @@ When used from a REPL, usage as a decorator is now possible with the as_decorato
 
 When used from a REPL, usage as a context manager is now possible with the as_context_manager,like
     >>>with y():
-    >>>    pass 
+    >>>    pass
     y| enter
     y| exit in 0.000241 seconds
 
@@ -209,7 +247,7 @@ The table below shows it all.
 ---------------------------------------------------------------------
                      enabled=True      enabled=False       enabled=[]
 ---------------------------------------------------------------------
-execution speed            normal             normal             fast     
+execution speed            normal             normal             fast
 y()                  as specified          no output        no output
 @y()                 as specified          no output        TypeError
 @y                   as specified          no output        no output
@@ -233,7 +271,7 @@ Ycecream now supports REPLs, be it with limited functionality:
   >>> y(hello, hello * 2)
   y| 'hello', 'hellohello'
   ('hello', 'hellohello')
-- line numbers are never shown  
+- line numbers are never shown
 - use as a decorator is not supported
 - use as a context manager is not supported
   
@@ -269,9 +307,9 @@ It is now possible to use the compact option of pprint.pformat:
     
     |a = 9 * ['0123456789']
     |y(a)
-    |y(a, compact=True) 
+    |y(a, compact=True)
     
-prints  
+prints
     |y|
     |    a:
     |        ['0123456789',
@@ -282,7 +320,7 @@ prints
     |         '0123456789',
     |         '0123456789',
     |         '0123456789',
-    |         '0123456789']    
+    |         '0123456789']
     |y|
     |    a:
     |        ['0123456789', '0123456789', '0123456789', '0123456789', '0123456789',
@@ -342,7 +380,7 @@ Internal change (0)
 
 version 1.1.5  2021-02-05
 =========================
-Now, the line_length is properly observed and indentation is not anymore dependent on prefix. 
+Now, the line_length is properly observed and indentation is not anymore dependent on prefix.
 Instead by default 4 blanks (this can overriden with the wrap_indent attribute) are used as an indent.
 
 The attributes context_delimiter and pair_delimiter are now documented.
@@ -352,7 +390,7 @@ Exception NoSourceAvailableError is now correctly raised.
 Internal change: complete overhaul of formatting.
 
 
-version 1.1.4  2021-02-03 
+version 1.1.4  2021-02-03
 =========================
 Increased the resolution of show_date and show_time (now microseconds).
 Delta now start on creation of an Y object and is thus different for each instance.
@@ -364,7 +402,7 @@ y() can now also be used as a context manager, primarily to time sections of cod
 |       time.sleep(1)
 will print
 |    y| enter
-|    y| exit in 1.000822 seconds    
+|    y| exit in 1.000822 seconds
 
 If you also want to see where the context manager was defined:
 
@@ -380,20 +418,20 @@ The ouput attribute can now also be the string
     "logging.debug", "logging.info", "logging.warning", "logging.error" or "logging.critical"
 , which is primarily useful when a configuration is read from ycecream.json .
 Note that
-    y.configure(logging.info) 
+    y.configure(logging.info)
 ie essentially the same as
     y.configure("logging.info")
     
 Internal change: now uses time.perf_counter() to improve accuracy of timings
 
 
-version 1.1.3  2021-03-02 
+version 1.1.3  2021-03-02
 =========================
 There was still a __all__ definition left over, which caused a problem when using ycecream from site-packages
 (installed with pip).
 Bug fixed.
 
-version 1.1.2  2021-02-28 
+version 1.1.2  2021-02-28
 =========================
 It is now possible to use the string 'stderr', 'stdout' and 'null' as output attributes.
 

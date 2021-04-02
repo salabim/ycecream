@@ -1,24 +1,46 @@
-from pathlib import Path
+from __future__ import print_function
+from __future__ import division
+
 import sys
-import tempfile
+
+PY2 = sys.version_info.major == 2
+PY3 = sys.version_info.major == 3
+
+from pathlib import Path
+
+if PY2:
+    from backports import tempfile
+
+if PY3:
+    import tempfile
+
+
+class g:
+    pass
+
 
 context_start = "y| #"
 
 # make a temporary dict and put a dummy ycecream.json file there, to prevent reading any ycecream.json
 with tempfile.TemporaryDirectory() as tmpdir:
     json_filename = Path(tmpdir) / "ycecream.json"
-    with open(json_filename, "w") as f:
+    with open(str(json_filename), "w") as f:
         print("{}", file=f)
     sys.path = [tmpdir] + sys.path
     from ycecream import y
     import ycecream
+
     sys.path.pop(0)
+
+if PY2:
+    ycecream.change_path(Path)
 
 import datetime
 import time
 import pytest
 
 FAKE_TIME = datetime.datetime(2021, 1, 1, 0, 0, 0)
+
 
 @pytest.fixture
 def patch_datetime_now(monkeypatch):
@@ -30,57 +52,49 @@ def patch_datetime_now(monkeypatch):
     monkeypatch.setattr(datetime, "datetime", mydatetime)
 
 
-@pytest.fixture
-def patch_perf_counter(monkeypatch):
-    def myperf_counter():
-        return 0
-
-    monkeypatch.setattr(time, "perf_counter", myperf_counter)
-
-
 def test_read_json():
-    with tempfile.TemporaryDirectory() as tmpdir:
+    with tempfile.TemporaryDirectory() as tmpdir:  # we can't use tmpdir from pytest because of Python 2.7 compatibity
         org_line_length = ycecream.default.line_length
         json_filename0 = Path(tmpdir) / "ycecream.json"
-        with open(json_filename0, "w") as f:
-            print('{"line_length":-1}', file=f)    
+        with open(str(json_filename0), "w") as f:
+            print('{"line_length":-1}', file=f)
         tmpdir1 = Path(tmpdir) / "ycecream"
         tmpdir1.mkdir()
-        json_filename1 = Path(tmpdir1) / "ycecream.json"        
-        with open(json_filename1, "w") as f:
-            print('{"line_length":-2}', file=f)    
+        json_filename1 = Path(tmpdir1) / "ycecream.json"
+        with open(str(json_filename1), "w") as f:
+            print('{"line_length":-2}', file=f)
         save_sys_path = sys.path
-        
+
         sys.path = [tmpdir] + [tmpdir1]
-        ycecream.set_defaults() 
+        ycecream.set_defaults()
         assert ycecream.default.line_length == -1
-        
-        sys.path = [tmpdir1] + [tmpdir]
+
+        sys.path = [str(tmpdir1)] + [tmpdir]
         ycecream.set_defaults()
         assert ycecream.default.line_length == -2
-                
+
         sys.path = []
         ycecream.set_defaults()
         assert ycecream.default.line_length == 80
 
-        with open(json_filename0, "w") as f:
-            print('{"error":0}', file=f)    
-        
-        sys.path = [tmpdir]                
+        with open(str(json_filename0), "w") as f:
+            print('{"error":0}', file=f)
+
+        sys.path = [tmpdir]
         with pytest.raises(ValueError):
-            ycecream.set_defaults()        
-                                                                        
-        sys.path = save_sys_path       
-                
+            ycecream.set_defaults()
+
+        sys.path = save_sys_path
+
         json_filename = Path(tmpdir) / "ycecream.json"
-        with open(json_filename, "w") as f:        
-            print('{}', file=f)    
+        with open(str(json_filename), "w") as f:
+            print("{}", file=f)
         sys.path = [tmpdir] + sys.path
         ycecream.set_defaults()
         sys.path.pop()
         assert ycecream.default.line_length == org_line_length
-    
-    
+
+
 def test_time(patch_datetime_now):
     hello = "world"
     s = y(hello, show_time=True, as_str=True)
@@ -100,10 +114,13 @@ def test_one_arguments(capsys):
     result = y(hello)
     y(hello)
     out, err = capsys.readouterr()
-    assert err == """\
+    assert (
+        err
+        == """\
 y| hello: 'world'
 y| hello: 'world'
 """
+    )
     assert result == hello
 
 
@@ -132,39 +149,41 @@ def test_prefix(capsys):
     out, err = capsys.readouterr()
     assert err == "==> hello: 'world'\n"
 
+
 def test_time_delta():
     sdelta0 = y(1, show_delta=True, as_str=True)
-    stime0 = y(1, show_time=True, as_str=True)  
-    time.sleep(0.001) 
+    stime0 = y(1, show_time=True, as_str=True)
+    time.sleep(0.001)
     sdelta1 = y(1, show_delta=True, as_str=True)
-    stime1 = y(1, show_time=True, as_str=True) 
-    assert sdelta0 != sdelta1     
+    stime1 = y(1, show_time=True, as_str=True)
+    assert sdelta0 != sdelta1
     assert stime0 != stime1
     y.delta = 10
     time.sleep(0.001)
     assert 10.001 < y.delta < 11
-             
+
+
 def test_dynamic_prefix(capsys):
-    i = 0
+    g.i = 0
 
     def prefix():
-        nonlocal i
-        i += 1
-        return f"{i})"
+        g.i += 1
+        return str(g.i) + ")"
 
     hello = "world"
     y(hello, prefix=prefix)
     y(hello, prefix=prefix)
     out, err = capsys.readouterr()
     assert err == "1)hello: 'world'\n2)hello: 'world'\n"
-    
-        
+
+
 def test_values_only():
     with y.preserve():
         y.configure(values_only=True)
-        hello = 'world'
+        hello = "world"
         s = y(hello, as_str=True)
         assert s == "y| 'world'\n"
+
 
 def test_calls():
     with pytest.raises(TypeError):
@@ -172,126 +191,126 @@ def test_calls():
     with pytest.raises(TypeError):
         y.clone(a=1)
     with pytest.raises(TypeError):
-        y.configure(a=1)     
+        y.configure(a=1)
     with pytest.raises(TypeError):
         y(12, a=1)
     with pytest.raises(TypeError):
-        y(a=1)        
-                   
-def test_output(capsys, tmpdir):
-    result = ""
-
-    def my_output(s):
-        nonlocal result
-        result += s + "\n"
-
-    hello = "world"
-    y(hello, output=print)
-    out, err = capsys.readouterr()
-    assert out == "y| hello: 'world'\n"
-    assert err == ""
-    y(hello, output=sys.stdout)
-    out, err = capsys.readouterr()
-    assert out == "y| hello: 'world'\n"
-    assert err == ""
-    y(hello, output="stdout")
-    out, err = capsys.readouterr()
-    assert out == "y| hello: 'world'\n"
-    assert err == ""
-    y(hello, output="")
-    out, err = capsys.readouterr()
-    assert out == ""
-    assert err == ""
-    y(hello, output="null")
-    out, err = capsys.readouterr()
-    assert out == ""
-    assert err == ""
-    y(hello, output=print)
-    out, err = capsys.readouterr()
-    assert out == "y| hello: 'world'\n"
-    assert err == ""
-
-    path = Path(tmpdir) / "x0"
-    y(hello, output=path)
-    out, err = capsys.readouterr()
-    assert out == ""
-    assert err == ""
-    with open(path, "r") as f:
-        assert f.read() == "y| hello: 'world'\n"
-
-    path = Path(tmpdir) / "x1"
-    y(hello, output=str(path))
-    out, err = capsys.readouterr()
-    assert out == ""
-    assert err == ""
-    with open(path, "r") as f:
-        assert f.read() == "y| hello: 'world'\n"
-
-    path = Path(tmpdir) / "x2"
-    with open(path, "a+") as f:
-        y(hello, output=f)
-    with pytest.raises(TypeError):  # closed file
-        y(hello, output=f)
-    out, err = capsys.readouterr()
-    assert out == ""
-    assert err == ""
-    with open(path, "r") as f:
-        assert f.read() == "y| hello: 'world'\n"
-
-    with pytest.raises(TypeError):
-        y(hello, output=1)
-
-    y(hello, output=my_output)
-    y(1, output=my_output)
-    out, err = capsys.readouterr()
-    assert out == ""
-    assert err == ""
-    assert result == "y| hello: 'world'\ny| 1\n"
+        y(a=1)
 
 
-def test_serialize(capsys):
-    def serialize(s):
-        return f"{repr(s)} [len={len(s)}]"
+def test_output(capsys):
+    with tempfile.TemporaryDirectory() as tmpdir:  # we can't use tmpdir from pytest because of Python 2.7 compatibity
 
-    hello = "world"
-    y(hello, serialize=serialize)
-    out, err = capsys.readouterr()
-    assert err == "y| hello: 'world' [len=5]\n"
+        g.result = ""
+
+        def my_output(s):
+            g.result += s + "\n"
+
+        hello = "world"
+        y(hello, output=print)
+        out, err = capsys.readouterr()
+        assert out == "y| hello: 'world'\n"
+        assert err == ""
+        y(hello, output=sys.stdout)
+        out, err = capsys.readouterr()
+        assert out == "y| hello: 'world'\n"
+        assert err == ""
+        y(hello, output="stdout")
+        out, err = capsys.readouterr()
+        assert out == "y| hello: 'world'\n"
+        assert err == ""
+        y(hello, output="")
+        out, err = capsys.readouterr()
+        assert out == ""
+        assert err == ""
+        y(hello, output="null")
+        out, err = capsys.readouterr()
+        assert out == ""
+        assert err == ""
+        y(hello, output=print)
+        out, err = capsys.readouterr()
+        assert out == "y| hello: 'world'\n"
+        assert err == ""
+
+        if True:
+            path = Path(tmpdir) / "x0"
+            y(hello, output=path)
+            out, err = capsys.readouterr()
+            assert out == ""
+            assert err == ""
+            with path.open("r") as f:
+                assert f.read() == "y| hello: 'world'\n"
+
+            path = Path(tmpdir) / "x1"
+            y(hello, output=path)
+            out, err = capsys.readouterr()
+            assert out == ""
+            assert err == ""
+            with path.open("r") as f:
+                assert f.read() == "y| hello: 'world'\n"
+
+            path = Path(tmpdir) / "x2"
+            with path.open("a+") as f:
+                y(hello, output=f)
+            with pytest.raises(TypeError):  # closed file
+                y(hello, output=f)
+            out, err = capsys.readouterr()
+            assert out == ""
+            assert err == ""
+            with path.open("r") as f:
+                assert f.read() == "y| hello: 'world'\n"
+
+        with pytest.raises(TypeError):
+            y(hello, output=1)
+
+        y(hello, output=my_output)
+        y(1, output=my_output)
+        out, err = capsys.readouterr()
+        assert out == ""
+        assert err == ""
+        assert g.result == "y| hello: 'world'\ny| 1\n"
+
+    def test_serialize(capsys):
+        def serialize(s):
+            return repr(s) + " [len=" + str(len(s)) + "]"
+
+        hello = "world"
+        y(hello, serialize=serialize)
+        out, err = capsys.readouterr()
+        assert err == "y| hello: 'world' [len=5]\n"
+
+    def test_show_time(capsys):
+        hello = "world"
+        y(hello, show_time=True)
+        out, err = capsys.readouterr()
+        assert err.endswith("hello: 'world'\n")
+        assert "@ " in err
+
+    def test_show_delta(capsys):
+        hello = "world"
+        y(hello, show_delta=True)
+        out, err = capsys.readouterr()
+        assert err.endswith("hello: 'world'\n")
+        assert "delta=" in err
+
+    def test_as_str(capsys):
+        hello = "world"
+        s = y(hello, as_str=True)
+        y(hello)
+        out, err = capsys.readouterr()
+        assert err == s
+
+        with pytest.raises(TypeError):
+
+            @y(as_str=True)
+            def add2(x):
+                return x + 2
+
+        with pytest.raises(TypeError):
+            with y(as_str=True):
+                pass
 
 
-def test_show_time(capsys):
-    hello = "world"
-    y(hello, show_time=True)
-    out, err = capsys.readouterr()
-    assert err.endswith("hello: 'world'\n")
-    assert "@ " in err
-
-
-def test_show_delta(capsys):
-    hello = "world"
-    y(hello, show_delta=True)
-    out, err = capsys.readouterr()
-    assert err.endswith("hello: 'world'\n")
-    assert "delta=" in err
-
-def test_as_str(capsys):
-    hello = "world"
-    s = y(hello, as_str=True)
-    y(hello)
-    out, err = capsys.readouterr()
-    assert err == s
-    
-    with pytest.raises(TypeError):
-        @y(as_str=True)
-        def add2(x):
-            return x + 2
-    
-    with pytest.raises(TypeError):
-        with y(as_str=True):
-            pass
-    
-
-            
 def test_clone():
     hello = "world"
     z = y.clone()
@@ -308,8 +327,11 @@ def test_sort_dicts():
     s0 = y(world, as_str=True)
     s1 = y(world, sort_dicts=False, as_str=True)
     s2 = y(world, sort_dicts=True, as_str=True)
-    assert s0 == s1 == "y| world: {'EN': 'world', 'NL': 'wereld', 'FR': 'monde', 'DE': 'Welt'}\n"
-    assert s2 == "y| world: {'DE': 'Welt', 'EN': 'world', 'FR': 'monde', 'NL': 'wereld'}\n"
+    if PY2:
+        assert s0 == s1 == s2 == "y| world: {'DE': 'Welt', 'EN': 'world', 'FR': 'monde', 'NL': 'wereld'}\n"
+    if PY3:
+        assert s0 == s1 == "y| world: {'EN': 'world', 'NL': 'wereld', 'FR': 'monde', 'DE': 'Welt'}\n"
+        assert s2 == "y| world: {'DE': 'Welt', 'EN': 'world', 'FR': 'monde', 'NL': 'wereld'}\n"
 
 
 def test_multiline():
@@ -333,7 +355,7 @@ y|
 """
     )
 
-    lines = "\n".join(f"line{i}" for i in range(4))
+    lines = "\n".join("line{i}".format(i=i) for i in range(4))
     result = y(lines, as_str=True)
     assert (
         result
@@ -348,7 +370,9 @@ y|
     )
 
 
-def test_decorator(capsys, patch_perf_counter):
+def test_decorator(capsys):
+    ycecream.fix_perf_counter(0)
+
     @y
     def mul(x, y):
         return x * y
@@ -386,9 +410,12 @@ y| returned 5 from add(2, 3) in 0.000000 seconds
 y| called sub(10, 2)
 """
     )
+    ycecream.fix_perf_counter(None)
 
 
-def test_decorator_edge_cases(capsys, patch_perf_counter):
+def test_decorator_edge_cases(capsys):
+    ycecream.fix_perf_counter(0)
+
     @y
     def mul(x, y, factor=1):
         return x * y * factor
@@ -408,6 +435,8 @@ y| called mul(5, 6, factor=10)
 y| returned 300 from mul(5, 6, factor=10) in 0.000000 seconds
 """
     )
+    ycecream.fix_perf_counter(None)
+
 
 def test_decorator_with_methods(capsys):
     class Number:
@@ -422,7 +451,7 @@ def test_decorator_with_methods(capsys):
                 return self.value * other
 
         def __repr__(self):
-            return f"{self.__class__.__name__}({self.value})"
+            return self.__class__.__name__ + "(" + str(self.value) + ")"
 
     a = Number(2)
     b = Number(3)
@@ -444,7 +473,8 @@ y| called __mul__(Number(2), Number(3))
     )
 
 
-def test_context_manager(capsys, patch_perf_counter):
+def test_context_manager(capsys):
+    ycecream.fix_perf_counter(0)
     with y():
         y(3)
     out, err = capsys.readouterr()
@@ -456,77 +486,88 @@ y| 3
 y| exit in 0.000000 seconds
 """
     )
+    ycecream.fix_perf_counter(None)
+
 
 def test_return_none(capsys):
     a = 2
     result = y(a, a)
-    assert result == (a,a)
-    result = y(a,a, return_none=True) 
+    assert result == (a, a)
+    result = y(a, a, return_none=True)
     assert result is None
     out, err = capsys.readouterr()
-    assert err =='''\
+    assert (
+        err
+        == """\
 y| a: 2, a: 2
 y| a: 2, a: 2
-'''
+"""
+    )
 
-def test_json_read(tmpdir):
-    json_filename = Path(tmpdir) / "ycecream.json"
-    with open(json_filename, "w") as f:
-        print('{"prefix": "xxx"}', file=f)
 
-    sys.path = [tmpdir] + sys.path
-    ycecream.set_defaults()
-    sys.path.pop(0)
+def test_json_read():
+    with tempfile.TemporaryDirectory() as tmpdir:
 
-    y1 = y.new()
+        json_filename = Path(tmpdir) / "ycecream.json"
+        with open(str(json_filename), "w") as f:
+            print('{"prefix": "xxx"}', file=f)
 
-    s = y1(3, as_str=True)
-    assert s == "xxx3\n"
-
-    with open(json_filename, "w") as f:
-        print('{"prefix1": "xxx"}', file=f)
-
-    sys.path = [tmpdir] + sys.path
-    with pytest.raises(ValueError):
+        sys.path = [tmpdir] + sys.path
         ycecream.set_defaults()
-    sys.path.pop(0)
+        sys.path.pop(0)
 
-    with open(json_filename, "w") as f:
-        print('{"serialize": "xxx"}', file=f)
+        y1 = y.new()
 
-    sys.path = [tmpdir] + sys.path
-    with pytest.raises(ValueError):
+        s = y1(3, as_str=True)
+        assert s == "xxx3\n"
+
+        with open(str(json_filename), "w") as f:
+            print('{"prefix1": "xxx"}', file=f)
+
+        sys.path = [tmpdir] + sys.path
+        with pytest.raises(ValueError):
+            ycecream.set_defaults()
+        sys.path.pop(0)
+
+        with open(str(json_filename), "w") as f:
+            print('{"serialize": "xxx"}', file=f)
+
+        sys.path = [tmpdir] + sys.path
+        with pytest.raises(ValueError):
+            ycecream.set_defaults()
+        sys.path.pop(0)
+
+        tmpdir = Path(tmpdir) / "ycecream"
+        tmpdir.mkdir()
+        json_filename = Path(tmpdir) / "ycecream.json"
+        with open(str(json_filename), "w") as f:
+            print('{"prefix": "yyy"}', file=f)
+
+        sys.path = [str(tmpdir)] + sys.path
         ycecream.set_defaults()
-    sys.path.pop(0)
+        sys.path.pop(0)
 
-    tmpdir = Path(tmpdir) / "ycecream"
-    tmpdir.mkdir()
-    json_filename = Path(tmpdir) / "ycecream.json"
-    with open(json_filename, "w") as f:
-        print('{"prefix": "yyy"}', file=f)
+        y1 = y.new()
 
-    sys.path = [tmpdir] + sys.path
-    ycecream.set_defaults()
-    sys.path.pop(0)
+        s = y1(3, as_str=True)
+        assert s == "yyy3\n"
 
-    y1 = y.new()
+        tmpdir = Path(tmpdir) / "ycecream"
+        tmpdir.mkdir()
+        json_filename = Path(tmpdir) / "ycecream.json"
+        with open(str(json_filename), "w") as f:
+            print("{}", file=f)
 
-    s = y1(3, as_str=True)
-    assert s == "yyy3\n"
-    
-    tmpdir = Path(tmpdir) / "ycecream"
-    tmpdir.mkdir()
-    json_filename = Path(tmpdir) / "ycecream.json"
-    with open(json_filename, "w") as f:
-        print('{}', file=f)
-
-    sys.path = [tmpdir] + sys.path
-    ycecream.set_defaults()
-    sys.path.pop(0)    
+        sys.path = [str(tmpdir)] + sys.path
+        ycecream.set_defaults()
+        sys.path.pop(0)
 
 
 def test_wrapping(capsys):
-    l0 = "".join(f"         {c}" for c in "12345678") + "\n" + "".join(f".........0" for c in "12345678")
+    if PY2:
+        return
+
+    l0 = "".join("         {c}".format(c=c) for c in "12345678") + "\n" + "".join(".........0" for c in "12345678")
 
     print(l0, file=sys.stderr)
     ccc = cccc = 3 * ["12345678123456789012"]
@@ -617,6 +658,8 @@ y| aa: ['0123456789ABC', '0123456789ABC']
 
 
 def test_compact(capsys):
+    if PY2:
+        return
     a = 9 * ["0123456789"]
     y(a)
     y(a, compact=True)
@@ -678,8 +721,6 @@ def test_enabled(capsys):
         y.configure(enabled=True)
         y("Three")
 
-
-
     out, err = capsys.readouterr()
     assert (
         err
@@ -689,89 +730,99 @@ y| 'Three'
 """
     )
 
+
 def test_enabled2(capsys):
     with y.preserve():
         y.configure(enabled=False)
-        line0 = y('line0')
-        noline0 = y(prefix='no0')       
-        pair0 = y('p0', 'p0')
-        s0 = y('s0', as_str=True)
+        line0 = y("line0")
+        noline0 = y(prefix="no0")
+        pair0 = y("p0", "p0")
+        s0 = y("s0", as_str=True)
         y.configure(enabled=[])
-        line1 = y('line1')
-        noline1 = y(prefix='no1')       
-        pair1 = y('p1', 'p1')    
-        s1 = y('s1', as_str=True)
+        line1 = y("line1")
+        noline1 = y(prefix="no1")
+        pair1 = y("p1", "p1")
+        s1 = y("s1", as_str=True)
         y.configure(enabled=True)
-        line2 = y('line2')
-        noline2 = y(prefix='no2')       
-        pair2 = y('p2', 'p2')     
-        s2 = y('s2', as_str=True)               
+        line2 = y("line2")
+        noline2 = y(prefix="no2")
+        pair2 = y("p2", "p2")
+        s2 = y("s2", as_str=True)
         out, err = capsys.readouterr()
-        assert 'line0' not in err and 'p0' not in err and 'no0' not in err     
-        assert 'line1' not in err and 'p1' not in err and 'no1' not in err      
-        assert 'line2' in err and 'p2' in err and 'no2' in err
-        assert line0 == 'line0'             
-        assert line1 == 'line1'     
-        assert line2 == 'line2'                     
-        assert noline0 is None            
-        assert noline1 is None     
+        assert "line0" not in err and "p0" not in err and "no0" not in err
+        assert "line1" not in err and "p1" not in err and "no1" not in err
+        assert "line2" in err and "p2" in err and "no2" in err
+        assert line0 == "line0"
+        assert line1 == "line1"
+        assert line2 == "line2"
+        assert noline0 is None
+        assert noline1 is None
         assert noline2 is None
-        assert pair0 == ('p0', 'p0')                                             
-        assert pair1 == ('p1', 'p1')                                             
-        assert pair2 == ('p2', 'p2')            
-        assert s0=="y| 's0'\n"                               
-        assert s1=="y| 's1'\n"                               
-        assert s2=="y| 's2'\n"   
-        
+        assert pair0 == ("p0", "p0")
+        assert pair1 == ("p1", "p1")
+        assert pair2 == ("p2", "p2")
+        assert s0 == "y| 's0'\n"
+        assert s1 == "y| 's1'\n"
+        assert s2 == "y| 's2'\n"
+
+
 def test_enabled3(capsys):
     with y.preserve():
         y.configure(enabled=[])
         y(2)
         with pytest.raises(TypeError):
+
             @y()
             def add2(x):
                 return x + 2
+
         with pytest.raises(AttributeError):
             with y():
-                pass     
+                pass
+
         @y(decorator=True)
         def add2(x):
             return x + 2
+
         with y(context_manager=True):
-            pass    
-        
+            pass
+
+
 def test_multiple_as():
     with pytest.raises(TypeError):
-        y(1,decorator=True, context_manager=True)
+        y(1, decorator=True, context_manager=True)
     with pytest.raises(TypeError):
         y(1, decorator=True, as_str=True)
     with pytest.raises(TypeError):
         y(1, context_manager=True, as_str=True)
 
+
 def test_wrap_indent():
-    s = 4* ['*******************']
+    s = 4 * ["*******************"]
     res = y(s, compact=True, as_str=True)
-    assert res.splitlines()[1].startswith('    s')
-    res = y(s, compact=True, as_str=True, wrap_indent='....')
-    assert res.splitlines()[1].startswith('....s')
+    assert res.splitlines()[1].startswith("    s")
+    res = y(s, compact=True, as_str=True, wrap_indent="....")
+    assert res.splitlines()[1].startswith("....s")
     res = y(s, compact=True, as_str=True, wrap_indent=2)
-    assert res.splitlines()[1].startswith('  s')    
+    assert res.splitlines()[1].startswith("  s")
     res = y(s, compact=True, as_str=True, wrap_indent=[])
-    assert res.splitlines()[1].startswith('[]s')    
-                                                                                                                                                                                                                                          
+    assert res.splitlines()[1].startswith("[]s")
+
+
 def test_check_output(capsys):
-    ''' special Pythonista code, as that does not reload x1 and x2 '''
-    if 'x1' in sys.modules:
-        del sys.modules['x1']
-    if 'x2' in sys.modules:
-        del sys.modules['x2']    
-    del sys.modules['ycecream']  
+    """ special Pythonista code, as that does not reload x1 and x2 """
+    if "x1" in sys.modules:
+        del sys.modules["x1"]
+    if "x2" in sys.modules:
+        del sys.modules["x2"]
+    del sys.modules["ycecream"]
     from ycecream import y
-    ''' end of special Pythonista code '''
+
+    """ end of special Pythonista code """
     with y.preserve():
         with tempfile.TemporaryDirectory() as tmpdir:
             x1_file = Path(tmpdir) / "x1.py"
-            with open(x1_file, "w") as f:
+            with open(str(x1_file), "w") as f:
                 print(
                     """\
 def check_output():
@@ -782,7 +833,7 @@ def check_output():
     x2.test()
     y(1)
     y(
-    1    
+    1
     )
     with y(prefix="==>"):
         y()
@@ -818,7 +869,7 @@ def check_output():
                 )
 
             x2_file = Path(tmpdir) / "x2.py"
-            with open(x2_file, "w") as f:
+            with open(str(x2_file), "w") as f:
                 print(
                     """\
 from ycecream import y
@@ -831,7 +882,7 @@ def test():
         
     myself(6)
     with y():
-        pass        
+        pass
 """,
                     file=f,
                 )

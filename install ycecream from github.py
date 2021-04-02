@@ -1,3 +1,5 @@
+from __future__ import print_function
+
 import sys
 import site
 import shutil
@@ -5,8 +7,10 @@ import hashlib
 import base64
 from pathlib import Path
 import configparser
-import urllib.request
-import urllib.error
+import six
+from six.moves import urllib
+#import urllib.request
+#import urllib.error
 
 
 def _install(files, url=None):
@@ -171,20 +175,20 @@ def _install(files, url=None):
         for entry in sitepackages_path.glob("*"):
             if entry.is_dir():
                 if entry.stem.startswith(package + "-") and entry.suffix == ".dist-info":
-                    shutil.rmtree(entry)
+                    shutil.rmtree(str(entry))
         path_distinfo = Path(str(path) + "-" + version + ".dist-info")
         if not path_distinfo.is_dir():
             path_distinfo.mkdir()
-        with (path_distinfo / "METADATA").open("w") as f:  # make a dummy METADATA file
+        with open(str(path_distinfo / "METADATA"), "w") as f:  # make a dummy METADATA file
             f.write("Name: " + package + "\n")
             f.write("Version: " + version + "\n")
 
-        with (path_distinfo / "INSTALLER").open("w") as f:  # make a dummy METADATA file
+        with open(str(path_distinfo / "INSTALLER"), "w") as f:  # make a dummy METADATA file
             f.write("github\n")
-        with (path_distinfo / "RECORD").open("w") as f:
+        with open(str(path_distinfo / "RECORD"),"w") as f:
             pass  # just to create the file to be recorded
 
-        with (path_distinfo / "RECORD").open("w") as record_file:
+        with open(str(path_distinfo / "RECORD"), "w") as record_file:
 
             for p in (path, path_distinfo):
                 for file in p.glob("**/*"):
@@ -209,7 +213,6 @@ def _install(files, url=None):
                         record_file.write("\n")
 
     return info
-
 
 if __name__ == "__main__":
     info = _install(

@@ -244,27 +244,34 @@ y| duration: 1.0001721999999997
 
 For the configuration, it is important to realize that `y` is an instance of the `ycecream.Y` class, which has
 a number of configuration attributes:
-* `prefix`/ p
-* `output`/ o
-* `serialize`
-* `show_line_number / sln
-* `show_time`/ st
-* `show_delta`/ sd
-* `show_enter`/ se
-* `show_exit`/ sx
-* `sort_dicts
-* `enabled`/ e
-* `line_length`/ ll
-* `compact`
-* `indent`
-* `depth` 
-* `context_delimiter`/ cd
-* `pair_delimiter`/ pd
-* `values_only`/ vo
-*  return_none /rn
-*  decorator / d
-*  context_manager / cm
-
+```
+--------------------------------------------------
+attribute          alternative     default
+--------------------------------------------------
+prefix             p               "y| "
+output             o               "stderr"
+serialize                          pprint.pformat
+show_line_number   sln             False
+show_time          st              False
+show_delta         sd              False
+show_enter         se              True
+show_exit          sx              True
+sort_dicts *)                      False
+enabled            e               True
+line_length        ll              80
+compact *)         c               False
+indent                             1
+depth                              1000000
+wrap_indent                        "     "   
+context_delimiter  cd              " ==> "
+pair_delimiter     pd              ", "
+values_only        vo              False
+return_none        rn              False
+decorator          d               False
+context_manager    cm              False
+--------------------------------------------------
+*) ignored under Python 2.7
+```
 It is perfectly ok to set/get any of these attributes directly.
 
 But, it is also possible to apply configuration directly in the call to `y`:
@@ -300,10 +307,10 @@ to print
 ```
 ==> 12
 ```
-Yet another way to configure y is by instantiating Y with the required configuration:
+Yet another way to configure y is to get a new instance of y with y.new() and the required configuration:
 ```
-y = y.(prefix="==> ")
-y(12)
+z = y.new(prefix="==> ")
+z(12)
 ```
 will print
 ```
@@ -314,9 +321,9 @@ Or, yet another possibility is to clone y (optionally with modified attributes):
 ```
 yd1 = y.clone(show_date=True)
 yd2 = y.clone()
-yd2.cunfigure(show_date=True)
+yd2.configure(show_date=True)
 ```
-After this `yd1` and `yd2` will behave similarly.
+After this `yd1` and `yd2` will behave similarly (but they are not the same!)
 
 ## prefix / p
 ```
@@ -328,7 +335,7 @@ prints
 hello -> 'world'
 ```
 
-`prefix` can also be a function, too.
+`prefix` can be a function, too.
 
 ```
 import time
@@ -429,7 +436,7 @@ y| 7, hello: 'world' [len=5], l: [0, 1, 2, 3, 4, 5, 6] [len=7]
 ```
 
 ## show_line_number / sln
-If True, adds the `y()` call's filename, line number, and parent function to `y()`'s output.
+If True, adds the `y()` call's line number and possible the filename and parent function to `y()`'s output.
 
 ```
 from ycecream import y
@@ -534,6 +541,8 @@ y|
         ['0123456789', '0123456789', '0123456789', '0123456789', '0123456789',
          '0123456789', '0123456789', '0123456789', '0123456789']
 ```
+Note that `compact` is ignored under Python 2.7.
+
 ## indent
 This attribute is used to specify the indent parameter for `pformat` (see the pprint documentation
 for details). `indent` is 1 by default.
@@ -644,6 +653,7 @@ y| world: {'EN': 'world', 'NL': 'wereld', 'FR': 'monde', 'DE': 'Welt'}
 y| world: {'EN': 'world', 'NL': 'wereld', 'FR': 'monde', 'DE': 'Welt'}
 y| world: {'DE': 'Welt', 'EN': 'world', 'FR': 'monde', 'NL': 'wereld'}
 ```
+Note that `sort_dicts` is ignored under Python 2.7.
 
 ## context_delimiter / cd
 By default the line_number, time and/or delta are followed by ` ==> `.
@@ -732,14 +742,14 @@ witb *fast disabling* (see below).
     |def add2(x):
     |    return x + 2
 ```
-would fail witn`TypeError: 'NoneType' object is not callable`, but
+would fail with`TypeError: 'NoneType' object is not callable`, but
 ```
     |y.enabled([])
     |@y(decorator=True)
     |def add2(x):
     |    return x + 2
 ```
-would run correctly.
+will run correctly.
 
 
 ## context_manager / cm
@@ -762,13 +772,13 @@ witb *fast disabling* (see below).
     |with y:
     |    pass
 ```
-would fail witn`AttributeError: __enter__`, but
+would fail with `AttributeError: __enter__`, but
 ```
     |y.enabled([])
     |with y(context_manager=True):
     |    pass
 ```
-would run correctly.
+will run correctly.
 
 # Return a string instead of sending to output
 
@@ -816,7 +826,7 @@ ycecream still has to check for usage as a decorator or context manager, which c
 consuming.
 
 In order to speed up a program with disabled ycecream calls, it is possible to specify
-`y.configure(enabled=[]), in which case `y` will always just return
+`y.configure(enabled=[])`, in which case `y` will always just return
 the given arguments. If ycecream is disabled this way, usage as a `@y()` decorator  or as a `with y():`
 context manager will raise a runtime error, though. The `@y` decorator without parentheses will
 not raise any exception, though.
@@ -873,7 +883,7 @@ can contain any attribute configuration overriding the standard settings.
 E.g. if there is an `ycecream.json` file with the following contents
 ```
 {
-    "output": "stdout",
+    "o": "stdout",
     "show_time": true,
     "line_length": 120`
     'compact' : true
@@ -926,7 +936,7 @@ In either case, attributes can be added to override these:
 ### Example
 ```
 from ycecream import y
-y_with_line_number = y.clone(show_line_number=True)
+y_with_line_number = y.fork(show_line_number=True)
 y_with_new_prefix = y.new(prefix="==> ")
 y_with_new_prefix_and_time = y_with_new_prefix.clone(show_time=True)
 hello="world"
@@ -948,13 +958,17 @@ y| hello: 'world'
 ycm exit in 0.041361 seconds
 ```
 
+If you need to use `y` as such in your program you can always use
+```
+from ycecream import y as yc
+```
 
 # Test script
 
 On GitHub is a file `test_ycecream.py` that tests (and thus also demonstrates) most of the functionality
 of ycecream.
 
-It is very useful to have a look at the tests to see the features (some may be not covered in this readme).
+It is very useful to have a look at the tests to see the features (some may be not covered (yet) in this readme).
 
 # Using ycecream in a REPL
 
@@ -973,7 +987,7 @@ Ycecream may be used in a REPL, but with limited functionality:
 # Alternative installation
 With `install ycecream from github.py`, you can install the ycecream.py directly from GitHub to the site packages (as if it was a pip install).
 
-With `install ycecream.py`, you can install the ycecream.py in your current directory to the site packages (as if it were a pip install).
+With `install ycecream.py`, you can install the ycecream.py in your current directory to the site packages (as if it was a pip install).
 
 Both files can be found in the GitHub repository (https://github.com/salabim/ycecream).
 
