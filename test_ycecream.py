@@ -18,19 +18,12 @@ if PY3:
 class g:
     pass
 
-
 context_start = "y| #"
 
-# make a temporary dict and put a dummy ycecream.json file there, to prevent reading any ycecream.json
-with tempfile.TemporaryDirectory() as tmpdir:
-    json_filename = Path(tmpdir) / "ycecream.json"
-    with open(str(json_filename), "w") as f:
-        print("{}", file=f)
-    sys.path = [tmpdir] + sys.path
-    from ycecream import y
-    import ycecream
+from ycecream import y
+y = y.new(ignore_json=True)
 
-    sys.path.pop(0)
+import ycecream
 
 if PY2:
     ycecream.change_path(Path)
@@ -51,48 +44,6 @@ def patch_datetime_now(monkeypatch):
 
     monkeypatch.setattr(datetime, "datetime", mydatetime)
 
-
-def test_read_json():
-    with tempfile.TemporaryDirectory() as tmpdir:  # we can't use tmpdir from pytest because of Python 2.7 compatibity
-        org_line_length = ycecream.default.line_length
-        json_filename0 = Path(tmpdir) / "ycecream.json"
-        with open(str(json_filename0), "w") as f:
-            print('{"line_length":-1}', file=f)
-        tmpdir1 = Path(tmpdir) / "ycecream"
-        tmpdir1.mkdir()
-        json_filename1 = Path(tmpdir1) / "ycecream.json"
-        with open(str(json_filename1), "w") as f:
-            print('{"line_length":-2}', file=f)
-        save_sys_path = sys.path
-
-        sys.path = [tmpdir] + [tmpdir1]
-        ycecream.set_defaults()
-        assert ycecream.default.line_length == -1
-
-        sys.path = [str(tmpdir1)] + [tmpdir]
-        ycecream.set_defaults()
-        assert ycecream.default.line_length == -2
-
-        sys.path = []
-        ycecream.set_defaults()
-        assert ycecream.default.line_length == 80
-
-        with open(str(json_filename0), "w") as f:
-            print('{"error":0}', file=f)
-
-        sys.path = [tmpdir]
-        with pytest.raises(ValueError):
-            ycecream.set_defaults()
-
-        sys.path = save_sys_path
-
-        json_filename = Path(tmpdir) / "ycecream.json"
-        with open(str(json_filename), "w") as f:
-            print("{}", file=f)
-        sys.path = [tmpdir] + sys.path
-        ycecream.set_defaults()
-        sys.path.pop()
-        assert ycecream.default.line_length == org_line_length
 
 
 def test_time(patch_datetime_now):
@@ -159,8 +110,8 @@ def test_time_delta():
     assert sdelta0 != sdelta1
     assert stime0 != stime1
     y.delta = 10
-    time.sleep(0.001)
-    assert 10.001 < y.delta < 11
+    time.sleep(0.1)
+    assert 10.05 < y.delta < 11
 
 
 def test_dynamic_prefix(capsys):
@@ -505,7 +456,47 @@ y| a: 2, a: 2
     )
 
 
-def test_json_read():
+def test_read_json1():
+    with tempfile.TemporaryDirectory() as tmpdir:  # we can't use tmpdir from pytest because of Python 2.7 compatibity
+        org_line_length = ycecream.default.line_length
+        json_filename0 = Path(tmpdir) / "ycecream.json"
+        with open(str(json_filename0), "w") as f:
+            print('{"line_length":-1}', file=f)
+        tmpdir1 = Path(tmpdir) / "ycecream"
+        tmpdir1.mkdir()
+        json_filename1 = Path(tmpdir1) / "ycecream.json"
+        with open(str(json_filename1), "w") as f:
+            print('{"line_length":-2}', file=f)
+        save_sys_path = sys.path
+
+        sys.path = [tmpdir] + [tmpdir1]
+        ycecream.set_defaults()
+        ycecream.apply_json()
+        assert ycecream.default.line_length == -1
+
+        sys.path = [str(tmpdir1)] + [tmpdir]
+        ycecream.set_defaults()
+        ycecream.apply_json()
+        assert ycecream.default.line_length == -2
+
+        sys.path = []
+        ycecream.set_defaults()
+        ycecream.apply_json()
+        assert ycecream.default.line_length == 80
+
+        with open(str(json_filename0), "w") as f:
+            print('{"error":0}', file=f)
+
+        sys.path = [tmpdir]
+        with pytest.raises(ValueError):
+            ycecream.set_defaults()
+            ycecream.apply_json()
+    
+        sys.path = save_sys_path
+
+
+
+def test_read_json2():
     with tempfile.TemporaryDirectory() as tmpdir:
 
         json_filename = Path(tmpdir) / "ycecream.json"
@@ -514,6 +505,7 @@ def test_json_read():
 
         sys.path = [tmpdir] + sys.path
         ycecream.set_defaults()
+        ycecream.apply_json()
         sys.path.pop(0)
 
         y1 = y.new()
@@ -527,6 +519,7 @@ def test_json_read():
         sys.path = [tmpdir] + sys.path
         with pytest.raises(ValueError):
             ycecream.set_defaults()
+            ycecream.apply_json()
         sys.path.pop(0)
 
         with open(str(json_filename), "w") as f:
@@ -535,6 +528,8 @@ def test_json_read():
         sys.path = [tmpdir] + sys.path
         with pytest.raises(ValueError):
             ycecream.set_defaults()
+            ycecream.apply_json()
+
         sys.path.pop(0)
 
         tmpdir = Path(tmpdir) / "ycecream"
@@ -545,6 +540,7 @@ def test_json_read():
 
         sys.path = [str(tmpdir)] + sys.path
         ycecream.set_defaults()
+        ycecream.apply_json()
         sys.path.pop(0)
 
         y1 = y.new()
@@ -560,6 +556,7 @@ def test_json_read():
 
         sys.path = [str(tmpdir)] + sys.path
         ycecream.set_defaults()
+        ycecream.apply_json()
         sys.path.pop(0)
 
 

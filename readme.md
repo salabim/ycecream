@@ -242,7 +242,7 @@ y| duration: 1.0001721999999997
 
 # Configuration
 
-For the configuration, it is important to realize that `y` is an instance of the `ycecream.Y` class, which has
+For the configuration, it is important to realize that `y` is an instance of the `ycecream._Y` class, which has
 a number of configuration attributes:
 ```
 --------------------------------------------------
@@ -515,7 +515,7 @@ y|
 y| d: {'a1': 1, 'a2': {'a': 1, 'b': 1, 'c': 3}, 'a3': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]}
 ```
 
-## compact
+## compact / c
 This attribute is used to specify the compact parameter for `pformat` (see the pprint documentation
 for details). `compact` is False by default.
 ```
@@ -653,7 +653,7 @@ y| world: {'EN': 'world', 'NL': 'wereld', 'FR': 'monde', 'DE': 'Welt'}
 y| world: {'EN': 'world', 'NL': 'wereld', 'FR': 'monde', 'DE': 'Welt'}
 y| world: {'DE': 'Welt', 'EN': 'world', 'FR': 'monde', 'NL': 'wereld'}
 ```
-Note that `sort_dicts` is ignored under Python 2.7.
+Note that `sort_dicts` is ignored under Python 2.7, i.e. dicts are always sorted.
 
 ## context_delimiter / cd
 By default the line_number, time and/or delta are followed by ` ==> `.
@@ -821,7 +821,7 @@ True
 Of course `y()` continues to return its arguments when disabled, of course.
 
 ## Speeding up disabled ycecream
-When output is disabled, either via `y.configure(enbabled=False)` or `ycecream.enable(False)`,
+When output is disabled, either via `y.configure(enbabled=False)` or `ycecream.enable = False`,
 ycecream still has to check for usage as a decorator or context manager, which can be rather time
 consuming.
 
@@ -848,7 +848,7 @@ with @y(context_manager=True):
 Note that calls with `as_str=True` will not be affected at all by the enabled flag.
 
 The table below shows it all.
-```                123456789012345 123456789012345 123456789012345 
+```  
 ---------------------------------------------------------------------
                          enabled=True   enabled=False      enabled=[]
 ---------------------------------------------------------------------
@@ -926,12 +926,13 @@ and others requires an alternative prefix.
 
 THere are several ways to obtain a new instance of ycecream:
 
-*    by using `y.new()
+*    by using `y.new()`
+*    by using `y.new(ignore_json=True)`
 *    by using `y.fork()`
 *    by using `y.clone()`, which copies all attributes from y()
-*    with y() used as a context manager
+*    with `y()` used as a context manager
     
-In either case, attributes can be added to override these:
+In either case, attributes can be added to override the default ones.
 
 ### Example
 ```
@@ -961,6 +962,29 @@ ycm exit in 0.041361 seconds
 If you need to use `y` as such in your program you can always use
 ```
 from ycecream import y as yc
+```
+
+## ignore_json
+The `y.new(ignore_json=True)` will return an instance of y without having applied any json configuration
+file. That can be useful when guaranteeing the same output in several setups.
+
+### Example
+Suppose we have an `ycecream.json` file in the current directory with the contents
+```
+{prefix="==>"}
+```
+Then
+```
+y_post_json = y.new()
+y_ignore_json = y.new(ignore_json=True)
+hello = "world"
+y_post_json(hello)
+y_ignore_json(hello)
+```
+prints
+```
+==>hello: 'world'
+y| hello: 'world'
 ```
 
 # Test script
@@ -1000,9 +1024,10 @@ It is not possible to use ycecream:
 # Implementation details
 Although not important for using the package, here are some implementation details:
 * ycecream.py contains the complete (slightly modified) source of the asttokens and executing packages, in
-   order to offer the required source lookups, without any depenencies
-* ycecream.py contains the complete source of pprint as of Python 3.8 in order to support the sort_dicts parameter
-* in order to support using y() as a decorator and a context manager, ycecream caches the complete source of`
+   order to offer the required source lookups, without any dependencies
+* ycecream.py contains the complete source of pprint as of Python 3.8 in order to support the sort_dicts parameter, Under Python 2.7 this is ignored and the pprint module
+from the standard library is used.
+* in order to support using y() as a decorator and a context manager, ycecream caches the complete source of
 any source file that uses y()
 
 

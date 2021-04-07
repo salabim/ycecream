@@ -1,3 +1,18 @@
+version 1.3.2  2021-04
+=========================
+New functionality (0)
+---------------------
+y.new() has a new parameter ignore_json that makes it possible to ignore the ycecream.json file.
+Thus, if you don't want to use any attributes that are overridden by an ycecream.json file:
+    y = y.new(ignore_json=True)
+
+Internal changes (0)
+--------------------
+The PY2/PY3 specific code is clustered now to make maintenance easier.
+In the pprint 3.8 module, the PrettyPrinter class is not even created for PY2,
+so no more need to disable specifically several dispatch calls.
+
+
 version 1.3.1  2021-04-02
 =========================
 New functionality (0)
