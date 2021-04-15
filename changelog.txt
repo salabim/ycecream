@@ -1,4 +1,30 @@
-version 1.3.2  2021-04
+version 1.3.3  2021-04-15
+=========================
+New functionality (0)
+---------------------
+Introduced a new attribute: enforce_line_length / ell .
+If True, all output lines will be truncated to the current line_length.
+This holds for all output lines, including as_str output.
+Example:
+    y.configure(enforce_line_length=True, line_length=15)
+    s = "abcdefghijklmnopqrstuvwxyz"
+    y(s)
+    y(show_time=True)
+prints something like
+    |y|
+    |    s: 'abcdefg
+    |y| #35 @ 08:14:
+
+New functionality (0)
+---------------------
+New shorthand alternatives:
+    sdi  for sort_dicts
+    i    for indent
+    de   for depth
+    wi   for wrap_indent
+    ell  for enforce_line_length
+
+version 1.3.2  2021-04-07
 =========================
 New functionality (0)
 ---------------------

@@ -6,7 +6,7 @@ from __future__ import print_function
 #   |___/  \___| \___| \___||_|    \___| \__,_||_| |_| |_|
 #                       sweeter debugging and benchmarking
 
-__version__ = "1.3.2"
+__version__ = "1.3.3"
 
 """
 See https://github.com/salabim/ycecream for details
@@ -56,8 +56,8 @@ if PY2:
     def ycecream_pformat(obj, width, indent, depth):
         return pformat(obj, width=width, indent=indent, depth=depth).replace("\\n", "\n")
 
+    text_type = unicode
     binary_type = str
-    binary_type = bytes
 
     def iteritems(d, **kw):
         return d.iteritems(**kw)
@@ -104,15 +104,23 @@ shortcut_to_name = {
     "sln": "show_line_number",
     "st": "show_time",
     "sd": "show_delta",
+    "sdi": "sort_dicts",
     "se": "show_enter",
     "sx": "show_exit",
     "e": "enabled",
     "ll": "line_length",
+    "c": "compact",
+    "i": "indent",
+    "de": "depth",
+    "wi": "wrap_indent",
+    "cd": "context_delimiter",
+    "pd": "pair_delimiter",
     "vo": "values_only",
     "rn": "return_none",
+    "ell": "enforce_line_length",    
     "d": "decorator",
-    "cm": "context_manager",
-    "c": "compact",
+    "cm": "context_manager"
+
 }
 
 
@@ -136,6 +144,7 @@ def set_defaults():
     default.pair_delimiter = ", "
     default.values_only = False
     default.return_none = False
+    default.enforce_line_length = False
     default.decorator = False
     default.context_manager = False
     default.start_time = perf_counter()
@@ -214,6 +223,7 @@ class _Y(object):
         pair_delimiter=nv,
         values_only=nv,
         return_none=nv,
+        enforce_line_length=nv,
         decorator=nv,
         context_manager=nv,
         _parent=nv,
@@ -310,6 +320,7 @@ class _Y(object):
         pair_delimiter = kwargs.pop("pair_delimiter", nv)
         values_only = kwargs.pop("values_only", nv)
         return_none = kwargs.pop("return_none", nv)
+        enforce_line_length = kwargs.pop("enforce_line_length", nv)
         decorator = kwargs.pop("decorator", nv)
         context_manager = kwargs.pop("context_manager", nv)
         as_str = kwargs.pop("as_str", nv)
@@ -520,6 +531,8 @@ class _Y(object):
             out = this.context(omit_context_delimiter=True)
 
         if as_str:
+            if this.enforce_line_length:
+                out = '\n'.join(line[:this.line_length] for line in out.splitlines())            
             return out + "\n"
         this.do_output(out)
 
@@ -546,6 +559,7 @@ class _Y(object):
         pair_delimiter=nv,
         values_only=nv,
         return_none=nv,
+        enforce_line_length=nv,
         decorator=nv,
         context_manager=nv,
         **kwargs
@@ -581,6 +595,7 @@ class _Y(object):
         pair_delimiter=nv,
         values_only=nv,
         return_none=nv,
+        enforce_line_length=nv,
         decorator=nv,
         context_manager=nv,
         **kwargs
@@ -631,7 +646,9 @@ class _Y(object):
 
         return (self.prefix() if callable(self.prefix) else self.prefix) + context
 
-    def do_output(self, s):
+    def do_output(self, s): 
+        if self.enforce_line_length:
+            s = '\n'.join(line[:self.line_length] for line in s.splitlines())                    
         if self.enabled:
             if callable(self.output):
                 self.output(s)

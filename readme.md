@@ -246,29 +246,30 @@ For the configuration, it is important to realize that `y` is an instance of the
 a number of configuration attributes:
 ```
 --------------------------------------------------
-attribute          alternative     default
+attribute           alternative     default
 --------------------------------------------------
-prefix             p               "y| "
-output             o               "stderr"
-serialize                          pprint.pformat
-show_line_number   sln             False
-show_time          st              False
-show_delta         sd              False
-show_enter         se              True
-show_exit          sx              True
-sort_dicts *)                      False
-enabled            e               True
-line_length        ll              80
-compact *)         c               False
-indent                             1
-depth                              1000000
-wrap_indent                        "     "   
-context_delimiter  cd              " ==> "
-pair_delimiter     pd              ", "
-values_only        vo              False
-return_none        rn              False
-decorator          d               False
-context_manager    cm              False
+prefix              p               "y| "
+output              o               "stderr"
+serialize                           pprint.pformat
+show_line_number    sln             False
+show_time           st              False
+show_delta          sd              False
+show_enter          se              True
+show_exit           sx              True
+sort_dicts *)       sdi             False
+enabled             e               True
+line_length         ll              80
+compact *)          c               False
+indent              i               1
+depth               de              1000000
+wrap_indent         wi              "     "   
+context_delimiter   cd              " ==> "
+pair_delimiter      pd              ", "
+values_only         vo              False
+return_none         rn              False
+enforce_line_length ell             False
+decorator           d               False
+context_manager     cm              False
 --------------------------------------------------
 *) ignored under Python 2.7
 ```
@@ -543,7 +544,7 @@ y|
 ```
 Note that `compact` is ignored under Python 2.7.
 
-## indent
+## indent / i
 This attribute is used to specify the indent parameter for `pformat` (see the pprint documentation
 for details). `indent` is 1 by default.
 ```
@@ -563,7 +564,7 @@ y|
             ['01234567890012345678900123456789001234567890']]
 ```
 
-## depth
+## depth / de
 This attribute is used to specify the depth parameter for `pformat` (see the pprint documentation
 for details). `depth` is `1000000` by default. 
 ```
@@ -587,7 +588,7 @@ y|
           ['01234567890012345678900123456789001234567890', [...]]]]
 ```
 
-## wrap_indent
+## wrap_indent / wi
 This specifies the indent string if the output does not fit in the line_length (has to be wrapped).
 Rather than a string, wrap_indent can be also be an integer, in which case the wrap_indent will be that amount of blanks.
 The default is 4 blanks.
@@ -618,8 +619,6 @@ y|
      'a3': [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]}
 ```
 
-
-
 ## enabled / e
 Can be used to disable the output:
 ```
@@ -637,7 +636,7 @@ y| s + 'on fire.': 'the world is on fire.'
 ```
 and nothing about a perfect world.
 
-## sort_dicts
+## sort_dicts / sdi
 By default, ycecream does not sort dicts (printed by pprint). However, it is possible to get the
 default pprint behaviour (i.e. sorting dicts) with the sorted_dicts attribute:
 
@@ -717,6 +716,10 @@ y| (3, 4)
 y| (3, 4)
 None
 ```
+
+## enforce_line_length / ell
+If enforce_line_length is True, all output lines are explicitely truncated to the given
+line_length, even those that are not truncated by pformat.
 
 ## decorator / d
 Normally, an ycecream instance can be used as to show values, as a decorator and as a
