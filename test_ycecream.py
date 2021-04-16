@@ -1,12 +1,21 @@
 from __future__ import print_function
 from __future__ import division
 
+#  In order to tun under Python 2.7, the following packages have to be pip-installed:
+#      pathlib
+#      backports.tempfile
+
 import sys
+from pathlib import Path
+from ycecream import y
+import ycecream
+import datetime
+import time
+import pytest
 
 PY2 = sys.version_info.major == 2
 PY3 = sys.version_info.major == 3
 
-from pathlib import Path
 
 if PY2:
     from backports import tempfile
@@ -18,19 +27,16 @@ if PY3:
 class g:
     pass
 
+
 context_start = "y| #"
 
-from ycecream import y
+
 y = y.new(ignore_json=True)
 
-import ycecream
 
 if PY2:
     ycecream.change_path(Path)
 
-import datetime
-import time
-import pytest
 
 FAKE_TIME = datetime.datetime(2021, 1, 1, 0, 0, 0)
 
@@ -43,7 +49,6 @@ def patch_datetime_now(monkeypatch):
             return FAKE_TIME
 
     monkeypatch.setattr(datetime, "datetime", mydatetime)
-
 
 
 def test_time(patch_datetime_now):
@@ -77,11 +82,11 @@ y| hello: 'world'
 
 def test_two_arguments(capsys):
     hello = "world"
-    l = [1, 2, 3]
-    result = y(hello, l)
+    ll = [1, 2, 3]
+    result = y(hello, ll)
     out, err = capsys.readouterr()
-    assert err == "y| hello: 'world', l: [1, 2, 3]\n"
-    assert result == (hello, l)
+    assert err == "y| hello: 'world', ll: [1, 2, 3]\n"
+    assert result == (hello, ll)
 
 
 def test_in_function(capsys):
@@ -288,19 +293,19 @@ def test_sort_dicts():
 def test_multiline():
     a = 1
     b = 2
-    l = list(range(15))
+    ll = list(range(15))
     # fmt: off
-    s=y((a, b),
-        [l,
-        l], as_str=True)
+    s = y((a, b),
+        [ll,
+        ll], as_str=True)
     # fmt: on
     assert (
         s
         == """\
 y|
     (a, b): (1, 2)
-    [l,
-    l]:
+    [ll,
+    ll]:
         [[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14],
          [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14]]
 """
@@ -491,9 +496,8 @@ def test_read_json1():
         with pytest.raises(ValueError):
             ycecream.set_defaults()
             ycecream.apply_json()
-    
-        sys.path = save_sys_path
 
+        sys.path = save_sys_path
 
 
 def test_read_json2():
@@ -806,6 +810,56 @@ def test_wrap_indent():
     assert res.splitlines()[1].startswith("[]s")
 
 
+def test_traceback(capsys):
+    with y.preserve():
+        y.show_traceback = True
+        y()
+        out, err = capsys.readouterr()
+        assert "traceback" in err
+
+        @y
+        def p():
+            pass
+
+        p()
+        out, err = capsys.readouterr()
+        assert "traceback" in err
+        with y():
+            pass
+        out, err = capsys.readouterr()
+        assert err.count("traceback") == 2
+
+
+def test_enforce_line_length(capsys):
+    s = 80 * "*"
+    y(s)
+    y(s, enforce_line_length=True)
+    out, err = capsys.readouterr()
+    assert (
+        err
+        == """\
+y|
+    s: '********************************************************************************'
+y|
+    s: '************************************************************************
+"""
+    )
+    with y.preserve():
+        y.configure(line_length=20, show_line_number=True)
+        y()
+        out, err1 = capsys.readouterr()
+        y(enforce_line_length=True)
+        out, err2 = capsys.readouterr()
+        err1 = err1.rstrip("\n")
+        err2 = err2.rstrip("\n")
+        assert len(err2) == 20
+        assert err1[10:20] == err2[10:20]
+        assert len(err1) > 20
+    res = y("abcdefghijklmnopqrstuvwxyz", p="", ell=1, ll=20, as_str=True).rstrip("\n")
+    assert res == "'abcdefghijklmnopqrs"
+    assert len(res) == 20
+
+
 def test_check_output(capsys):
     """ special Pythonista code, as that does not reload x1 and x2 """
     if "x1" in sys.modules:
@@ -825,7 +879,7 @@ def test_check_output(capsys):
 def check_output():
     from ycecream import y
     import x2
-    
+
     y.configure(show_line_number=True, show_exit= False)
     x2.test()
     y(1)
@@ -834,32 +888,32 @@ def check_output():
     )
     with y(prefix="==>"):
         y()
-    
+
     with y(
-        
-        
-        
+
+
+
         prefix="==>"
-        
+
         ):
         y()
-    
+
     @y
     def x(a, b=1):
         pass
     x(2)
-    
+
     @y()
-    
-    
-    
-    
+
+
+
+
     def x(
-    
-        
+
+
     ):
         pass
-    
+
     x()
 """,
                     file=f,
@@ -876,7 +930,7 @@ def test():
     def myself(x):
         y(x)
         return x
-        
+
     myself(6)
     with y():
         pass

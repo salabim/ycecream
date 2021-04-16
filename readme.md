@@ -256,6 +256,7 @@ show_time           st              False
 show_delta          sd              False
 show_enter          se              True
 show_exit           sx              True
+show_traceback      st              False
 sort_dicts *)       sdi             False
 enabled             e               True
 line_length         ll              80
@@ -497,6 +498,35 @@ function returned or the context manager is exited.
 
 With `show_exit=False` this line can be suppressed.
 
+
+## show_traceback / st
+When show_traceback is True, the ordinary output of y() will be followed by a printout of the
+traceback, similar to an error traceback.
+```
+from ycecream import y
+y.show_traceback=True
+def x():
+    y()
+
+x()
+x()
+```
+prints
+```
+y| #4 in x()
+    Traceback (most recent call last)
+      File "c:\Users\Ruud\Dropbox (Personal)\Apps\Python Ruud\ycecream\x.py", line 6, in <module>
+        x()
+      File "c:\Users\Ruud\Dropbox (Personal)\Apps\Python Ruud\ycecream\x.py", line 4, in x
+        y()
+y| #4 in x()
+    Traceback (most recent call last)
+      File "c:\Users\Ruud\Dropbox (Personal)\Apps\Python Ruud\ycecream\x.py", line 7, in <module>
+        x()
+      File "c:\Users\Ruud\Dropbox (Personal)\Apps\Python Ruud\ycecream\x.py", line 4, in x
+        y()
+```
+The `show_traceback` functionality is also available when y is used as a decorator or context manager. 
 
 ## line_length / ll
 This attribute is used to specify the line length (for wrapping). The default is 80.

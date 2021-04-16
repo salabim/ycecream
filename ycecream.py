@@ -6,7 +6,7 @@ from __future__ import print_function
 #   |___/  \___| \___| \___||_|    \___| \__,_||_| |_| |_|
 #                       sweeter debugging and benchmarking
 
-__version__ = "1.3.3"
+__version__ = "1.3.4"
 
 """
 See https://github.com/salabim/ycecream for details
@@ -33,6 +33,7 @@ import numbers
 import ast
 import os
 import copy
+import traceback
 
 nv = object()
 
@@ -107,6 +108,7 @@ shortcut_to_name = {
     "sdi": "sort_dicts",
     "se": "show_enter",
     "sx": "show_exit",
+    "st": "show_traceback",
     "e": "enabled",
     "ll": "line_length",
     "c": "compact",
@@ -117,10 +119,9 @@ shortcut_to_name = {
     "pd": "pair_delimiter",
     "vo": "values_only",
     "rn": "return_none",
-    "ell": "enforce_line_length",    
+    "ell": "enforce_line_length",
     "d": "decorator",
-    "cm": "context_manager"
-
+    "cm": "context_manager",
 }
 
 
@@ -134,6 +135,7 @@ def set_defaults():
     default.sort_dicts = False
     default.show_enter = True
     default.show_exit = True
+    default.show_traceback = False
     default.enabled = True
     default.line_length = 80
     default.compact = False
@@ -212,6 +214,7 @@ class _Y(object):
         show_delta=nv,
         show_enter=nv,
         show_exit=nv,
+        show_traceback=nv,
         sort_dicts=nv,
         enabled=nv,
         line_length=nv,
@@ -309,6 +312,7 @@ class _Y(object):
         show_delta = kwargs.pop("show_delta", nv)
         show_enter = kwargs.pop("show_enter", nv)
         show_exit = kwargs.pop("show_exit", nv)
+        show_traceback = kwargs.pop("show_traceback", nv)
         sort_dicts = kwargs.pop("sort_dicts", nv)
         enabled = kwargs.pop("enabled", nv)
         line_length = kwargs.pop("line_length", nv)
@@ -394,9 +398,9 @@ class _Y(object):
             if as_str:
                 raise TypeError("as_str may not be True when y used as decorator")
 
-            for l, line in enumerate(code[line_number - 1 :], line_number):
+            for ln, line in enumerate(code[line_number - 1 :], line_number):
                 if line.strip().startswith("def") or line.strip().startswith("class"):
-                    line_number = l
+                    line_number = ln
                     break
             else:
                 line_number += 1
@@ -414,15 +418,19 @@ class _Y(object):
                     function_arguments = function.__name__ + "(" + (", ".join(args_kwargs)) + ")"
 
                     if this.show_enter:
-                        this.do_output("{context}called {function_arguments}".format(context=context, function_arguments=function_arguments))
+                        this.do_output(
+                            "{context}called {function_arguments}{traceback}".format(
+                                context=context, function_arguments=function_arguments, traceback=this.traceback()
+                            )
+                        )
                     result = function(*args, **kwargs)
                     duration = perf_counter() - enter_time
 
                     context = this.context()
                     if this.show_exit:
                         this.do_output(
-                            "{context}returned {repr_result} from {function_arguments} in {duration:.6f} seconds".format(
-                                context=context, repr_result=repr(result), function_arguments=function_arguments, duration=duration
+                            "{context}returned {repr_result} from {function_arguments} in {duration:.6f} seconds{traceback}".format(
+                                context=context, repr_result=repr(result), function_arguments=function_arguments, duration=duration, traceback=this.traceback()
                             )
                         )
 
@@ -530,9 +538,12 @@ class _Y(object):
             this.show_line_number = True
             out = this.context(omit_context_delimiter=True)
 
+        if this.show_traceback:
+            out += this.traceback()
+
         if as_str:
             if this.enforce_line_length:
-                out = '\n'.join(line[:this.line_length] for line in out.splitlines())            
+                out = "\n".join(line[: this.line_length] for line in out.splitlines())
             return out + "\n"
         this.do_output(out)
 
@@ -548,6 +559,7 @@ class _Y(object):
         show_delta=nv,
         show_enter=nv,
         show_exit=nv,
+        show_traceback=nv,
         sort_dicts=nv,
         enabled=nv,
         line_length=nv,
@@ -584,6 +596,7 @@ class _Y(object):
         show_delta=nv,
         show_enter=nv,
         show_exit=nv,
+        show_traceback=nv,
         sort_dicts=nv,
         enabled=nv,
         line_length=nv,
@@ -615,17 +628,18 @@ class _Y(object):
     def __enter__(self):
         if not hasattr(self, "is_context_manager"):
             raise ValueError("not allowed as context_manager")
+        self.save_traceback = self.traceback()
         self.enter_time = perf_counter()
         if self.show_enter:
             context = self.context()
-            self.do_output(context + "enter")
+            self.do_output(context + "enter" + self.save_traceback)
         return self
 
     def __exit__(self, *args):
         if self.show_exit:
             context = self.context()
             duration = perf_counter() - self.enter_time
-            self.do_output("{context}exit in {duration:.6f} seconds".format(context=context, duration=duration))
+            self.do_output("{context}exit in {duration:.6f} seconds{traceback}".format(context=context, duration=duration, traceback=self.save_traceback))
         self.is_context_manager = False
 
     def context(self, omit_context_delimiter=False):
@@ -646,9 +660,9 @@ class _Y(object):
 
         return (self.prefix() if callable(self.prefix) else self.prefix) + context
 
-    def do_output(self, s): 
+    def do_output(self, s):
         if self.enforce_line_length:
-            s = '\n'.join(line[:self.line_length] for line in s.splitlines())                    
+            s = "\n".join(line[: self.line_length] for line in s.splitlines())
         if self.enabled:
             if callable(self.output):
                 self.output(s)
@@ -682,6 +696,22 @@ class _Y(object):
 
             else:
                 print(s, file=self.output)
+
+    def traceback(self):
+        if self.show_traceback:
+            if isinstance(self.wrap_indent, numbers.Number):
+                wrap_indent = int(self.wrap_indent) * " "
+            else:
+                wrap_indent = str(self.wrap_indent)
+
+            result = "\n" + wrap_indent + "Traceback (most recent call last)\n"
+
+            return result + "\n".join(
+                wrap_indent + '  File "' + entry.filename + '", line ' + str(entry.lineno) + ", in " + entry.name + "\n" + wrap_indent + "    " + entry.line
+                for entry in traceback.extract_stack()[:-2]
+            )
+        else:
+            return ""
 
     def check(self):
 

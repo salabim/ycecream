@@ -1,4 +1,40 @@
-version 1.3.3  2021-04-15
+version 1.3.4  2021-04-16
+=========================
+New functionality (0)
+---------------------
+Introduced a new attribute: show_traceback / st .
+
+When show_traceback is True, the ordinary output of y() will be followed by a printout of the
+traceback, similar to an error traceback.
+
+    from ycecream import y
+    y.show_traceback=True
+    def x():
+        y()
+
+    x()
+    x()
+prints
+    y| #4 in x()
+        Traceback (most recent call last)
+        File "c:\Users\Ruud\Dropbox (Personal)\Apps\Python Ruud\ycecream\x.py", line 6, in <module>
+            x()
+        File "c:\Users\Ruud\Dropbox (Personal)\Apps\Python Ruud\ycecream\x.py", line 4, in x
+            y()
+    y| #4 in x()
+        Traceback (most recent call last)
+        File "c:\Users\Ruud\Dropbox (Personal)\Apps\Python Ruud\ycecream\x.py", line 7, in <module>
+            x()
+        File "c:\Users\Ruud\Dropbox (Personal)\Apps\Python Ruud\ycecream\x.py", line 4, in x
+            y()
+
+The show_traceback functionality is also available when y is used as a decorator or context manager. 
+
+Documentation change (0)
+------------------------
+The description of ycecream on PyPI is now (nearly) the same as the readme.md file.
+
+version 1.3.3  2021-04-14
 =========================
 New functionality (0)
 ---------------------
