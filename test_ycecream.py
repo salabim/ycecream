@@ -505,7 +505,7 @@ def test_read_json2():
 
         json_filename = Path(tmpdir) / "ycecream.json"
         with open(str(json_filename), "w") as f:
-            print('{"prefix": "xxx"}', file=f)
+            print('{"prefix": "xxx", "delta": 10}', file=f)
 
         sys.path = [tmpdir] + sys.path
         ycecream.set_defaults()
@@ -516,6 +516,7 @@ def test_read_json2():
 
         s = y1(3, as_str=True)
         assert s == "xxx3\n"
+        assert 10 < y1.delta < 11
 
         with open(str(json_filename), "w") as f:
             print('{"prefix1": "xxx"}', file=f)
@@ -815,7 +816,7 @@ def test_traceback(capsys):
         y.show_traceback = True
         y()
         out, err = capsys.readouterr()
-        assert "traceback" in err
+        assert err.count("traceback") == 2
 
         @y
         def p():
@@ -823,7 +824,7 @@ def test_traceback(capsys):
 
         p()
         out, err = capsys.readouterr()
-        assert "traceback" in err
+        assert err.count("traceback") == 2
         with y():
             pass
         out, err = capsys.readouterr()
@@ -960,6 +961,68 @@ y| #33[x1.py] in check_output() ==> called x()
 """
     )
 
+
+def test_propagation():
+    with y.preserve():
+        y0 = y.fork()
+        y1 = y0.fork()
+        y.p = "x"
+        y2 = y.clone()
+
+        assert y.p == "x"
+        assert y0.p == "x"
+        assert y1.p == "x"
+        assert y2.p == "x"
+
+        y1.p = "xx"
+        assert y.p == "x"
+        assert y0.p == "x"
+        assert y1.p == "xx"
+        assert y2.p == "x"
+
+        y1.p = None
+        assert y.p == "x"
+        assert y0.p == "x"
+        assert y1.p == "x"
+        assert y2.p == "x"
+
+        y.p = None
+        assert y.p == "y| "
+        assert y0.p == "y| "
+        assert y1.p == "y| "
+        assert y2.p == "x"
+
+
+def test_delta_propagation():
+    with y.preserve():
+        y_delta_start = y.delta
+        y0 = y.fork()
+        y1 = y0.fork()
+        y.dl = 100
+        y2 = y.clone()
+
+        assert 100 < y.delta < 110
+        assert 100 < y0.delta < 110
+        assert 100 < y1.delta < 110
+        assert 100 < y2.delta < 110
+
+        y1.delta = 200
+        assert 100 < y.delta < 110
+        assert 100 < y0.delta < 110
+        assert 200 < y1.delta < 210
+        assert 100 < y2.delta < 110
+
+        y1.delta = None
+        assert 100 < y.delta < 110
+        assert 100 < y0.delta < 110
+        assert 100 < y1.delta < 110
+        assert 100 < y2.delta < 110
+
+        y.delta = None
+        assert 0 < y.delta < y_delta_start+10
+        assert 0 < y0.delta < y_delta_start+10
+        assert 0 < y1.delta < y_delta_start+10
+        assert 100 < y2.delta < 110
 
 if __name__ == "__main__":
     pytest.main(["-vv", "-s", "-x", __file__])

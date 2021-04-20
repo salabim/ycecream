@@ -6,7 +6,7 @@ from __future__ import print_function
 #   |___/  \___| \___| \___||_|    \___| \__,_||_| |_| |_|
 #                       sweeter debugging and benchmarking
 
-__version__ = "1.3.4"
+__version__ = "1.3.5"
 
 """
 See https://github.com/salabim/ycecream for details
@@ -122,6 +122,7 @@ shortcut_to_name = {
     "ell": "enforce_line_length",
     "d": "decorator",
     "cm": "context_manager",
+    "dl": "delta",
 }
 
 
@@ -170,6 +171,7 @@ def apply_json():
             break
 
     for k, v in config.items():
+
         if k in ("serialize", "start_time"):
             raise ValueError("error in {json_file}: key {k} not allowed".format(json_file=json_file, k=k))
 
@@ -178,7 +180,10 @@ def apply_json():
         if hasattr(default, k):
             setattr(default, k, v)
         else:
-            raise ValueError("error in {json_file}: key {k} not recognized".format(json_file=json_file, k=k))
+            if k == "delta":
+                setattr(default, "start_time", perf_counter() - v)
+            else:
+                raise ValueError("error in {json_file}: key {k} not recognized".format(json_file=json_file, k=k))
 
 
 def no_source_error(s=None):
@@ -229,6 +234,7 @@ class _Y(object):
         enforce_line_length=nv,
         decorator=nv,
         context_manager=nv,
+        delta=nv,
         _parent=nv,
         **kwargs
     ):
@@ -258,10 +264,11 @@ class _Y(object):
         return "y.new(" + ", ".join(pairs) + ")"
 
     def __getattr__(self, item):
-        if item == "delta":
-            return perf_counter() - self.start_time
         if item in shortcut_to_name:
             item = shortcut_to_name[item]
+        if item == "delta":
+            return perf_counter() - getattr(self, "start_time")
+
         if item in self._attributes:
             if self._attributes[item] is None:
                 return getattr(self._parent, item)
@@ -270,14 +277,12 @@ class _Y(object):
         raise AttributeError("{item} not found".format(item=item))
 
     def __setattr__(self, item, value):
-        if item == "delta":
-            if value is None:
-                self.start_time = None
-            else:
-                self.start_time = perf_counter() - value
-            return
         if item in shortcut_to_name:
             item = shortcut_to_name[item]
+        if item == "delta":
+            item = "start_time"
+            if value is not None:
+                value = perf_counter() - value
 
         if item in ["_attributes"]:
             super(_Y, self).__setattr__(item, value)
@@ -297,6 +302,10 @@ class _Y(object):
                 raise TypeError("{func} got an unexpected keyword argument {key}".format(func=func, key=key))
         for key, value in source.items():
             if value is not nv:
+                if key == "delta":
+                    key = "start_time"
+                    if value is not None:
+                        value = perf_counter() - value
                 setattr(self, key, value)
 
     def fork(self, **kwargs):
@@ -327,8 +336,8 @@ class _Y(object):
         enforce_line_length = kwargs.pop("enforce_line_length", nv)
         decorator = kwargs.pop("decorator", nv)
         context_manager = kwargs.pop("context_manager", nv)
+        delta = kwargs.pop("delta", nv)
         as_str = kwargs.pop("as_str", nv)
-
         as_str = False if as_str is nv else bool(as_str)
 
         self.is_context_manager = False
@@ -340,7 +349,6 @@ class _Y(object):
 
         if this.enabled == [] and not (as_str or this.decorator or this.context_manager):
             return return_args(args, this.return_none)
-        this.start_time = self.start_time
 
         this.check()
 
@@ -574,6 +582,7 @@ class _Y(object):
         enforce_line_length=nv,
         decorator=nv,
         context_manager=nv,
+        delta=nv,
         **kwargs
     ):
         self.assign(kwargs, locals(), "configure()")
@@ -611,6 +620,7 @@ class _Y(object):
         enforce_line_length=nv,
         decorator=nv,
         context_manager=nv,
+        delta=nv,
         **kwargs
     ):
         this = _Y(_parent=self._parent)
@@ -705,9 +715,9 @@ class _Y(object):
                 wrap_indent = str(self.wrap_indent)
 
             result = "\n" + wrap_indent + "Traceback (most recent call last)\n"
-
+            #  Python 2.7 does not allow entry.filename, entry.line, etc, so we have to index entry
             return result + "\n".join(
-                wrap_indent + '  File "' + entry.filename + '", line ' + str(entry.lineno) + ", in " + entry.name + "\n" + wrap_indent + "    " + entry.line
+                wrap_indent + '  File "' + entry[0] + '", line ' + str(entry[1]) + ", in " + entry[2] + "\n" + wrap_indent + "    " + entry[3]
                 for entry in traceback.extract_stack()[:-2]
             )
         else:
