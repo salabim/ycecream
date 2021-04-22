@@ -148,7 +148,7 @@ It is possible to suppress the print-out of either the enter or the exit informa
 the show_enter and show_exit parameters, like:
 
 ```
-inport ycecream as y
+import ycecream as y
 @y(show_exit=False)
 def mul(x, y):
     return x * y
@@ -271,6 +271,7 @@ return_none         rn              False
 enforce_line_length ell             False
 decorator           d               False
 context_manager     cm              False
+delta               dl              0
 --------------------------------------------------
 *) ignored under Python 2.7
 ```
@@ -770,17 +771,17 @@ y| returned 12 from add2(10) in 0.000548 seconds
 The `decorator` attribute is also required when using `y()` as a decorator
 witb *fast disabling* (see below).
 ```
-    |y.enabled([])
-    |@y()
-    |def add2(x):
-    |    return x + 2
+y.enabled([])
+@y()
+def add2(x):
+    return x + 2
 ```
 would fail with`TypeError: 'NoneType' object is not callable`, but
 ```
-    |y.enabled([])
-    |@y(decorator=True)
-    |def add2(x):
-    |    return x + 2
+y.enabled([])
+@y(decorator=True)
+def add2(x):
+    return x + 2
 ```
 will run correctly.
 
@@ -801,17 +802,25 @@ y| exit in 0.008644 seconds
 The `context_manager` attribute is also required when using `y():` as a context manager
 witb *fast disabling* (see below).
 ```
-    |y.enabled([])
-    |with y:
-    |    pass
+y.enabled([])
+    with y:
+    pass
 ```
 would fail with `AttributeError: __enter__`, but
 ```
-    |y.enabled([])
-    |with y(context_manager=True):
-    |    pass
+y.enabled([])
+    with y(context_manager=True):
+    pass
 ```
 will run correctly.
+
+## delta / dl
+The delta attribute can be used to (re)set the current delta, e.g.
+```
+y.configure(dl=0)
+print(y.delta)
+```
+prints a value that slightly more than 0.
 
 # Return a string instead of sending to output
 
