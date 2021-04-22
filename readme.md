@@ -148,7 +148,7 @@ It is possible to suppress the print-out of either the enter or the exit informa
 the show_enter and show_exit parameters, like:
 
 ```
-import ycecream as y
+from ycecream import y
 @y(show_exit=False)
 def mul(x, y):
     return x * y
