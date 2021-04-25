@@ -7,7 +7,6 @@ The ycecream module was originally a fork of IceCream, but has many differences:
 ----------------------------------------------------------------------------------------
 characteristic                    ycecream                 IceCream
 ----------------------------------------------------------------------------------------
-colourize                         no                       yes (can be disabled)
 platform                          Python 2.7, >=3.6, PyPy  Python 2.7, >=3.5, PyPy
 default name                      y                        ic
 dependencies                      none                     many
@@ -23,6 +22,8 @@ use from a REPL                   limited functionality    no
 external configuration            via json file            no
 observes line_length correctly    yes                      no
 indentation                       4 blanks (overridable)   dependent on length of prefix
+forking and cloning               yes                      no
 test script                       pytest                   unittest
+colourize                         no                       yes (can be disabled)
 ----------------------------------------------------------------------------------------
 *) sort_dicts and compact are ignored under Python 2.7
