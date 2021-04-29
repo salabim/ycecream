@@ -264,8 +264,9 @@ compact *)          c               False
 indent              i               1
 depth               de              1000000
 wrap_indent         wi              "     "   
-context_delimiter   cd              " ==> "
-pair_delimiter      pd              ", "
+separator           sep             ", "
+context_separator   cs              " ==> "
+equals_separator    es              ": "
 values_only         vo              False
 return_none         rn              False
 enforce_line_length ell             False
@@ -685,36 +686,49 @@ y| world: {'DE': 'Welt', 'EN': 'world', 'FR': 'monde', 'NL': 'wereld'}
 ```
 Note that `sort_dicts` is ignored under Python 2.7, i.e. dicts are always sorted.
 
-## context_delimiter / cd
-By default the line_number, time and/or delta are followed by ` ==> `.
-It is possible to change this with the attribute `context_delimiter`:
-```
-a="abcd"
-y(a)
-y(a, show_time=True, context_delimiter = ' \u279c ')
-```
-prints:
-```
-y| @ 12:56:11.341650 ==> a: 'abcd'
-y| @ 12:56:11.485567 ➜ a: 'abcd'
-```
-
-## pair_delimiter / pd
+## separator / sep
 By default, pairs (on one line) are separated by `, `.
-It is possible to change this with the attribute ` pair_delimiter`:
+It is possible to change this with the attribute ` separator`:
 ```
 a="abcd"
 b=1
 c=1000
 d=list("ycecream")
 y(a,(b,c),d)
-y(a,(b,c),d, pair_delimiter=" | ")
+y(a,(b,c),d, separator=" | ")
 ```
 prints
 ```
 y| a: 'abcd', (b,c): (1, 1000), d: ['y', 'c', 'e', 'c', 'r', 'e', 'a', 'm']
 y| a: 'abcd' | (b,c): (1, 1000) | d: ['y', 'c', 'e', 'c', 'r', 'e', 'a', 'm']
 ```
+## context_separator / cs
+By default the line_number, time and/or delta are followed by ` ==> `.
+It is possible to change this with the attribute `context_separator`:
+```
+a="abcd"
+y(a)
+y(a, show_time=True, context_separator = ' \u279c ')
+```
+prints:
+```
+y| @ 12:56:11.341650 ==> a: 'abcd'
+y| @ 12:56:11.485567 ➜ a: 'abcd'
+```
+## equals_separator / es
+By default name of a variable and its value are separated by `: `.
+It is possible to change this with the attribute `equals_separator`:
+```
+a="abcd"
+y(a)
+y(a, equals_separator = ' == ")
+```
+prints:
+```
+y| a: 'abcd'
+y| a == 'abcd'
+```
+
 ## values_only / vo
 If False (the default), both the left-hand side (if possible) and the
 value will be printed. If True, the left_hand side will be suppressed:
@@ -969,9 +983,19 @@ and others requires an alternative prefix.
 THere are several ways to obtain a new instance of ycecream:
 
 *    by using `y.new()`
+     
+     With this a new ycecream object is created with the default attributes
+     and possibly ycecream.json overrides.
 *    by using `y.new(ignore_json=True)`
+
+     With this a new ycecreamobject is created with the default attibutes. Any ycecream.json files asre ignored.
 *    by using `y.fork()`
+     
+     With this a new ycecream object is created with the same attributes as the object it is created ('the parent') from. Note that any non set attributes are copied (propagated) from the parent.
 *    by using `y.clone()`, which copies all attributes from y()
+
+     With this a new ycecream object is created with the same attributes as the object it is created ('the parent') from. Note that the attributes are not propagated from the parent, in this case.
+
 *    with `y()` used as a context manager
     
 In either case, attributes can be added to override the default ones.
@@ -986,24 +1010,26 @@ hello="world"
 y_with_line_number(hello)
 y_with_new_prefix(hello)
 y_with_new_prefix_and_time(hello)
+y.equals_separator = " == "  # this affects only the forked objects
+y_with_line_number(hello)
+y_with_new_prefix(hello)
+y_with_new_prefix_and_time(hello)
 with y(prefix="ycm ") as ycm:
     ycm(hello)
     y(hello)
 ```
 prints
 ```
-y| x.py:6 ==> hello: 'world'
+y| #6 ==> hello: 'world'
 ==> hello: 'world'
-==> @ 10:15:41.457879 ==> hello: 'world'
+==> @ 09:55:10.883732 ==> hello: 'world'
+y| #10 ==> hello == 'world'
+==> hello: 'world'
+==> @ 09:55:10.910717 ==> hello: 'world'
 ycm enter
-ycm hello: 'world'
-y| hello: 'world'
-ycm exit in 0.041361 seconds
-```
-
-If you need to use `y` as such in your program you can always use
-```
-from ycecream import y as yc
+ycm hello == 'world'
+y| hello == 'world'
+ycm exit in 0.017686 seconds
 ```
 
 ## ignore_json
@@ -1020,11 +1046,13 @@ Then
 y_post_json = y.new()
 y_ignore_json = y.new(ignore_json=True)
 hello = "world"
+y(hello)
 y_post_json(hello)
 y_ignore_json(hello)
 ```
 prints
 ```
+==>hello: 'world'
 ==>hello: 'world'
 y| hello: 'world'
 ```
@@ -1049,6 +1077,19 @@ Ycecream may be used in a REPL, but with limited functionality:
 * line numbers are never shown  
 * use as a decorator is only supported when you used as `y(decorator=True)` or `y(d=1)`
 * use as a context manager is only supported when used as `y(context_manager=True)`or `y(cm=1)`
+
+# Alternative to y
+Sometime, it is not suitable to use the name y in a program, e.g. when
+dealing with coordinates x, y and z.
+
+In that case, it is possible to use yc instead
+```
+from ycecream import yc
+```
+Or -a bit longer-
+```
+from ycecream import y as yy
+```
 
 # Alternative installation
 With `install ycecream from github.py`, you can install the ycecream.py directly from GitHub to the site packages (as if it was a pip install).

@@ -6,7 +6,7 @@ from __future__ import print_function
 #   |___/  \___| \___| \___||_|    \___| \__,_||_| |_| |_|
 #                       sweeter debugging and benchmarking
 
-__version__ = "1.3.5"
+__version__ = "1.3.6"
 
 """
 See https://github.com/salabim/ycecream for details
@@ -48,10 +48,6 @@ if PY2:
     class Path(object):
         pass
 
-    class Default(object):
-        pass
-
-    default = Default()
     import io
 
     def ycecream_pformat(obj, width, indent, depth):
@@ -60,8 +56,8 @@ if PY2:
     text_type = unicode
     binary_type = str
 
-    def iteritems(d, **kw):
-        return d.iteritems(**kw)
+    def iteritems(d, **kwargs):
+        return d.iteritems(**kwargs)
 
 
 if PY3:
@@ -71,11 +67,6 @@ if PY3:
 
     from pathlib import Path
 
-    class Default(object):
-        pass
-
-    default = Default()
-
     def ycecream_pformat(obj, width, compact, indent, depth, sort_dicts):
         return pformat(obj, width=width, compact=compact, indent=indent, depth=depth, sort_dicts=sort_dicts).replace("\\n", "\n")
 
@@ -83,8 +74,15 @@ if PY3:
     binary_type = bytes
     xrange = range
 
-    def iteritems(d, **kw):
-        return iter(d.items(**kw))
+    def iteritems(d, **kwargs):
+        return iter(d.items(**kwargs))
+
+
+class Default(object):
+    pass
+
+
+default = Default()
 
 
 def change_path(new_path):  # used in tests
@@ -95,7 +93,7 @@ def change_path(new_path):  # used in tests
 _fixed_perf_counter = None
 
 
-def fix_perf_counter(val):
+def fix_perf_counter(val):  # for tests
     global _fixed_perf_counter
     _fixed_perf_counter = val
 
@@ -115,8 +113,9 @@ shortcut_to_name = {
     "i": "indent",
     "de": "depth",
     "wi": "wrap_indent",
-    "cd": "context_delimiter",
-    "pd": "pair_delimiter",
+    "cs": "context_separator",
+    "sep": "separator",
+    "es": "equals_separator",
     "vo": "values_only",
     "rn": "return_none",
     "ell": "enforce_line_length",
@@ -143,11 +142,13 @@ def set_defaults():
     default.indent = 1
     default.depth = 1000000
     default.wrap_indent = "    "
-    default.context_delimiter = " ==> "
-    default.pair_delimiter = ", "
+    default.context_separator = " ==> "
+    default.separator = ", "
+    default.equals_separator = ": "
     default.values_only = False
     default.return_none = False
     default.enforce_line_length = False
+    default.one_line_per_pairenforce_line_length = False
     default.decorator = False
     default.context_manager = False
     default.start_time = perf_counter()
@@ -227,8 +228,9 @@ class _Y(object):
         indent=nv,
         depth=nv,
         wrap_indent=nv,
-        context_delimiter=nv,
-        pair_delimiter=nv,
+        context_separator=nv,
+        separator=nv,
+        equals_separator=nv,
         values_only=nv,
         return_none=nv,
         enforce_line_length=nv,
@@ -329,8 +331,9 @@ class _Y(object):
         indent = kwargs.pop("indent", nv)
         depth = kwargs.pop("depth", nv)
         wrap_indent = kwargs.pop("wrap_indent", nv)
-        context_delimiter = kwargs.pop("context_delimiter", nv)
-        pair_delimiter = kwargs.pop("pair_delimiter", nv)
+        context_separator = kwargs.pop("context_separator", nv)
+        separator = kwargs.pop("separator", nv)
+        equals_separator = kwargs.pop("equals_separator", nv)
         values_only = kwargs.pop("values_only", nv)
         return_none = kwargs.pop("return_none", nv)
         enforce_line_length = kwargs.pop("enforce_line_length", nv)
@@ -497,15 +500,16 @@ class _Y(object):
 
                         left = ""
                     except Exception:
-                        left = left + ": "  # not a literal\
+                        left += this.equals_separator
                     pairs.append(Pair(left=left, right=right))
 
             just_one_line = False
-            if not any("\n" in pair.left for pair in pairs):
-                as_one_line = context + this.pair_delimiter.join(pair.left + this.serialize_kwargs(obj=pair.right, width=10000) for pair in pairs)
-                if len(as_one_line) <= this.line_length and "\n" not in as_one_line:
-                    out = as_one_line
-                    just_one_line = True
+            if not (len(pairs) > 1 and this.separator == ""):
+                if not any("\n" in pair.left for pair in pairs):
+                    as_one_line = context + this.separator.join(pair.left + this.serialize_kwargs(obj=pair.right, width=10000) for pair in pairs)
+                    if len(as_one_line) <= this.line_length and "\n" not in as_one_line:
+                        out = as_one_line
+                        just_one_line = True
 
             if not just_one_line:
                 if isinstance(this.wrap_indent, numbers.Number):
@@ -544,7 +548,7 @@ class _Y(object):
 
         else:
             this.show_line_number = True
-            out = this.context(omit_context_delimiter=True)
+            out = this.context(omit_context_separator=True)
 
         if this.show_traceback:
             out += this.traceback()
@@ -575,8 +579,9 @@ class _Y(object):
         indent=nv,
         depth=nv,
         wrap_indent=nv,
-        context_delimiter=nv,
-        pair_delimiter=nv,
+        context_separator=nv,
+        separator=nv,
+        equals_separator=nv,
         values_only=nv,
         return_none=nv,
         enforce_line_length=nv,
@@ -613,8 +618,9 @@ class _Y(object):
         indent=nv,
         depth=nv,
         wrap_indent=nv,
-        context_delimiter=nv,
-        pair_delimiter=nv,
+        context_separator=nv,
+        separator=nv,
+        equals_separator=nv,
         values_only=nv,
         return_none=nv,
         enforce_line_length=nv,
@@ -652,7 +658,7 @@ class _Y(object):
             self.do_output("{context}exit in {duration:.6f} seconds{traceback}".format(context=context, duration=duration, traceback=self.save_traceback))
         self.is_context_manager = False
 
-    def context(self, omit_context_delimiter=False):
+    def context(self, omit_context_separator=False):
         if self.show_line_number and self.line_number_with_filename_and_parent != "":
             parts = [self.line_number_with_filename_and_parent]
         else:
@@ -665,8 +671,8 @@ class _Y(object):
             parts.append("delta={t0:.3f}".format(t0=t0))
 
         context = " ".join(parts)
-        if not omit_context_delimiter and context:
-            context += self.context_delimiter
+        if not omit_context_separator and context:
+            context += self.context_separator
 
         return (self.prefix() if callable(self.prefix) else self.prefix) + context
 
@@ -766,7 +772,7 @@ codes = {}
 set_defaults()
 default_pre_json = copy.copy(default)
 apply_json()
-y = _Y()
+y = yc = _Y()
 
 # source of asttoke.util
 

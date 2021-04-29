@@ -1019,10 +1019,58 @@ def test_delta_propagation():
         assert 100 < y2.delta < 110
 
         y.delta = None
-        assert 0 < y.delta < y_delta_start+10
-        assert 0 < y0.delta < y_delta_start+10
-        assert 0 < y1.delta < y_delta_start+10
+        assert 0 < y.delta < y_delta_start + 10
+        assert 0 < y0.delta < y_delta_start + 10
+        assert 0 < y1.delta < y_delta_start + 10
         assert 100 < y2.delta < 110
+
+
+def test_separator(capsys):
+    a = 12
+    b = 4 * ["test"]
+    y(a, b)
+    y(a, b, sep="")
+    y(a, separator="")
+    out, err = capsys.readouterr()
+    assert (
+        err
+        == """\
+y| a: 12, b: ['test', 'test', 'test', 'test']
+y|
+    a: 12
+    b: ['test', 'test', 'test', 'test']
+y| a: 12
+"""
+    )
+
+
+def test_equals_separator(capsys):
+    a = 12
+    b = 4 * ["test"]
+    y(a, b)
+    y(a, b, equals_separator=" ==> ")
+    y(a, b, es=" = ")
+
+    out, err = capsys.readouterr()
+    assert (
+        err
+        == """\
+y| a: 12, b: ['test', 'test', 'test', 'test']
+y| a ==> 12, b ==> ['test', 'test', 'test', 'test']
+y| a = 12, b = ['test', 'test', 'test', 'test']
+"""
+    )
+
+def test_context_separator(capsys):
+    a = 12
+    b = 2 * ["test"]
+    y(a, b, show_line_number=True)
+    y(a, b, sln=1, context_separator=" ... ")
+
+    out, err = capsys.readouterr()
+    lines = err.split('\n')
+    assert lines[0].endswith(" ==> a: 12, b: ['test', 'test']")
+    assert lines[1].endswith(" ... a: 12, b: ['test', 'test']")
 
 if __name__ == "__main__":
     pytest.main(["-vv", "-s", "-x", __file__])

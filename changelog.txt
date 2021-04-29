@@ -1,13 +1,62 @@
-version 1.3.5  2021-
-========================
+version 1.3.6  2021-04-29
+=========================
+Changed functionality (0)
+-------------------------
+The attribute pair_delimiter is now called separator (shorthand sep).
+
+If separator is blank, multiple items will be automatically placed on multiple lines. E.g.
+    from ycecream import y
+    a = 12
+    b = 4 * ["test"]
+    y(a, b)
+    y(a, b, sep="")
+prints
+    y| a: 12, b: ['test', 'test', 'test', 'test']
+    y|
+        a: 12
+        b: ['test', 'test', 'test', 'test']
+
+
+Changed functionality (1)
+-------------------------
+The attribute context_delimiter is now called context_separator (shorthand cs).
+
+
 New functionality (0)
 ---------------------
-The attribute delta can now be used as an ordinary attribute, including initialization from json.
+Introduced a new attribute: equals_separator (shorthand es).
+This string is used to separate the name of a variable of expression and the value (by deafult it is ": ").
+Example:
+    from ycecream import y
+    a = 12
+    b = 4 * ["test"]
+    y(a, b)
+    y(a, b, equals_separator=" => ")
+prints
+    y| a: 12, b: ['test', 'test', 'test', 'test']
+    y| a => 12, b => ['test', 'test', 'test', 'test']
+
+
+New functionality (1)
+---------------------
+Ycecream now also has a yc variable that is equal to y. So it is possible to use
+    from ycecream import yc
+Please note that after
+    from ycecream import y
+    from ycecream import yc
+y and yc refer to the same object!
+
+version 1.3.5  2021-04-20
+=========================
+New functionality (0)
+---------------------
+The attribute delta can now be used as an ordinary attribute,
+including propagation and initialization from json.
 
 New tests (0)
 -------------
-Test for propagation of attributes added.
-Test for delta setting added.
+Tests for propagation of attributes added.
+Tests for delta setting/reading added.
 
 Bugfix (0)
 ----------
