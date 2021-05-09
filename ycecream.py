@@ -6,7 +6,7 @@ from __future__ import print_function
 #   |___/  \___| \___| \___||_|    \___| \__,_||_| |_| |_|
 #                       sweeter debugging and benchmarking
 
-__version__ = "1.3.6"
+__version__ = "1.3.7"
 
 """
 See https://github.com/salabim/ycecream for details
@@ -518,10 +518,17 @@ class _Y(object):
                     wrap_indent = str(this.wrap_indent)
 
                 if context.strip():
-                    indent1 = wrap_indent
-                    lines = [context]
+                    if len(context.rstrip()) >= len(wrap_indent):
+                        indent1 = wrap_indent
+                        indent1_rest = wrap_indent
+                        lines = [context]
+                    else:
+                        indent1 = context.rstrip().ljust(len(wrap_indent))
+                        indent1_rest = wrap_indent
+                        lines = []
                 else:
                     indent1 = ""
+                    indent1_rest = ""
                     lines = []
 
                 for pair in pairs:
@@ -538,6 +545,7 @@ class _Y(object):
                             do_right = True
                         else:
                             lines.append(line)
+                    indent1 = indent1_rest
                     if do_right:
                         indent2 = indent1 + wrap_indent
                         line = this.serialize_kwargs(obj=pair.right, width=this.line_length - len(indent2))
@@ -772,7 +780,8 @@ codes = {}
 set_defaults()
 default_pre_json = copy.copy(default)
 apply_json()
-y = yc = _Y()
+y = _Y()
+yc = y.fork(prefix="yc| ")
 
 # source of asttoke.util
 

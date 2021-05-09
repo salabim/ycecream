@@ -1,3 +1,43 @@
+version 1.3.7  2021-05-08
+=========================
+Changed functionality (0)
+-------------------------
+More compact output for multiple lines, when the context fits within the wrap_indent on the first line, like
+    a = 12
+    b = 4
+    y.separator = ""
+    y(a,b)
+    y.prefix = "prefix| "
+    y(a,b)
+prints
+    y|  a: 12
+        b: 4
+    prefix|
+        a: 12
+        b: 4
+
+Changed functionality (1)
+-------------------------
+The yc ycecream object has now "yc| " as prefix and is now different from y. E.g.
+    from ycecream y, yc
+    a=1
+    y(a)
+    yc(a)
+prints
+    y| a: 12
+    yc| a: 12
+Note that yc is forked from y, so if you change an attribute of y (and that attribute is not
+explicitely set in yc)), that attribute is also changed in yc, e.g.
+    from ycecream y, yc
+    y.enabled = False
+    yc(1)
+    y.enabled = True
+    yc(2)
+prints
+    yc| 2
+and not yc| 1 , as y.enabled propagates to yc.enabled
+
+
 version 1.3.6  2021-04-29
 =========================
 Changed functionality (0)
@@ -93,10 +133,6 @@ prints
             y()
 
 The show_traceback functionality is also available when y is used as a decorator or context manager. 
-
-Documentation change (0)
-------------------------
-The description of ycecream on PyPI is now (nearly) the same as the readme.md file.
 
 version 1.3.3  2021-04-14
 =========================
@@ -370,7 +406,7 @@ value will be printed. If True, the left_hand side will be suppressed:
 prints
     |y| hello: 'world', 2 * hello = 'worldworld'
     |y| 'world', 'worldworld'
-The values=True version of y can be seen as a supercharged print/pprint.
+The values_only=True version of y can be seen as a supercharged print/pprint.
 
 New functionality (1)
 ---------------------
