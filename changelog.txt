@@ -1,3 +1,59 @@
+version 1.3.8  2021-05-08
+=========================
+New functionality (0)
+---------------------
+Introduced a new attribute "value_only_for_fstrings" (shorthand "voff").
+By default, Values_only_for_fstrings is False.
+When values_only_for_fstring is True, the f-string itself will not be shown.
+Example:
+    x = 12.3
+    y(f"{x:0.3e}")
+    y.values_only_for_fstrings = True
+    y(f"{x:0.3e}")
+prints
+    y| f"{x:0.3e}": '1.230e+01'
+    y| '1.230e+01'
+Note that, when the test script is run on Python < 3.6, the corresponding test is skipped.
+
+Bugfix (0)
+----------
+The shortcut st was defined twice, resulting in being a shortcut for show_traceback only.
+From now on st is a shortcut for show_time and stb is a shortcut for show_traceback.
+
+Example:
+    y.show_time = True
+    y(y.st)
+    y.show_time = False
+    y(y.st)
+    y.show_traceback = True
+    y(y.stb)
+    y.show_traceback = False
+    y(y.stb)
+prints something like:
+    y| @ 14:47:46.356834 ==> y.st: True
+    y| y.st: False
+    y| y.stb: True
+        Traceback (most recent call last)
+        File "c:\Users\Ruud\Dropbox (Personal)\Apps\Python Ruud\ycecream\x.py", line 8, in <module>
+            y(y.stb)
+    y| y.stb: False
+
+More compact output for multiple lines, when the context fits within the wrap_indent on the first line, like
+    a = 12
+    b = 4
+    y.separator = ""
+    y(a,b)
+    y.prefix = "prefix| "
+    y(a,b)
+prints
+    y|  a: 12
+        b: 4
+    prefix|
+        a: 12
+        b: 4
+
+
+
 version 1.3.7  2021-05-08
 =========================
 Changed functionality (0)

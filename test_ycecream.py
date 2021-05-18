@@ -1080,6 +1080,53 @@ yyy|
 ....1
 ....2
 """        
+
+
+@pytest.mark.skipif (sys.version_info < (3,6), reason="f-strings require Python >= 3.6")
+def test_fstrings(capsys):
+    test_code="""\
+hello='world'
+with y.preserve():
+    y('hello, world')
+    y(hello)
+    y(f'hello={hello}')
+
+with y.preserve():
+    y.values_only = True
+    y('hello, world')
+    y(hello)
+    y(f'hello={hello}')
+
+with y.preserve():
+    y.values_only_for_fstrings=True
+    y('hello, world')
+    y(hello)
+    y(f'hello={hello}')
+
+with y.preserve():
+    y.voff=True
+    y.vo=True
+    y('hello, world')
+    y(hello)
+    y(f'hello={hello}')"""
+    exec(test_code)
+    out, err = capsys.readouterr()
+    assert (
+        err == """\
+y| 'hello, world'
+y| 'world'
+y| 'hello=world'
+y| 'hello, world'
+y| 'world'
+y| 'hello=world'
+y| 'hello, world'
+y| 'world'
+y| 'hello=world'
+y| 'hello, world'
+y| 'world'
+y| 'hello=world'
+""")
+
     
 if __name__ == "__main__":
     pytest.main(["-vv", "-s", "-x", __file__])

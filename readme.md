@@ -245,35 +245,36 @@ y| duration: 1.0001721999999997
 For the configuration, it is important to realize that `y` is an instance of the `ycecream._Y` class, which has
 a number of configuration attributes:
 ```
---------------------------------------------------
-attribute           alternative     default
---------------------------------------------------
-prefix              p               "y| "
-output              o               "stderr"
-serialize                           pprint.pformat
-show_line_number    sln             False
-show_time           st              False
-show_delta          sd              False
-show_enter          se              True
-show_exit           sx              True
-show_traceback      st              False
-sort_dicts *)       sdi             False
-enabled             e               True
-line_length         ll              80
-compact *)          c               False
-indent              i               1
-depth               de              1000000
-wrap_indent         wi              "     "   
-separator           sep             ", "
-context_separator   cs              " ==> "
-equals_separator    es              ": "
-values_only         vo              False
-return_none         rn              False
-enforce_line_length ell             False
-decorator           d               False
-context_manager     cm              False
-delta               dl              0
---------------------------------------------------
+------------------------------------------------------
+attribute               alternative     default
+------------------------------------------------------
+prefix                  p               "y| "
+output                  o               "stderr"
+serialize                               pprint.pformat
+show_line_number        sln             False
+show_time               st              False
+show_delta              sd              False
+show_enter              se              True
+show_exit               sx              True
+show_traceback          stb             False
+sort_dicts *)           sdi             False
+enabled                 e               True
+line_length             ll              80
+compact *)              c               False
+indent                  i               1
+depth                   de              1000000
+wrap_indent             wi              "     "   
+separator               sep             ", "
+context_separator       cs              " ==> "
+equals_separator        es              ": "
+values_only             vo              False
+value_only_for_fstrings voff            False 
+return_none             rn              False
+enforce_line_length     ell             False
+decorator               d               False
+context_manager         cm              False
+delta                   dl              0
+------------------------------------------------------
 *) ignored under Python 2.7
 ```
 It is perfectly ok to set/get any of these attributes directly.
@@ -501,7 +502,7 @@ function returned or the context manager is exited.
 With `show_exit=False` this line can be suppressed.
 
 
-## show_traceback / st
+## show_traceback / stb
 When show_traceback is True, the ordinary output of y() will be followed by a printout of the
 traceback, similar to an error traceback.
 ```
@@ -743,6 +744,24 @@ y| hello: 'world', 2 * hello = 'worldworld'
 y| 'world', 'worldworld'
 ```
 The values=True version of y can be seen as a supercharged print/pprint.
+
+
+## values_only_for_fstrings / voff
+If False (the default), both the original f-string and the
+value will be printed for f-strings.
+If True, the left_hand side will be suppressed in case of an f-string:
+```
+x = 12.3
+y(f"{x:0.3e}")
+y.values_only_for_fstrings = True
+y(f"{x:0.3e}")
+```
+prints
+```
+y| f"{x:0.3e}": '1.230e+01'
+y| '1.230e+01'
+```
+Note that if `values_only` is True, f-string will be suppressed, regardless of `values_only_for_fstrings`.
 
 ## return_none / rn
 Normally, `y()`returns the values passed directly, which is usually fine. However, when used in a notebook
@@ -1078,17 +1097,27 @@ Ycecream may be used in a REPL, but with limited functionality:
 * use as a decorator is only supported when you used as `y(decorator=True)` or `y(d=1)`
 * use as a context manager is only supported when used as `y(context_manager=True)`or `y(cm=1)`
 
-# Alternative to y
-Sometime, it is not suitable to use the name y in a program, e.g. when
+# Alternative to `y`
+Sometimes, it is not suitable to use the name y in a program, e.g. when
 dealing with coordinates x, y and z.
 
 In that case, it is possible to use yc instead
 ```
 from ycecream import yc
 ```
-Or -a bit longer-
+The `yc` object is a *fork* of y with the prefix `"yc| "`. That means that attributes of `y` are propagated to `yc`, unless overridden.
+
+Of course, it is also possible to use
 ```
 from ycecream import y as yy
+```
+or
+```
+yy = y.new()
+```
+or
+```
+yy = y.new(prefix="yy| ")
 ```
 
 # Alternative installation

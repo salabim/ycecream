@@ -6,7 +6,7 @@ from __future__ import print_function
 #   |___/  \___| \___| \___||_|    \___| \__,_||_| |_| |_|
 #                       sweeter debugging and benchmarking
 
-__version__ = "1.3.7"
+__version__ = "1.3.8"
 
 """
 See https://github.com/salabim/ycecream for details
@@ -106,7 +106,7 @@ shortcut_to_name = {
     "sdi": "sort_dicts",
     "se": "show_enter",
     "sx": "show_exit",
-    "st": "show_traceback",
+    "stb": "show_traceback",
     "e": "enabled",
     "ll": "line_length",
     "c": "compact",
@@ -117,6 +117,7 @@ shortcut_to_name = {
     "sep": "separator",
     "es": "equals_separator",
     "vo": "values_only",
+    "voff": "values_only_for_fstrings",
     "rn": "return_none",
     "ell": "enforce_line_length",
     "d": "decorator",
@@ -146,6 +147,7 @@ def set_defaults():
     default.separator = ", "
     default.equals_separator = ": "
     default.values_only = False
+    default.values_only_for_fstrings = False
     default.return_none = False
     default.enforce_line_length = False
     default.one_line_per_pairenforce_line_length = False
@@ -232,6 +234,7 @@ class _Y(object):
         separator=nv,
         equals_separator=nv,
         values_only=nv,
+        values_only_for_fstrings=nv,
         return_none=nv,
         enforce_line_length=nv,
         decorator=nv,
@@ -335,6 +338,7 @@ class _Y(object):
         separator = kwargs.pop("separator", nv)
         equals_separator = kwargs.pop("equals_separator", nv)
         values_only = kwargs.pop("values_only", nv)
+        values_only_for_fstrings = kwargs.pop("values_only_for_fstrings", nv)
         return_none = kwargs.pop("return_none", nv)
         enforce_line_length = kwargs.pop("enforce_line_length", nv)
         decorator = kwargs.pop("decorator", nv)
@@ -494,12 +498,23 @@ class _Y(object):
                     if "\n" in left:
                         left = " " * node.first_token.start[1] + left
                         left = textwrap.dedent(left)
-
                     try:
                         ast.literal_eval(left)  # it's indeed a literal
-
                         left = ""
                     except Exception:
+                        pass
+                    if left:
+                        try:
+                            if isinstance(left, str):
+                                s = ast.parse(left, mode='eval')
+                            if isinstance(s, ast.Expression):
+                                s = s.body
+                            if s and isinstance(s, ast.JoinedStr): # it is indeed an f-string
+                                if this.values_only_for_fstrings:
+                                    left = ""  
+                        except Exception:
+                            pass
+                    if left:
                         left += this.equals_separator
                     pairs.append(Pair(left=left, right=right))
 
@@ -591,6 +606,7 @@ class _Y(object):
         separator=nv,
         equals_separator=nv,
         values_only=nv,
+        values_only_for_fstrings=nv,
         return_none=nv,
         enforce_line_length=nv,
         decorator=nv,
@@ -630,6 +646,7 @@ class _Y(object):
         separator=nv,
         equals_separator=nv,
         values_only=nv,
+        values_only_for_fstrings=nv,
         return_none=nv,
         enforce_line_length=nv,
         decorator=nv,
