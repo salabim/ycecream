@@ -23,6 +23,7 @@ use from a REPL                   limited functionality    no
 external configuration            via json file            no
 observes line_length correctly    yes                      no
 benchmarking functionality        yes                      no
+suppress f-strings at left hand   optional                 no
 indentation                       4 blanks (overridable)   dependent on length of prefix
 forking and cloning               yes                      no
 test script                       pytest                   unittest
