@@ -6,7 +6,7 @@ from __future__ import print_function
 #   |___/  \___| \___| \___||_|    \___| \__,_||_| |_| |_|
 #                       sweeter debugging and benchmarking
 
-__version__ = "1.3.8"
+__version__ = "1.3.9"
 
 """
 See https://github.com/salabim/ycecream for details
@@ -120,8 +120,8 @@ shortcut_to_name = {
     "voff": "values_only_for_fstrings",
     "rn": "return_none",
     "ell": "enforce_line_length",
-    "d": "decorator",
-    "cm": "context_manager",
+#    "d": "decorator",
+#    "cm": "context_manager",
     "dl": "delta",
 }
 
@@ -151,8 +151,8 @@ def set_defaults():
     default.return_none = False
     default.enforce_line_length = False
     default.one_line_per_pairenforce_line_length = False
-    default.decorator = False
-    default.context_manager = False
+#    default.decorator = False
+#    default.context_manager = False
     default.start_time = perf_counter()
 
 
@@ -237,8 +237,8 @@ class _Y(object):
         values_only_for_fstrings=nv,
         return_none=nv,
         enforce_line_length=nv,
-        decorator=nv,
-        context_manager=nv,
+   #     decorator=nv,
+   #     context_manager=nv,
         delta=nv,
         _parent=nv,
         **kwargs
@@ -342,10 +342,28 @@ class _Y(object):
         return_none = kwargs.pop("return_none", nv)
         enforce_line_length = kwargs.pop("enforce_line_length", nv)
         decorator = kwargs.pop("decorator", nv)
+        d = kwargs.pop("decorator", nv)
         context_manager = kwargs.pop("context_manager", nv)
+        cm = kwargs.pop("cm", nv)
         delta = kwargs.pop("delta", nv)
         as_str = kwargs.pop("as_str", nv)
+        provided = kwargs.pop("provided", nv)
+        pr = kwargs.pop("pr", nv)
+
+        if d is not nv and decorator is not nv:
+            raise TypeError("can't use both d and decorator")
+        if cm is not nv and context_manager is not nv:
+            raise TypeError("can't use both cm and context_manager")
+        if pr is not nv and provided is not nv:
+            raise TypeError("can't use both pr and provided")
+
         as_str = False if as_str is nv else bool(as_str)
+        provided = True if provided is nv else bool(provided)
+        decorator = False if decorator is nv else bool(decorator)
+        context_manager = False if context_manager is nv else bool(context_manager)
+
+        if decorator and context_manager:
+            raise TypeError("decorator and context_manager can't be specified both.")
 
         self.is_context_manager = False
 
@@ -356,6 +374,9 @@ class _Y(object):
 
         if this.enabled == [] and not (as_str or this.decorator or this.context_manager):
             return return_args(args, this.return_none)
+
+        if not provided:
+            this.enabled = False
 
         this.check()
 
@@ -577,9 +598,12 @@ class _Y(object):
             out += this.traceback()
 
         if as_str:
-            if this.enforce_line_length:
-                out = "\n".join(line[: this.line_length] for line in out.splitlines())
-            return out + "\n"
+            if this.enabled:
+                if this.enforce_line_length:
+                    out = "\n".join(line[: this.line_length] for line in out.splitlines())
+                return out + "\n"
+            else:
+                return ""
         this.do_output(out)
 
         return return_args(args, this.return_none)
@@ -609,8 +633,8 @@ class _Y(object):
         values_only_for_fstrings=nv,
         return_none=nv,
         enforce_line_length=nv,
-        decorator=nv,
-        context_manager=nv,
+#        decorator=nv,
+#        context_manager=nv,
         delta=nv,
         **kwargs
     ):
@@ -649,8 +673,8 @@ class _Y(object):
         values_only_for_fstrings=nv,
         return_none=nv,
         enforce_line_length=nv,
-        decorator=nv,
-        context_manager=nv,
+#        decorator=nv,
+#        context_manager=nv,
         delta=nv,
         **kwargs
     ):
@@ -659,6 +683,11 @@ class _Y(object):
         this.assign(kwargs, locals(), func="clone()")
 
         return this
+
+    def assert_(self, condition):
+        if self.enabled:
+            assert condition
+        
 
     @contextlib.contextmanager
     def preserve(self):
@@ -755,9 +784,6 @@ class _Y(object):
             return ""
 
     def check(self):
-
-        if self.decorator and self.context_manager:
-            raise TypeError("decorator and context_manager can't be specified both.")
 
         if callable(self.output):
             return

@@ -785,6 +785,15 @@ None
 If enforce_line_length is True, all output lines are explicitely truncated to the given
 line_length, even those that are not truncated by pformat.
 
+## delta / dl
+The delta attribute can be used to (re)set the current delta, e.g.
+```
+y.configure(dl=0)
+print(y.delta)
+```
+prints a value that slightly more than 0.
+
+
 ## decorator / d
 Normally, an ycecream instance can be used as to show values, as a decorator and as a
 context manager.
@@ -833,27 +842,33 @@ y| exit in 0.008644 seconds
 ```
 
 The `context_manager` attribute is also required when using `y():` as a context manager
-witb *fast disabling* (see below).
+with *fast disabling* (see below).
 ```
 y.enabled([])
-    with y:
+with y:
     pass
 ```
 would fail with `AttributeError: __enter__`, but
 ```
 y.enabled([])
-    with y(context_manager=True):
+with y(context_manager=True):
     pass
 ```
 will run correctly.
 
-## delta / dl
-The delta attribute can be used to (re)set the current delta, e.g.
+## provided / pr
+If provided is False, all output for this call will be suppressed.
+If provided is True, output will be generated as usual (obeying the enabled attribute).
+
 ```
-y.configure(dl=0)
-print(y.delta)
+x = 1
+y("should print", provided=x > 0)
+y("should not print", provided=x < 0)
 ```
-prints a value that slightly more than 0.
+This will print
+```
+should print
+```
 
 # Return a string instead of sending to output
 
@@ -870,6 +885,9 @@ prints
 ```
 y| hello: 'world'
 ```
+
+Note that if enabled=False, the call will return the null string.
+
 # Disabling ycecream's output
 
 ```
@@ -895,6 +913,8 @@ True
 ```
 Of course `y()` continues to return its arguments when disabled, of course.
 
+It is also possible to suppress output with the provided attribute (see above).
+
 ## Speeding up disabled ycecream
 When output is disabled, either via `y.configure(enbabled=False)` or `ycecream.enable = False`,
 ycecream still has to check for usage as a decorator or context manager, which can be rather time
@@ -906,7 +926,7 @@ the given arguments. If ycecream is disabled this way, usage as a `@y()` decorat
 context manager will raise a runtime error, though. The `@y` decorator without parentheses will
 not raise any exception, though.
 
-To use `y` as a decorator and still want *fast disabling*:
+To use `y` as a decorator and still have *fast disabling*:
 ```
 y.configure(enabled=[])
 @y(decorator=True):
@@ -920,7 +940,6 @@ y.configure(enabled=[])
 with @y(context_manager=True):
     pass
 ```
-Note that calls with `as_str=True` will not be affected at all by the enabled flag.
 
 The table below shows it all.
 ```  
@@ -934,10 +953,28 @@ y(decorator=True)              normal       no output       no output
 y(context_manager=True)        normal       no output       no output
 @y()                           normal       no output       TypeError
 with y():                      normal       no output  AttributeError
-y(as_str=True)                 normal          normal          normal
+y(as_str=True)                 normal             ""               ""
 ---------------------------------------------------------------------
 ```
 
+# Using yecream as a substitute for `assert`
+Ycecream has a method `assert_` that works like `assert`, but can be enabled or disabled with the enabled flag.
+
+```
+temperature = -1
+y.assert_(temperature > 0)
+```
+This will raise an AttributeError.
+
+But
+```
+y.enabled = False
+temperature = -1
+y.assert_(temperature > 0)
+```
+will not.
+
+Note that with the attribute propagation method, you can in effect have a layered assert system.
 # Interpreting the line number information
 When `show_line_number` is True or y() is used without any parameters, the output will contain the line number like:
 ```
@@ -1052,8 +1089,7 @@ ycm exit in 0.017686 seconds
 ```
 
 ## ignore_json
-The `y.new(ignore_json=True)` will return an instance of y without having applied any json configuration
-file. That can be useful when guaranteeing the same output in several setups.
+With `y.new(ignore_json=True)` an instance of y without having applied any json configuration file will be returned. That can be useful when guaranteeing the same output in several setups.
 
 ### Example
 Suppose we have an `ycecream.json` file in the current directory with the contents

@@ -706,7 +706,7 @@ def test_enabled(capsys):
         y.configure(enabled=False)
         y("Two")
         s = y("Two", as_str=True)
-        assert s == "y| 'Two'\n"
+        assert s == ""
         y.configure(enabled=True)
         y("Three")
 
@@ -750,8 +750,8 @@ def test_enabled2(capsys):
         assert pair0 == ("p0", "p0")
         assert pair1 == ("p1", "p1")
         assert pair2 == ("p2", "p2")
-        assert s0 == "y| 's0'\n"
-        assert s1 == "y| 's1'\n"
+        assert s0 == ""
+        assert s1 == ""
         assert s2 == "y| 's2'\n"
 
 
@@ -945,6 +945,32 @@ y| #24[x1.py] in check_output() ==> called x(2)
 y| #33[x1.py] in check_output() ==> called x()
 """
     )
+
+
+def test_provided(capsys):
+    with y.preserve():
+        y("1")
+        y("2", provided=True)
+        y("3", provided=False)
+        y.enabled=False
+        y("4")
+        y("5", provided=True)
+        y("6", provided=False)
+    out, err = capsys.readouterr()
+    assert err =="""\
+y| '1'
+y| '2'
+"""
+
+def test_assert_():
+    y.assert_(True)
+    with pytest.raises(AssertionError):
+        y.assert_(False)
+
+    with y.preserve():
+        y.enabled=False
+        y.assert_(True)
+        y.assert_(False)
 
 
 def test_propagation():
