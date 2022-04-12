@@ -6,7 +6,7 @@ from __future__ import print_function
 #   |___/  \___| \___| \___||_|    \___| \__,_||_| |_| |_|
 #                       sweeter debugging and benchmarking
 
-__version__ = "1.3.9"
+__version__ = "1.3.10"
 
 """
 See https://github.com/salabim/ycecream for details
@@ -100,6 +100,7 @@ def fix_perf_counter(val):  # for tests
 
 shortcut_to_name = {
     "p": "prefix",
+    "o": "output",
     "sln": "show_line_number",
     "st": "show_time",
     "sd": "show_delta",
@@ -120,8 +121,6 @@ shortcut_to_name = {
     "voff": "values_only_for_fstrings",
     "rn": "return_none",
     "ell": "enforce_line_length",
-#    "d": "decorator",
-#    "cm": "context_manager",
     "dl": "delta",
 }
 
@@ -151,8 +150,6 @@ def set_defaults():
     default.return_none = False
     default.enforce_line_length = False
     default.one_line_per_pairenforce_line_length = False
-#    default.decorator = False
-#    default.context_manager = False
     default.start_time = perf_counter()
 
 
@@ -416,7 +413,10 @@ class _Y(object):
                 codes[filename] = frame_info.code_context
             code = codes[filename]
             frame_info = inspect.getframeinfo(call_frame, context=1)
-            parent_function = frame_info.function
+
+            parent_function = frame_info.function  # changed in version 1.3.10 ****
+            parent_function = Source.executing(call_frame).code_qualname()
+            parent_function = parent_function.replace(".<locals>.",".")
             if parent_function == "<module>":
                 parent_function = ""
             else:
@@ -826,7 +826,7 @@ apply_json()
 y = _Y()
 yc = y.fork(prefix="yc| ")
 
-# source of asttoke.util
+# source of asttokens.util
 
 # Copyright 2016 Grist Labs, Inc.
 #
@@ -1101,7 +1101,7 @@ class NodeMethods(object):
         return method
 
 
-# end of source of asttoke.util
+# end of source of asttokens.util
 
 # source of asttokens.mark_tokens
 

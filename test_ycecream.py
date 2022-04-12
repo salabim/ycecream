@@ -96,7 +96,7 @@ def test_in_function(capsys):
     hello("world")
     out, err = capsys.readouterr()
     assert err.startswith(context_start)
-    assert err.endswith(" in hello() ==> val: 'world'\n")
+    assert err.endswith(" in test_in_function.hello() ==> val: 'world'\n")
 
 
 def test_prefix(capsys):
@@ -933,7 +933,7 @@ def test():
         err
         == """\
 y| #5[x2.py] in test() ==> called myself(6)
-y| #6[x2.py] in myself() ==> x: 6
+y| #6[x2.py] in test.myself() ==> x: 6
 y| #10[x2.py] in test() ==> enter
 y| #7[x1.py] in check_output() ==> 1
 y| #8[x1.py] in check_output() ==> 1
