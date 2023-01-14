@@ -1,3 +1,11 @@
+version 1.3.11  2023-01-13
+==========================
+Added compatibility (0)
+-----------------------
+Now compatible with Python 3.11
+by including the updated executing and _position_node_finder modules
+Also updated tests.
+
 version 1.3.10  2022-04-12
 ==========================
 Changed functionality (0)

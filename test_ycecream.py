@@ -765,7 +765,7 @@ def test_enabled3(capsys):
             def add2(x):
                 return x + 2
 
-        with pytest.raises(AttributeError):
+        with pytest.raises((AttributeError, TypeError)):
             with y():
                 pass
 
