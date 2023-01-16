@@ -21,7 +21,33 @@ And on top of that, you get some basic benchmarking functionality.
 
 * [Configuration](#configuration)
 
-* [Return a string instead of sending to output](return-a-string-instead-of-sending-output)
+* [Return a string instead of sending to output](#return-a-string-instead-of-sending-output)
+
+* [Disabling ycecream's output](#disabling-ycecreams-output)
+
+* [Using yecream as a substitute for `assert`](#using-ycecream-as-a-substitute-for-assert)
+
+* [Interpreting the line number information](#interpreting-the-line-number)
+
+* [Configuring at import time](#configuring-at-import-time)
+
+* [Working with multiple instances of y](#working-with-multiple-instances-of-y)
+
+* [Test script](#test-script)
+
+* [Using ycecream in a REPL](#using-ycecream-in-a-repl)
+
+* [Alternative to `y`](#alternative-to-y)
+
+* [Alternative installation](#alternative-installation)
+
+* [Limitations](#limitations)
+
+* [Implementation details](implementation-details)
+
+* [Acknowledgement](#acknowledgenment)
+
+* [Differences with IceCream](#differences-with-icecream)
 
 
 # Installation
@@ -996,7 +1022,9 @@ y.assert_(temperature > 0)
 will not.
 
 Note that with the attribute propagation method, you can in effect have a layered assert system.
+
 # Interpreting the line number information
+
 When `show_line_number` is True or y() is used without any parameters, the output will contain the line number like:
 ```
 y| #3 ==> a: 'abcd'
@@ -1011,6 +1039,7 @@ y| #456[foo.py] in square_root ==> x: 123
 ```
 
 # Configuring at import time
+
 It can be useful to configure ycecream at import time. This can be done by providing a `ycecream.json` file which
 can contain any attribute configuration overriding the standard settings.
 E.g. if there is an `ycecream.json` file with the following contents
@@ -1052,6 +1081,7 @@ Note that not-specified attributes will remain the default settings.
 For obvious reasons, it is not possible to specify `serialize` in an ycecream.json file.
 
 # Working with multiple instances of y
+
 Normally, only the `y()` object is used.
 
 It can be useful to have multiple instances, e.g. when some of the debugging has to be done with context information
@@ -1155,6 +1185,7 @@ Ycecream may be used in a REPL, but with limited functionality:
 * use as a context manager is only supported when used as `y(context_manager=True)`or `y(cm=1)`
 
 # Alternative to `y`
+
 Sometimes, it is not suitable to use the name y in a program, e.g. when
 dealing with coordinates x, y and z.
 
@@ -1178,6 +1209,7 @@ yy = y.new(prefix="yy| ")
 ```
 
 # Alternative installation
+
 With `install ycecream from github.py`, you can install the ycecream.py directly from GitHub to the site packages (as if it was a pip install).
 
 With `install ycecream.py`, you can install the ycecream.py in your current directory to the site packages (as if it was a pip install).
@@ -1186,11 +1218,13 @@ Both files can be found in the GitHub repository (https://github.com/salabim/yce
 
 
 # Limitations
+
 It is not possible to use ycecream:
 * from a frozen application (e.g. packaged with PyInstaller)
 * when the underlying source code has changed during execution
 
 # Implementation details
+
 Although not important for using the package, here are some implementation details:
 * ycecream.py contains the complete (slightly modified) source of the asttokens and executing packages, in
    order to offer the required source lookups, without any dependencies
@@ -1201,6 +1235,7 @@ any source file that uses y()
 
 
 # Acknowledgement
+
 The **ycecream** pacakage is inspired by the **IceCream** package, but is a 
 nearly complete rewrite. See https://github.com/gruns/icecream
 
