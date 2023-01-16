@@ -49,7 +49,7 @@ And on top of that, you get some basic benchmarking functionality.
 
 * [Acknowledgement](#acknowledgement)
 
-* [Differences with IceCream](#differences-with-icecream)
+* [Differences with IceCream](./differences_with_icecream.md)
 
 
 # Installation
