@@ -1,7 +1,28 @@
 ![Logo](./images/ycecream_logo.png)
 
+# Introduction
+
 Do you ever use `print()` or `log()` to debug your code? If so,  ycecream, or `y` for short, will make printing debug information a lot sweeter.
 And on top of that, you get some basic benchmarking functionality.
+
+# Table of contents
+
+* [Installation](#installation)
+
+* [Inspect variables and expressions](#inspect-variables-and-expressions)
+
+* [Inspect execution](#inspect-execution)
+
+* [Return value](#return-value)
+
+* [Debug entry and exit of function calls](#debug-entry-and-exit-of-function-calls)
+
+* [Benchmarking with ycecream](#benchmarking-with-ycecream)
+
+* [Configuration](#configuration)
+
+* [Return a string instead of sending to output](return-a-string-instead-of-sending-output)
+
 
 # Installation
 
