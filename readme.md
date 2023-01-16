@@ -21,13 +21,13 @@ And on top of that, you get some basic benchmarking functionality.
 
 * [Configuration](#configuration)
 
-* [Return a string instead of sending to output](#return-a-string-instead-of-sending-output)
+* [Return a string instead of sending to output](#return-a-string-instead-of-sending-to-output)
 
 * [Disabling ycecream's output](#disabling-ycecreams-output)
 
 * [Using ycecream as a substitute for `assert`](#using-ycecream-as-a-substitute-for-assert)
 
-* [Interpreting the line number information](#interpreting-the-line-number)
+* [Interpreting the line number information](#interpreting-the-line-number-information)
 
 * [Configuring at import time](#configuring-at-import-time)
 
@@ -45,7 +45,7 @@ And on top of that, you get some basic benchmarking functionality.
 
 * [Implementation details](implementation-details)
 
-* [Acknowledgement](#acknowledgenment)
+* [Acknowledgement](#acknowledgement)
 
 * [Differences with IceCream](#differences-with-icecream)
 
@@ -1005,6 +1005,7 @@ y(as_str=True)                 normal             ""               ""
 ```
 
 # Using yecream as a substitute for `assert`
+
 Ycecream has a method `assert_` that works like `assert`, but can be enabled or disabled with the enabled flag.
 
 ```
