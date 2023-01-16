@@ -25,6 +25,8 @@ And on top of that, you get some basic benchmarking functionality.
 
 * [Disabling ycecream's output](#disabling-ycecreams-output)
 
+* [Speeding up disabled ycecream](#speeding-up-disabled-ycecream)
+
 * [Using ycecream as a substitute for `assert`](#using-ycecream-as-a-substitute-for-assert)
 
 * [Interpreting the line number information](#interpreting-the-line-number-information)
