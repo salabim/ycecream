@@ -1004,7 +1004,7 @@ y(as_str=True)                 normal             ""               ""
 ---------------------------------------------------------------------
 ```
 
-# Using yecream as a substitute for `assert`
+# Using ycecream as a substitute for `assert`
 
 Ycecream has a method `assert_` that works like `assert`, but can be enabled or disabled with the enabled flag.
 
