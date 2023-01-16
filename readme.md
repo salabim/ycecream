@@ -990,18 +990,18 @@ with @y(context_manager=True):
 
 The table below shows it all.
 ```  
----------------------------------------------------------------------
-                         enabled=True   enabled=False      enabled=[]
----------------------------------------------------------------------
-execution speed                normal          normal            fast     
-y()                            normal       no output       no output
-@y                             normal       no output       no output
-y(decorator=True)              normal       no output       no output
-y(context_manager=True)        normal       no output       no output
-@y()                           normal       no output       TypeError
-with y():                      normal       no output  AttributeError
-y(as_str=True)                 normal             ""               ""
----------------------------------------------------------------------
+-------------------------------------------------------------------------------
+                         enabled=True   enabled=False                enabled=[]
+-------------------------------------------------------------------------------
+execution speed                normal          normal                      fast     
+y()                            normal       no output                 no output
+@y                             normal       no output                 no output
+y(decorator=True)              normal       no output                 no output
+y(context_manager=True)        normal       no output                 no output
+@y()                           normal       no output                 TypeError
+with y():                      normal       no output  AttributeError/TypeError
+y(as_str=True)                 normal             ""                         ""
+-------------------------------------------------------------------------------
 ```
 
 # Using ycecream as a substitute for `assert`
