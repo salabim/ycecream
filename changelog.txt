@@ -1,3 +1,9 @@
+version 1.3.12  2023-01-23
+==========================
+A bug in 1.3.11 made that asttokens had to be installed.
+Fixed by using a completely different way of embedding the required dependencies,
+i.e. with my package embedder (see www.github.com/salabim/package_embedder)
+
 version 1.3.11  2023-01-13
 ==========================
 Added compatibility (0)
