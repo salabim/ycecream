@@ -397,7 +397,7 @@ from ycecream import y
 def unix_timestamp():
     return f"{int(time.time())} "
 hello = "world"
-y = Y(prefix=unix_timestamp)
+y.configure(prefix=unix_timestamp)
 y(hello) 
 ```
 prints
@@ -527,7 +527,7 @@ If True, adds the current time to `y()`'s output.
 
 ```
 from ycecream import y
-y =  Y(show_time=True)
+y.configure(show_time=True)
 hello="world"
 y(hello)
 ```
@@ -542,16 +542,16 @@ If True, adds the number of seconds since the start of the program to `y()`'s ou
 from ycecream import y
 import time
 y.configure(show_delta=True)
-allô="monde"
-hallo
-y(hello)
+french = "bonjour le monde"
+english = "hallo world"
+y(english)
 time.sleep(1)
-y(âllo)
+y(french)
 ```
 prints something like
 ```
-y| delta=0.021002 ==> hello: 'world'
-y| delta=1.053234 ==> âllo: 'monde'
+y| delta=0.088 ==> english: 'hallo world'
+y| delta=1.091 ==> french: 'bonjour le monde'
 ```
 
 ## show_enter / se
@@ -1052,10 +1052,11 @@ If the line resides in another file than the main file, the filename (without th
 ```
 y| #30[foo.py] ==> foo: 'Foo'
 ```
-And finally when used in a function or method, that functiuon/method will be shown as well:
+And finally when used in a function or method, that function/method will be shown as well:
 ```
 y| #456[foo.py] in square_root ==> x: 123
 ```
+The parent function can be suppressed by 
 
 # Configuring at import time
 

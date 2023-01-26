@@ -6,12 +6,12 @@ from __future__ import print_function
 #   |___/  \___| \___| \___||_|    \___| \__,_||_| |_| |_|
 #                       sweeter debugging and benchmarking
 
-__version__ = "1.3.13"
+__version__ = "1.3.14"
 
 """
 See https://github.com/salabim/ycecream for details
 
-(c)2021 Ruud van der Ham - rt.van.der.ham@gmail.com
+(c)2023 Ruud van der Ham - rt.van.der.ham@gmail.com
 
 Inspired by IceCream "Never use print() to debug again".
 Also contains some of the original code.
@@ -82,8 +82,6 @@ import os
 import copy
 import traceback
 import executing
-import asttokens # for the embedder
-import six # for the embedder
 
 nv = object()
 
@@ -93,29 +91,39 @@ PY3 = sys.version_info.major == 3
 if PY2:
 
     def ycecream_pformat(obj, width, indent, depth):
-        return pformat(obj, width=width, indent=indent, depth=depth).replace("\\n", "\n")
+        return pformat(obj, width=width, indent=indent, depth=depth).replace(
+            "\\n", "\n"
+        )
+
 
 if PY3:
 
     def perf_counter():
-        return time.perf_counter() if _fixed_perf_counter is None else _fixed_perf_counter
+        return (
+            time.perf_counter() if _fixed_perf_counter is None else _fixed_perf_counter
+        )
 
     from pathlib import Path
 
     def ycecream_pformat(obj, width, compact, indent, depth, sort_dicts):
-        return pformat(obj, width=width, compact=compact, indent=indent, depth=depth, sort_dicts=sort_dicts).replace("\\n", "\n")
-
+        return pformat(
+            obj,
+            width=width,
+            compact=compact,
+            indent=indent,
+            depth=depth,
+            sort_dicts=sort_dicts,
+        ).replace("\\n", "\n")
 
 
 class Source(executing.Source):
     def get_text_with_indentation(self, node):
         result = self.asttokens().get_text(node)
-        if '\n' in result:
-            result = ' ' * node.first_token.start[1] + result
+        if "\n" in result:
+            result = " " * node.first_token.start[1] + result
             result = dedent(result)
         result = result.strip()
         return result
-
 
 
 class Default(object):
@@ -168,7 +176,9 @@ shortcut_to_name = {
 def set_defaults():
     default.prefix = "y| "
     default.output = "stderr"
-    default.serialize = ycecream_pformat  # can't use pformat directly as that is defined later
+    default.serialize = (
+        ycecream_pformat  # can't use pformat directly as that is defined later
+    )
     default.show_line_number = False
     default.show_time = False
     default.show_delta = False
@@ -213,7 +223,11 @@ def apply_json():
     for k, v in config.items():
 
         if k in ("serialize", "start_time"):
-            raise ValueError("error in {json_file}: key {k} not allowed".format(json_file=json_file, k=k))
+            raise ValueError(
+                "error in {json_file}: key {k} not allowed".format(
+                    json_file=json_file, k=k
+                )
+            )
 
         if k in shortcut_to_name:
             k = shortcut_to_name[k]
@@ -223,7 +237,11 @@ def apply_json():
             if k == "delta":
                 setattr(default, "start_time", perf_counter() - v)
             else:
-                raise ValueError("error in {json_file}: key {k} not recognized".format(json_file=json_file, k=k))
+                raise ValueError(
+                    "error in {json_file}: key {k} not recognized".format(
+                        json_file=json_file, k=k
+                    )
+                )
 
 
 def no_source_error(s=None):
@@ -274,8 +292,8 @@ class _Y(object):
         values_only_for_fstrings=nv,
         return_none=nv,
         enforce_line_length=nv,
-   #     decorator=nv,
-   #     context_manager=nv,
+        #     decorator=nv,
+        #     context_manager=nv,
         delta=nv,
         _parent=nv,
         **kwargs
@@ -339,9 +357,17 @@ class _Y(object):
                     if source[full_name] is nv:
                         source[full_name] = value
                     else:
-                        raise ValueError("can't use {key} and {full_name} in {func}".format(key=key, full_name=full_name, func=func))
+                        raise ValueError(
+                            "can't use {key} and {full_name} in {func}".format(
+                                key=key, full_name=full_name, func=func
+                            )
+                        )
             else:
-                raise TypeError("{func} got an unexpected keyword argument {key}".format(func=func, key=key))
+                raise TypeError(
+                    "{func} got an unexpected keyword argument {key}".format(
+                        func=func, key=key
+                    )
+                )
         for key, value in source.items():
             if value is not nv:
                 if key == "delta":
@@ -409,7 +435,9 @@ class _Y(object):
         this = self.fork()
         this.assign(kwargs, locals(), func="__call__")
 
-        if this.enabled == [] and not (as_str or this.decorator or this.context_manager):
+        if this.enabled == [] and not (
+            as_str or this.decorator or this.context_manager
+        ):
             return return_args(args, this.return_none)
 
         if not provided:
@@ -441,13 +469,19 @@ class _Y(object):
             except AttributeError:
                 main_file_resolved = None
             filename_resolved = os.path.abspath(filename)
-            if (filename.startswith("<") and filename.endswith(">")) or (main_file_resolved is None) or (filename_resolved == main_file_resolved):
+            if (
+                (filename.startswith("<") and filename.endswith(">"))
+                or (main_file_resolved is None)
+                or (filename_resolved == main_file_resolved)
+            ):
                 filename_name = ""
             else:
                 filename_name = "[" + os.path.basename(filename) + "]"
 
             if filename not in codes:
-                frame_info = inspect.getframeinfo(call_frame, context=1000000)  # get the full source code
+                frame_info = inspect.getframeinfo(
+                    call_frame, context=1000000
+                )  # get the full source code
                 if frame_info.code_context is None:
                     no_source_error()
                 codes[filename] = frame_info.code_context
@@ -456,11 +490,16 @@ class _Y(object):
 
             parent_function = frame_info.function  # changed in version 1.3.10 ****
             parent_function = Source.executing(call_frame).code_qualname()
-            parent_function = parent_function.replace(".<locals>.",".")
-            if parent_function == "<module>":
+            parent_function = parent_function.replace(".<locals>.", ".")
+            if parent_function == "<module>" or str(this.show_line_number) in (
+                "n",
+                "no parent",
+            ):
                 parent_function = ""
             else:
-                parent_function = " in {parent_function}()".format(parent_function=parent_function)
+                parent_function = " in {parent_function}()".format(
+                    parent_function=parent_function
+                )
             line_number = frame_info.lineno
             if 0 <= line_number - 1 < len(code):
                 this_line = code[line_number - 1].strip()
@@ -470,7 +509,11 @@ class _Y(object):
                 this_line_prev = code[line_number - 2].strip()
             else:
                 this_line_prev = ""
-        if this_line.startswith("@") or this_line_prev.startswith("@") or this.decorator:
+        if (
+            this_line.startswith("@")
+            or this_line_prev.startswith("@")
+            or this.decorator
+        ):
             if as_str:
                 raise TypeError("as_str may not be True when y used as decorator")
 
@@ -480,8 +523,12 @@ class _Y(object):
                     break
             else:
                 line_number += 1
-            this.line_number_with_filename_and_parent = "#{line_number}{filename_name}{parent_function}".format(
-                line_number=line_number, filename_name=filename_name, parent_function=parent_function
+            this.line_number_with_filename_and_parent = (
+                "#{line_number}{filename_name}{parent_function}".format(
+                    line_number=line_number,
+                    filename_name=filename_name,
+                    parent_function=parent_function,
+                )
             )
 
             def real_decorator(function):
@@ -490,13 +537,20 @@ class _Y(object):
                     enter_time = perf_counter()
                     context = this.context()
 
-                    args_kwargs = [repr(arg) for arg in args] + ["{k}={repr_v}".format(k=k, repr_v=repr(v)) for k, v in kwargs.items()]
-                    function_arguments = function.__name__ + "(" + (", ".join(args_kwargs)) + ")"
+                    args_kwargs = [repr(arg) for arg in args] + [
+                        "{k}={repr_v}".format(k=k, repr_v=repr(v))
+                        for k, v in kwargs.items()
+                    ]
+                    function_arguments = (
+                        function.__name__ + "(" + (", ".join(args_kwargs)) + ")"
+                    )
 
                     if this.show_enter:
                         this.do_output(
                             "{context}called {function_arguments}{traceback}".format(
-                                context=context, function_arguments=function_arguments, traceback=this.traceback()
+                                context=context,
+                                function_arguments=function_arguments,
+                                traceback=this.traceback(),
                             )
                         )
                     result = function(*args, **kwargs)
@@ -506,7 +560,11 @@ class _Y(object):
                     if this.show_exit:
                         this.do_output(
                             "{context}returned {repr_result} from {function_arguments} in {duration:.6f} seconds{traceback}".format(
-                                context=context, repr_result=repr(result), function_arguments=function_arguments, duration=duration, traceback=this.traceback()
+                                context=context,
+                                repr_result=repr(result),
+                                function_arguments=function_arguments,
+                                duration=duration,
+                                traceback=this.traceback(),
                             )
                         )
 
@@ -530,15 +588,25 @@ class _Y(object):
             line_number = call_node.lineno
             this_line = code[line_number - 1].strip()
 
-            this.line_number_with_filename_and_parent = "#{line_number}{filename_name}{parent_function}".format(
-                line_number=line_number, filename_name=filename_name, parent_function=parent_function
+            this.line_number_with_filename_and_parent = (
+                "#{line_number}{filename_name}{parent_function}".format(
+                    line_number=line_number,
+                    filename_name=filename_name,
+                    parent_function=parent_function,
+                )
             )
 
-        if this_line.startswith("with ") or this_line.startswith("with\t") or this.context_manager:
+        if (
+            this_line.startswith("with ")
+            or this_line.startswith("with\t")
+            or this.context_manager
+        ):
             if as_str:
                 raise TypeError("as_str may not be True when y used as context manager")
             if args:
-                raise TypeError("non-keyword arguments are not allowed when y used as context manager")
+                raise TypeError(
+                    "non-keyword arguments are not allowed when y used as context manager"
+                )
 
             this.is_context_manager = True
             return this
@@ -567,12 +635,14 @@ class _Y(object):
                     if left:
                         try:
                             if isinstance(left, str):
-                                s = ast.parse(left, mode='eval')
+                                s = ast.parse(left, mode="eval")
                             if isinstance(s, ast.Expression):
                                 s = s.body
-                            if s and isinstance(s, ast.JoinedStr): # it is indeed an f-string
+                            if s and isinstance(
+                                s, ast.JoinedStr
+                            ):  # it is indeed an f-string
                                 if this.values_only_for_fstrings:
-                                    left = ""  
+                                    left = ""
                         except Exception:
                             pass
                     if left:
@@ -582,7 +652,10 @@ class _Y(object):
             just_one_line = False
             if not (len(pairs) > 1 and this.separator == ""):
                 if not any("\n" in pair.left for pair in pairs):
-                    as_one_line = context + this.separator.join(pair.left + this.serialize_kwargs(obj=pair.right, width=10000) for pair in pairs)
+                    as_one_line = context + this.separator.join(
+                        pair.left + this.serialize_kwargs(obj=pair.right, width=10000)
+                        for pair in pairs
+                    )
                     if len(as_one_line) <= this.line_length and "\n" not in as_one_line:
                         out = as_one_line
                         just_one_line = True
@@ -615,7 +688,9 @@ class _Y(object):
                             do_right = True
                     else:
                         start = indent1 + pair.left
-                        line = start + this.serialize_kwargs(obj=pair.right, width=this.line_length - len(start))
+                        line = start + this.serialize_kwargs(
+                            obj=pair.right, width=this.line_length - len(start)
+                        )
                         if "\n" in line:
                             lines.append(start)
                             do_right = True
@@ -624,14 +699,17 @@ class _Y(object):
                     indent1 = indent1_rest
                     if do_right:
                         indent2 = indent1 + wrap_indent
-                        line = this.serialize_kwargs(obj=pair.right, width=this.line_length - len(indent2))
+                        line = this.serialize_kwargs(
+                            obj=pair.right, width=this.line_length - len(indent2)
+                        )
                         for s in line.splitlines():
                             lines.append(indent2 + s)
 
                 out = "\n".join(line.rstrip() for line in lines)
 
         else:
-            this.show_line_number = True
+            if not this.show_line_number:  # if "n" or "no parent", keep that info
+                this.show_line_number = True
             out = this.context(omit_context_separator=True)
 
         if this.show_traceback:
@@ -640,7 +718,9 @@ class _Y(object):
         if as_str:
             if this.enabled:
                 if this.enforce_line_length:
-                    out = "\n".join(line[: this.line_length] for line in out.splitlines())
+                    out = "\n".join(
+                        line[: this.line_length] for line in out.splitlines()
+                    )
                 return out + "\n"
             else:
                 return ""
@@ -673,8 +753,8 @@ class _Y(object):
         values_only_for_fstrings=nv,
         return_none=nv,
         enforce_line_length=nv,
-#        decorator=nv,
-#        context_manager=nv,
+        #        decorator=nv,
+        #        context_manager=nv,
         delta=nv,
         **kwargs
     ):
@@ -713,8 +793,8 @@ class _Y(object):
         values_only_for_fstrings=nv,
         return_none=nv,
         enforce_line_length=nv,
-#        decorator=nv,
-#        context_manager=nv,
+        #        decorator=nv,
+        #        context_manager=nv,
         delta=nv,
         **kwargs
     ):
@@ -727,7 +807,6 @@ class _Y(object):
     def assert_(self, condition):
         if self.enabled:
             assert condition
-        
 
     @contextlib.contextmanager
     def preserve(self):
@@ -749,7 +828,11 @@ class _Y(object):
         if self.show_exit:
             context = self.context()
             duration = perf_counter() - self.enter_time
-            self.do_output("{context}exit in {duration:.6f} seconds{traceback}".format(context=context, duration=duration, traceback=self.save_traceback))
+            self.do_output(
+                "{context}exit in {duration:.6f} seconds{traceback}".format(
+                    context=context, duration=duration, traceback=self.save_traceback
+                )
+            )
         self.is_context_manager = False
 
     def context(self, omit_context_separator=False):
@@ -817,7 +900,17 @@ class _Y(object):
             result = "\n" + wrap_indent + "Traceback (most recent call last)\n"
             #  Python 2.7 does not allow entry.filename, entry.line, etc, so we have to index entry
             return result + "\n".join(
-                wrap_indent + '  File "' + entry[0] + '", line ' + str(entry[1]) + ", in " + entry[2] + "\n" + wrap_indent + "    " + entry[3]
+                wrap_indent
+                + '  File "'
+                + entry[0]
+                + '", line '
+                + str(entry[1])
+                + ", in "
+                + entry[2]
+                + "\n"
+                + wrap_indent
+                + "    "
+                + entry[3]
                 for entry in traceback.extract_stack()[:-2]
             )
         else:
@@ -844,7 +937,11 @@ class _Y(object):
 
         def serialize_kwargs(self, obj, width):
 
-            kwargs = {key: getattr(self, key) for key in ("indent", "depth") if key in inspect.getargspec(self.serialize).args}
+            kwargs = {
+                key: getattr(self, key)
+                for key in ("indent", "depth")
+                if key in inspect.getargspec(self.serialize).args
+            }
             kwargs["width"] = width
 
             return self.serialize(obj, **kwargs)
@@ -852,7 +949,11 @@ class _Y(object):
     if PY3:
 
         def serialize_kwargs(self, obj, width):
-            kwargs = {key: getattr(self, key) for key in ("sort_dicts", "compact", "indent", "depth") if key in inspect.signature(self.serialize).parameters}
+            kwargs = {
+                key: getattr(self, key)
+                for key in ("sort_dicts", "compact", "indent", "depth")
+                if key in inspect.signature(self.serialize).parameters
+            }
             if "width" in inspect.signature(self.serialize).parameters:
                 kwargs["width"] = width
             return self.serialize(obj, **kwargs)
@@ -913,15 +1014,26 @@ import types as _types
 from io import StringIO as _StringIO
 
 
-def pprint(object, stream=None, indent=1, width=80, depth=None, compact=False, sort_dicts=True):
+def pprint(
+    object, stream=None, indent=1, width=80, depth=None, compact=False, sort_dicts=True
+):
     """Pretty-print a Python object to a stream [default is sys.stdout]."""
-    printer = PrettyPrinter(stream=stream, indent=indent, width=width, depth=depth, compact=compact, sort_dicts=sort_dicts)
+    printer = PrettyPrinter(
+        stream=stream,
+        indent=indent,
+        width=width,
+        depth=depth,
+        compact=compact,
+        sort_dicts=sort_dicts,
+    )
     printer.pprint(object)
 
 
 def pformat(object, indent=1, width=80, depth=None, compact=False, sort_dicts=True):
     """Format a Python object into a pretty-printed representation."""
-    return PrettyPrinter(indent=indent, width=width, depth=depth, compact=compact, sort_dicts=sort_dicts).pformat(object)
+    return PrettyPrinter(
+        indent=indent, width=width, depth=depth, compact=compact, sort_dicts=sort_dicts
+    ).pformat(object)
 
 
 def pp(object, *args, **kwargs):
@@ -964,7 +1076,10 @@ class _safe_key:
         try:
             return self.obj < other.obj
         except TypeError:
-            return (str(type(self.obj)), id(self.obj)) < (str(type(other.obj)), id(other.obj))
+            return (str(type(self.obj)), id(self.obj)) < (
+                str(type(other.obj)),
+                id(other.obj),
+            )
 
 
 def _safe_tuple(t):
@@ -975,30 +1090,38 @@ def _safe_tuple(t):
 if PY3:
 
     class PrettyPrinter:
-        def __init__(self, indent=1, width=80, depth=None, stream=None, compact=False, sort_dicts=True):
+        def __init__(
+            self,
+            indent=1,
+            width=80,
+            depth=None,
+            stream=None,
+            compact=False,
+            sort_dicts=True,
+        ):
             """Handle pretty printing operations onto a stream using a set of
-        configured parameters.
+            configured parameters.
 
-        indent
-            Number of spaces to indent for each level of nesting.
+            indent
+                Number of spaces to indent for each level of nesting.
 
-        width
-            Attempted maximum number of columns in the output.
+            width
+                Attempted maximum number of columns in the output.
 
-        depth
-            The maximum depth to print out nested structures.
+            depth
+                The maximum depth to print out nested structures.
 
-        stream
-            The desired output stream.  If omitted (or false), the standard
-            output stream available at construction will be used.
+            stream
+                The desired output stream.  If omitted (or false), the standard
+                output stream available at construction will be used.
 
-        compact
-            If true, several items will be combined in one line.
+            compact
+                If true, several items will be combined in one line.
 
-        sort_dicts
-            If true, dict keys are sorted.
+            sort_dicts
+                If true, dict keys are sorted.
 
-        """
+            """
             indent = int(indent)
             width = int(width)
             if indent < 0:
@@ -1051,7 +1174,9 @@ if PY3:
                     return
                 elif isinstance(object, dict):
                     context[objid] = 1
-                    self._pprint_dict(object, stream, indent, allowance, context, level + 1)
+                    self._pprint_dict(
+                        object, stream, indent, allowance, context, level + 1
+                    )
                     del context[objid]
                     return
             stream.write(rep)
@@ -1069,18 +1194,29 @@ if PY3:
                     items = sorted(object.items(), key=_safe_tuple)
                 else:
                     items = object.items()
-                self._format_dict_items(items, stream, indent, allowance + 1, context, level)
+                self._format_dict_items(
+                    items, stream, indent, allowance + 1, context, level
+                )
             write("}")
 
         _dispatch[dict.__repr__] = _pprint_dict
 
-        def _pprint_ordered_dict(self, object, stream, indent, allowance, context, level):
+        def _pprint_ordered_dict(
+            self, object, stream, indent, allowance, context, level
+        ):
             if not len(object):
                 stream.write(repr(object))
                 return
             cls = object.__class__
             stream.write(cls.__name__ + "(")
-            self._format(list(object.items()), stream, indent + len(cls.__name__) + 1, allowance + 1, context, level)
+            self._format(
+                list(object.items()),
+                stream,
+                indent + len(cls.__name__) + 1,
+                allowance + 1,
+                context,
+                level,
+            )
             stream.write(")")
 
         _dispatch[_collections.OrderedDict.__repr__] = _pprint_ordered_dict
@@ -1095,7 +1231,9 @@ if PY3:
         def _pprint_tuple(self, object, stream, indent, allowance, context, level):
             stream.write("(")
             endchar = ",)" if len(object) == 1 else ")"
-            self._format_items(object, stream, indent, allowance + len(endchar), context, level)
+            self._format_items(
+                object, stream, indent, allowance + len(endchar), context, level
+            )
             stream.write(endchar)
 
         _dispatch[tuple.__repr__] = _pprint_tuple
@@ -1113,7 +1251,9 @@ if PY3:
                 endchar = "})"
                 indent += len(typ.__name__) + 1
             object = sorted(object, key=_safe_key)
-            self._format_items(object, stream, indent, allowance + len(endchar), context, level)
+            self._format_items(
+                object, stream, indent, allowance + len(endchar), context, level
+            )
             stream.write(endchar)
 
         _dispatch[set.__repr__] = _pprint_set
@@ -1194,14 +1334,20 @@ if PY3:
         def _pprint_bytearray(self, object, stream, indent, allowance, context, level):
             write = stream.write
             write("bytearray(")
-            self._pprint_bytes(bytes(object), stream, indent + 10, allowance + 1, context, level + 1)
+            self._pprint_bytes(
+                bytes(object), stream, indent + 10, allowance + 1, context, level + 1
+            )
             write(")")
 
         _dispatch[bytearray.__repr__] = _pprint_bytearray
 
-        def _pprint_mappingproxy(self, object, stream, indent, allowance, context, level):
+        def _pprint_mappingproxy(
+            self, object, stream, indent, allowance, context, level
+        ):
             stream.write("mappingproxy(")
-            self._format(object.copy(), stream, indent + 13, allowance + 1, context, level)
+            self._format(
+                object.copy(), stream, indent + 13, allowance + 1, context, level
+            )
             stream.write(")")
 
         _dispatch[_types.MappingProxyType.__repr__] = _pprint_mappingproxy
@@ -1216,7 +1362,14 @@ if PY3:
                 rep = self._repr(key, context, level)
                 write(rep)
                 write(": ")
-                self._format(ent, stream, indent + len(rep) + 2, allowance if last else 1, context, level)
+                self._format(
+                    ent,
+                    stream,
+                    indent + len(rep) + 2,
+                    allowance if last else 1,
+                    context,
+                    level,
+                )
                 if not last:
                     write(delimnl)
 
@@ -1257,10 +1410,14 @@ if PY3:
                         continue
                 write(delim)
                 delim = delimnl
-                self._format(ent, stream, indent, allowance if last else 1, context, level)
+                self._format(
+                    ent, stream, indent, allowance if last else 1, context, level
+                )
 
         def _repr(self, object, context, level):
-            repr, readable, recursive = self.format(object, context.copy(), self._depth, level)
+            repr, readable, recursive = self.format(
+                object, context.copy(), self._depth, level
+            )
             if not readable:
                 self._readable = False
             if recursive:
@@ -1269,12 +1426,14 @@ if PY3:
 
         def format(self, object, context, maxlevels, level):
             """Format object for a specific context, returning a string
-        and flags indicating whether the representation is 'readable'
-        and whether the object represents a recursive construct.
-        """
+            and flags indicating whether the representation is 'readable'
+            and whether the object represents a recursive construct.
+            """
             return _safe_repr(object, context, maxlevels, level, self._sort_dicts)
 
-        def _pprint_default_dict(self, object, stream, indent, allowance, context, level):
+        def _pprint_default_dict(
+            self, object, stream, indent, allowance, context, level
+        ):
             if not len(object):
                 stream.write(repr(object))
                 return
@@ -1296,7 +1455,14 @@ if PY3:
             if self._indent_per_level > 1:
                 stream.write((self._indent_per_level - 1) * " ")
             items = object.most_common()
-            self._format_dict_items(items, stream, indent + len(cls.__name__) + 1, allowance + 2, context, level)
+            self._format_dict_items(
+                items,
+                stream,
+                indent + len(cls.__name__) + 1,
+                allowance + 2,
+                context,
+                level,
+            )
             stream.write("})")
 
         _dispatch[_collections.Counter.__repr__] = _pprint_counter
@@ -1327,7 +1493,9 @@ if PY3:
             indent += len(cls.__name__) + 1
             stream.write("[")
             if object.maxlen is None:
-                self._format_items(object, stream, indent, allowance + 2, context, level)
+                self._format_items(
+                    object, stream, indent, allowance + 2, context, level
+                )
                 stream.write("])")
             else:
                 self._format_items(object, stream, indent, 2, context, level)
@@ -1346,7 +1514,9 @@ if PY3:
 
         _dispatch[_collections.UserList.__repr__] = _pprint_user_list
 
-        def _pprint_user_string(self, object, stream, indent, allowance, context, level):
+        def _pprint_user_string(
+            self, object, stream, indent, allowance, context, level
+        ):
             self._format(object.data, stream, indent, allowance, context, level - 1)
 
         _dispatch[_collections.UserString.__repr__] = _pprint_user_string
@@ -1380,8 +1550,12 @@ def _safe_repr(object, context, maxlevels, level, sort_dicts):
         else:
             items = object.items()
         for k, v in items:
-            krepr, kreadable, krecur = _safe_repr(k, context, maxlevels, level, sort_dicts)
-            vrepr, vreadable, vrecur = _safe_repr(v, context, maxlevels, level, sort_dicts)
+            krepr, kreadable, krecur = _safe_repr(
+                k, context, maxlevels, level, sort_dicts
+            )
+            vrepr, vreadable, vrecur = _safe_repr(
+                v, context, maxlevels, level, sort_dicts
+            )
             append("%s: %s" % (krepr, vrepr))
             readable = readable and kreadable and vreadable
             if krecur or vrecur:
@@ -1389,7 +1563,9 @@ def _safe_repr(object, context, maxlevels, level, sort_dicts):
         del context[objid]
         return "{%s}" % ", ".join(components), readable, recursive
 
-    if (issubclass(typ, list) and r is list.__repr__) or (issubclass(typ, tuple) and r is tuple.__repr__):
+    if (issubclass(typ, list) and r is list.__repr__) or (
+        issubclass(typ, tuple) and r is tuple.__repr__
+    ):
         if issubclass(typ, list):
             if not object:
                 return "[]", True, False
@@ -1412,7 +1588,9 @@ def _safe_repr(object, context, maxlevels, level, sort_dicts):
         append = components.append
         level += 1
         for o in object:
-            orepr, oreadable, orecur = _safe_repr(o, context, maxlevels, level, sort_dicts)
+            orepr, oreadable, orecur = _safe_repr(
+                o, context, maxlevels, level, sort_dicts
+            )
             append(orepr)
             if not oreadable:
                 readable = False
@@ -1425,7 +1603,9 @@ def _safe_repr(object, context, maxlevels, level, sort_dicts):
     return rep, (rep and not rep.startswith("<")), False
 
 
-_builtin_scalars = frozenset({str, bytes, bytearray, int, float, complex, bool, type(None)})
+_builtin_scalars = frozenset(
+    {str, bytes, bytearray, int, float, complex, bool, type(None)}
+)
 
 
 def _recursion(object):
@@ -1471,5 +1651,4 @@ if PY2:
     import pprint
 
     pformat = pprint.pformat
-
 
