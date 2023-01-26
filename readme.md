@@ -1056,7 +1056,7 @@ And finally when used in a function or method, that function/method will be show
 ```
 y| #456[foo.py] in square_root ==> x: 123
 ```
-The parent function can be suppressed by 
+The parent function can be suppressed by setting `show_line_number` or `sln` to `"n"` or `"no parent"`.
 
 # Configuring at import time
 
