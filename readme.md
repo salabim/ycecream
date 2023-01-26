@@ -49,7 +49,7 @@ And on top of that, you get some basic benchmarking functionality.
 
 * [Acknowledgement](#acknowledgement)
 
-* [Differences with IceCream](./differences_with_icecream.md)
+* [Differences with IceCream](#differences-with-icecream)
 
 
 # Installation
@@ -494,13 +494,29 @@ If True, adds the `y()` call's line number and possible the filename and parent 
 
 ```
 from ycecream import y
-y = Y(show_line_number=True)
-hello="world"
-y(hello)
+y.configure(show_line_number=True)
+def shout():
+    hello="world"
+    y(hello)
+shout()
 ```
-prints like
+prints something like
 ```
-y| #4 ==> hello: 'world'
+y| #5 in shout() ==> hello: 'world'
+```
+
+If "no parent" or "n", the parent function will not be shown.
+```
+from ycecream import y
+y.configure(show_line_number="n")
+def shout():
+    hello="world"
+    y(hello)
+shout()
+```
+prints something like
+```
+y| #5 ==> hello: 'world'
 ```
 Note that if you call `y` without any arguments, the line number is always shown, regardless of the status `show_line_number`.
 
