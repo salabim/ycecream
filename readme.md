@@ -49,7 +49,7 @@ And on top of that, you get some basic benchmarking functionality.
 
 * [Acknowledgement](#acknowledgement)
 
-* [Differences with IceCream](!./differences_with_icecream.md)
+* [Differences with IceCream](./differences_with_icecream.md)
 
 
 # Installation
@@ -1263,7 +1263,7 @@ Many thanks to the author Ansgar Grunseid / grunseid.com / grunseid@gmail.com .
 
 # Differences with IceCream
 
-[Click here](!./differences_with_icecream.md)
+[Click here](./differences_with_icecream.md)
 
 ![PyPI](https://img.shields.io/pypi/v/ycecream) ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/ycecream) ![PyPI - Implementation](https://img.shields.io/pypi/implementation/ycecream)
 
