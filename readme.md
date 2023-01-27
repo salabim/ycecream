@@ -326,7 +326,11 @@ delta                   dl              0
 ------------------------------------------------------
 *) ignored under Python 2.7
 ```
-It is perfectly ok to set/get any of these attributes directly.
+It is perfectly ok to set/get any of these attributes directly, like
+```
+y.prefix = "==> "
+print(y.prefix)
+```
 
 But, it is also possible to apply configuration directly in the call to `y`:
 So, it is possible to say
@@ -449,7 +453,7 @@ INFO:demo:y| a: {1, 2, 3, 5}
 Finally, you can specify the following strings:
 ```
 "stderr"           to print to stderr
-"stdput"           to print to stdout
+"stdout"           to print to stdout
 "null" or ""       to completely ignore (dummy) output 
 "logging.debug"    to use logging.debug
 "logging.info"     to use logging.info
@@ -951,7 +955,7 @@ prints
 y| hello: 'world'
 ```
 
-Note that if enabled=False, the call will return the null string.
+Note that if enabled=False, the call will return the null string (`""`).
 
 # Disabling ycecream's output
 
