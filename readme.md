@@ -1250,7 +1250,7 @@ It is not possible to use ycecream:
 # Implementation details
 
 Although not important for using the package, here are some implementation details:
-* ycecream.py contains the complete (slightly modified) source of the asttokens and executing packages, in
+* ycecream.py contains the complete source of the asttokens and executing packages, in
    order to offer the required source lookups, without any dependencies
 * ycecream.py contains the complete source of pprint as of Python 3.8 in order to support the sort_dicts parameter, Under Python 2.7 this is ignored and the pprint module
 from the standard library is used.
