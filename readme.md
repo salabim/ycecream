@@ -45,11 +45,11 @@ And on top of that, you get some basic benchmarking functionality.
 
 * [Limitations](#limitations)
 
-* [Implementation details](implementation-details)
+* [Implementation details](#implementation-details)
 
 * [Acknowledgement](#acknowledgement)
 
-* [Differences with IceCream](#Differences with IceCream)
+* [Differences with IceCream](#differences-with-icecream)
 
 
 # Installation
