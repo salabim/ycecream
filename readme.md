@@ -1296,7 +1296,7 @@ test script                       pytest                   unittest
 colourize                         no                       yes (can be disabled)
 ----------------------------------------------------------------------------------------
 *) sort_dicts and compact are ignored under Python 2.7
-
+```
 ![PyPI](https://img.shields.io/pypi/v/ycecream) ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/ycecream) ![PyPI - Implementation](https://img.shields.io/pypi/implementation/ycecream)
 
 ![PyPI - License](https://img.shields.io/pypi/l/ycecream) ![Black](https://img.shields.io/badge/code%20style-black-000000.svg) 
