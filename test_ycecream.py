@@ -99,6 +99,16 @@ def test_in_function(capsys):
     assert err.endswith(" in test_in_function.hello() ==> val: 'world'\n")
 
 
+def test_in_function_no_parent(capsys):
+    def hello(val):
+        y(val, show_line_number="n")
+
+    hello("world")
+    out, err = capsys.readouterr()
+    assert err.startswith(context_start)
+    assert not err.endswith(" in test_in_function_no_parent.hello() ==> val: 'world'\n")
+
+
 def test_prefix(capsys):
     hello = "world"
     y(hello, prefix="==> ")
@@ -156,7 +166,6 @@ def test_calls():
 
 def test_output(capsys):
     with tempfile.TemporaryDirectory() as tmpdir:  # we can't use tmpdir from pytest because of Python 2.7 compatibity
-
         g.result = ""
 
         def my_output(s):
@@ -290,6 +299,18 @@ def test_sort_dicts():
         assert s2 == "y| world: {'DE': 'Welt', 'EN': 'world', 'FR': 'monde', 'NL': 'wereld'}\n"
 
 
+def test_underscore_numbers():
+    numbers = dict(x1=1, x2=1000, x3=1000000, x4=1234567890)    
+    s0 = y(numbers, as_str=True)
+    s1 = y(numbers, underscore_numbers=True, as_str=True)
+    s2 = y(numbers, un=False, as_str=True)
+    if PY2:
+        assert s0 == s1 == s2 == "y| numbers: {'x1': 1, 'x2': 1000, 'x3': 1000000, 'x4': 1234567890}\n"
+    if PY3:
+        assert s0 == s2 == "y| numbers: {'x1': 1, 'x2': 1000, 'x3': 1000000, 'x4': 1234567890}\n"
+        assert s1 == "y| numbers: {'x1': 1, 'x2': 1_000, 'x3': 1_000_000, 'x4': 1_234_567_890}\n"
+
+
 def test_multiline():
     a = 1
     b = 2
@@ -345,13 +366,13 @@ def test_decorator(capsys):
 
     @y(show_enter=False, show_exit=False)
     def pos(x, y):
-        return x ** y
+        return x**y
 
     assert mul(2, 3) == 2 * 3
     assert div(10, 2) == 10 / 2
     assert add(2, 3) == 2 + 3
     assert sub(10, 2) == 10 - 2
-    assert pow(10, 2) == 10 ** 2
+    assert pow(10, 2) == 10**2
     out, err = capsys.readouterr()
     assert (
         err
@@ -500,7 +521,6 @@ def test_read_json1():
 
 def test_read_json2():
     with tempfile.TemporaryDirectory() as tmpdir:
-
         json_filename = Path(tmpdir) / "ycecream.json"
         with open(str(json_filename), "w") as f:
             print('{"prefix": "xxx", "delta": 10}', file=f)
@@ -847,7 +867,7 @@ y|  s: '************************************************************************
 
 
 def test_check_output(capsys):
-    """ special Pythonista code, as that does not reload x1 and x2 """
+    """special Pythonista code, as that does not reload x1 and x2"""
     if "x1" in sys.modules:
         del sys.modules["x1"]
     if "x2" in sys.modules:
@@ -952,15 +972,19 @@ def test_provided(capsys):
         y("1")
         y("2", provided=True)
         y("3", provided=False)
-        y.enabled=False
+        y.enabled = False
         y("4")
         y("5", provided=True)
         y("6", provided=False)
     out, err = capsys.readouterr()
-    assert err =="""\
+    assert (
+        err
+        == """\
 y| '1'
 y| '2'
 """
+    )
+
 
 def test_assert_():
     y.assert_(True)
@@ -968,7 +992,7 @@ def test_assert_():
         y.assert_(False)
 
     with y.preserve():
-        y.enabled=False
+        y.enabled = False
         y.assert_(True)
         y.assert_(False)
 
@@ -1071,6 +1095,7 @@ y| a = 12, b = ['test', 'test', 'test', 'test']
 """
     )
 
+
 def test_context_separator(capsys):
     a = 12
     b = 2 * ["test"]
@@ -1078,21 +1103,24 @@ def test_context_separator(capsys):
     y(a, b, sln=1, context_separator=" ... ")
 
     out, err = capsys.readouterr()
-    lines = err.split('\n')
+    lines = err.split("\n")
     assert lines[0].endswith(" ==> a: 12, b: ['test', 'test']")
     assert lines[1].endswith(" ... a: 12, b: ['test', 'test']")
-    
+
+
 def test_wrap_indent(capsys):
     with y.preserve():
-        y.separator=""
+        y.separator = ""
         y(1, 2)
-        y(1, 2,prefix="yy| ")
-        y(1, 2,prefix="yyy| ")
+        y(1, 2, prefix="yy| ")
+        y(1, 2, prefix="yyy| ")
         y.wrap_indent = "...."
-        y(1, 2,prefix="yy| ")
-        y(1, 2,prefix="yyy| ")    
+        y(1, 2, prefix="yy| ")
+        y(1, 2, prefix="yyy| ")
     out, err = capsys.readouterr()
-    assert err == """\
+    assert (
+        err
+        == """\
 y|  1
     2
 yy| 1
@@ -1105,12 +1133,13 @@ yy| 1
 yyy|
 ....1
 ....2
-"""        
+"""
+    )
 
 
-@pytest.mark.skipif (sys.version_info < (3,6), reason="f-strings require Python >= 3.6")
+@pytest.mark.skipif(sys.version_info < (3, 6), reason="f-strings require Python >= 3.6")
 def test_fstrings(capsys):
-    test_code="""\
+    test_code = """\
 hello='world'
 with y.preserve():
     y('hello, world')
@@ -1138,7 +1167,8 @@ with y.preserve():
     exec(test_code)
     out, err = capsys.readouterr()
     assert (
-        err == """\
+        err
+        == """\
 y| 'hello, world'
 y| 'world'
 y| 'hello=world'
@@ -1151,8 +1181,9 @@ y| 'hello=world'
 y| 'hello, world'
 y| 'world'
 y| 'hello=world'
-""")
+"""
+    )
 
-    
+
 if __name__ == "__main__":
     pytest.main(["-vv", "-s", "-x", __file__])

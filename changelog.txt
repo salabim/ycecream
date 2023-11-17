@@ -1,6 +1,18 @@
+version 1.3.16  2023-11-16
+--------------------------
+Ycecream now supports the underscore_number functionality of pprint
+(even for Python < 3.10, but not Python 2.7).
+Therefore, a new attribute underscore_number (abbreviated un) is introduced. 
+This attribute is False by default.
+Example usage:
+    powers = [10**i for i in range(8)]
+    y(powers, underscore_numbers=True)
+results in
+    y| powers: [1, 10, 100, 1_000, 10_000, 100_000, 1_000_000, 10_000_000]    
+    
 version 1.3.15  2023-10-06
 --------------------------
-Updated readme and made it available at PyPI.
+Updated readme and made it available on PyPI.
 Checked compatibility with Python 3.12.
 
 
