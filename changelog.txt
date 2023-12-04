@@ -1,3 +1,11 @@
+version 1.3.17  2023-12-04
+----------------------------
+Removed __all__ from the pprint source, which prevented ycecream to work properly.
+
+version 1.3.16.2  2023-12-02
+----------------------------
+Changed prepare.py to dynamically make setup.py (from setupx.py and readme.md).
+
 version 1.3.16  2023-11-16
 --------------------------
 Ycecream now supports the underscore_number functionality of pprint
@@ -48,7 +56,7 @@ version 1.3.10  2022-04-12
 ==========================
 Changed functionality (0)
 ---------------------
-For methods, the class name is also showed in the function name.
+For methods, the class name is also shown in the function name.
 Based on a pull request https://github.com/gruns/icecream/pull/120/files
 
 
@@ -76,7 +84,7 @@ E.g.
 This will result in an AssertionError.
 but
 E.g.
-    y.enabled=False
+    y.enabled = False
     x = 12
     temperature = 18
     y.assert_(temperature>25)
@@ -394,7 +402,7 @@ The readme now uses the 'import ycecream as y' style, although the
 New functionality (1)
 ---------------------
 From this version on, it is possible to fork an ycecream instance.
-The forked instance will depend on (ingherit from) the attributes of the parent instance.
+The forked instance will depend on (inherit from) the attributes of the parent instance.
 That means that, unless overridden in the forked instance, a change of an attribute in the
 parent instance will be propagated into the forked instance. E.g.
     |y1 = y.fork()
