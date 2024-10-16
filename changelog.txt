@@ -1,6 +1,6 @@
 version 1.3.17  2023-12-04
 ----------------------------
-Removed __all__ from the pprint source, which prevented ycecream to work properly.
+Removed __all__ from the pprint source, which prevented ycecream to work properly.x
 
 version 1.3.16.2  2023-12-02
 ----------------------------
