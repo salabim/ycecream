@@ -7,11 +7,21 @@ from __future__ import division
 
 import sys
 from pathlib import Path
-from ycecream import y
-import ycecream
+
 import datetime
 import time
+import os
+
+if __name__ == "__main__":  # to make the tests run without the pytest cli
+    file_folder = Path(__file__).parent
+    top_folder = (file_folder / ".." / "ycecream").resolve()
+    sys.path.insert(0, str(top_folder))
+    os.chdir(file_folder)
+
 import pytest
+import ycecream
+from ycecream import y
+
 
 PY2 = sys.version_info.major == 2
 PY3 = sys.version_info.major == 3

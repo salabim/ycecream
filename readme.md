@@ -1,4 +1,4 @@
-![Logo](./images/ycecream_logo.png)
+ <img src="https://www.salabim.org/ycecream/ycecream_logo.png">
 
 # Introduction
 
@@ -488,7 +488,7 @@ def add_len(obj):
 l = list(range(7))
 hello = "world"
 y(7, hello, l, serialize=add_len)
-```   
+```
 prints
 ```
 y| 7, hello: 'world' [len=5], l: [0, 1, 2, 3, 4, 5, 6] [len=7]
@@ -1147,7 +1147,7 @@ THere are several ways to obtain a new instance of ycecream:
      With this a new ycecream object is created with the same attributes as the object it is created ('the parent') from. Note that the attributes are not propagated from the parent, in this case.
 
 *    with `y()` used as a context manager
-    
+
 In either case, attributes can be added to override the default ones.
 
 ### Example
