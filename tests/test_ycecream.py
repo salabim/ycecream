@@ -7,11 +7,19 @@ from __future__ import division
 
 import sys
 from pathlib import Path
-from ycecream import y
-import ycecream
 import datetime
 import time
 import pytest
+import os
+
+file_folder = Path(__file__).parent
+top_folder = (file_folder / ".." / "ycecream").resolve()
+sys.path.insert(0, str(top_folder))
+os.chdir(file_folder)
+
+from ycecream import y
+import ycecream
+
 
 PY2 = sys.version_info.major == 2
 PY3 = sys.version_info.major == 3
