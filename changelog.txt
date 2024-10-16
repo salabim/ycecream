@@ -6,7 +6,7 @@ Removed __all__ from the pprint source, which prevented ycecream to work properl
 version 1.3.18  2024-10-15
 ----------------------------
 Now compatible with Python >3.12
-Project structure overhaul
+Project structure overhaul 
 
 version 1.3.17  2023-12-04
 ----------------------------
