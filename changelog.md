@@ -5,7 +5,7 @@
 * Now compatible with Python >3.12
 * Complete  project structure overhaul, including pyproject.toml
 * embedder now works on an embedded version as well, so no more need for an unembedded version.
-
+* GitHub update
  
 
 #### Older versions
