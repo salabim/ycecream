@@ -6,14 +6,15 @@ from __future__ import division
 #      backports.tempfile
 
 import sys
-from pathlib import Path
 import datetime
 import time
 import pytest
 import os
+from pathlib import Path
 
 file_folder = Path(__file__).parent
 top_folder = (file_folder / ".." / "ycecream").resolve()
+
 sys.path.insert(0, str(top_folder))
 os.chdir(file_folder)
 
@@ -21,15 +22,7 @@ from ycecream import y
 import ycecream
 
 
-PY2 = sys.version_info.major == 2
-PY3 = sys.version_info.major == 3
-
-
-if PY2:
-    from backports import tempfile
-
-if PY3:
-    import tempfile
+import tempfile
 
 
 class g:
@@ -40,10 +33,6 @@ context_start = "y| #"
 
 
 y = y.new(ignore_json=True)
-
-
-if PY2:
-    ycecream.change_path(Path)
 
 
 FAKE_TIME = datetime.datetime(2021, 1, 1, 0, 0, 0)
@@ -300,11 +289,8 @@ def test_sort_dicts():
     s0 = y(world, as_str=True)
     s1 = y(world, sort_dicts=False, as_str=True)
     s2 = y(world, sort_dicts=True, as_str=True)
-    if PY2:
-        assert s0 == s1 == s2 == "y| world: {'DE': 'Welt', 'EN': 'world', 'FR': 'monde', 'NL': 'wereld'}\n"
-    if PY3:
-        assert s0 == s1 == "y| world: {'EN': 'world', 'NL': 'wereld', 'FR': 'monde', 'DE': 'Welt'}\n"
-        assert s2 == "y| world: {'DE': 'Welt', 'EN': 'world', 'FR': 'monde', 'NL': 'wereld'}\n"
+    assert s0 == s1 == "y| world: {'EN': 'world', 'NL': 'wereld', 'FR': 'monde', 'DE': 'Welt'}\n"
+    assert s2 == "y| world: {'DE': 'Welt', 'EN': 'world', 'FR': 'monde', 'NL': 'wereld'}\n"
 
 
 def test_underscore_numbers():
@@ -312,11 +298,9 @@ def test_underscore_numbers():
     s0 = y(numbers, as_str=True)
     s1 = y(numbers, underscore_numbers=True, as_str=True)
     s2 = y(numbers, un=False, as_str=True)
-    if PY2:
-        assert s0 == s1 == s2 == "y| numbers: {'x1': 1, 'x2': 1000, 'x3': 1000000, 'x4': 1234567890}\n"
-    if PY3:
-        assert s0 == s2 == "y| numbers: {'x1': 1, 'x2': 1000, 'x3': 1000000, 'x4': 1234567890}\n"
-        assert s1 == "y| numbers: {'x1': 1, 'x2': 1_000, 'x3': 1_000_000, 'x4': 1_234_567_890}\n"
+
+    assert s0 == s2 == "y| numbers: {'x1': 1, 'x2': 1000, 'x3': 1000000, 'x4': 1234567890}\n"
+    assert s1 == "y| numbers: {'x1': 1, 'x2': 1_000, 'x3': 1_000_000, 'x4': 1_234_567_890}\n"
 
 
 def test_multiline():
@@ -592,8 +576,6 @@ def test_read_json2():
 
 
 def test_wrapping(capsys):
-    if PY2:
-        return
 
     l0 = "".join("         {c}".format(c=c) for c in "12345678") + "\n" + "".join(".........0" for c in "12345678")
 
@@ -679,8 +661,6 @@ y| aa: ['0123456789ABC', '0123456789ABC']
 
 
 def test_compact(capsys):
-    if PY2:
-        return
     a = 9 * ["0123456789"]
     y(a)
     y(a, compact=True)

@@ -6,7 +6,7 @@ from __future__ import print_function
 #   |___/  \___| \___| \___||_|    \___| \__,_||_| |_| |_|
 #                       sweeter debugging and benchmarking
 
-__version__ = "1.3.18"
+__version__ = "1.3.19"
 
 """
 See https://github.com/salabim/ycecream for details
@@ -133,26 +133,15 @@ import executing
 
 nv = object()
 
-PY2 = sys.version_info.major == 2
-PY3 = sys.version_info.major == 3
+def perf_counter():
+    return time.perf_counter() if _fixed_perf_counter is None else _fixed_perf_counter
 
-if PY2:
+from pathlib import Path
 
-    def ycecream_pformat(obj, width, indent, depth):
-        return pformat(obj, width=width, indent=indent, depth=depth).replace("\\n", "\n")
-
-
-if PY3:
-
-    def perf_counter():
-        return time.perf_counter() if _fixed_perf_counter is None else _fixed_perf_counter
-
-    from pathlib import Path
-
-    def ycecream_pformat(obj, width, compact, indent, depth, sort_dicts, underscore_numbers):
-        return pformat(obj, width=width, compact=compact, indent=indent, depth=depth, sort_dicts=sort_dicts, underscore_numbers=underscore_numbers).replace(
-            "\\n", "\n"
-        )
+def ycecream_pformat(obj, width, compact, indent, depth, sort_dicts, underscore_numbers):
+    return pformat(obj, width=width, compact=compact, indent=indent, depth=depth, sort_dicts=sort_dicts, underscore_numbers=underscore_numbers).replace(
+        "\\n", "\n"
+    )
 
 
 class Source(executing.Source):
@@ -327,7 +316,7 @@ class _Y(object):
         #     context_manager=nv,
         delta=nv,
         _parent=nv,
-        **kwargs,
+        **kwargs
     ):
         self._attributes = {}
         if _parent is nv:
@@ -728,7 +717,7 @@ class _Y(object):
         #        decorator=nv,
         #        context_manager=nv,
         delta=nv,
-        **kwargs,
+        **kwargs
     ):
         self.assign(kwargs, locals(), "configure()")
         self.check()
@@ -769,7 +758,7 @@ class _Y(object):
         #        decorator=nv,
         #        context_manager=nv,
         delta=nv,
-        **kwargs,
+        **kwargs
     ):
         this = _Y(_parent=self._parent)
         this.assign({}, self._attributes, func="clone()")
@@ -846,12 +835,8 @@ class _Y(object):
                 pass
 
             elif isinstance(self.output, str):
-                if PY2:
-                    with io.open(self.output, "a+", encoding="utf-8") as f:
-                        print(s, file=f)
-                if PY3:
-                    with open(self.output, "a+", encoding="utf-8") as f:
-                        print(s, file=f)
+                with open(self.output, "a+", encoding="utf-8") as f:
+                    print(s, file=f)
             elif isinstance(self.output, Path):
                 with self.output.open("a+", encoding="utf-8") as f:
                     print(s, file=f)
@@ -881,35 +866,22 @@ class _Y(object):
         if isinstance(self.output, (str, Path)):
             return
         try:
-            if PY2:
-                self.output.write(unicode(""))
-            if PY3:
-                self.output.write("")
+            self.output.write("")
             return
 
         except Exception:
             pass
         raise TypeError("output should be a callable, str, Path or open text file.")
 
-    if PY2:
-
-        def serialize_kwargs(self, obj, width):
-            kwargs = {key: getattr(self, key) for key in ("indent", "depth") if key in inspect.getargspec(self.serialize).args}
+    def serialize_kwargs(self, obj, width):
+        kwargs = {
+            key: getattr(self, key)
+            for key in ("sort_dicts", "compact", "indent", "depth", "underscore_numbers")
+            if key in inspect.signature(self.serialize).parameters
+        }
+        if "width" in inspect.signature(self.serialize).parameters:
             kwargs["width"] = width
-
-            return self.serialize(obj, **kwargs)
-
-    if PY3:
-
-        def serialize_kwargs(self, obj, width):
-            kwargs = {
-                key: getattr(self, key)
-                for key in ("sort_dicts", "compact", "indent", "depth", "underscore_numbers")
-                if key in inspect.signature(self.serialize).parameters
-            }
-            if "width" in inspect.signature(self.serialize).parameters:
-                kwargs["width"] = width
-            return self.serialize(obj, **kwargs)
+        return self.serialize(obj, **kwargs)
 
 
 codes = {}
@@ -921,7 +893,7 @@ y = _Y()
 yc = y.fork(prefix="yc| ")
 
 
-# source of pprint (3.10) module
+# source of pprint (3.13) module
 
 #  Author:      Fred L. Drake, Jr.
 #               fdrake@acm.org
@@ -960,12 +932,11 @@ saferepr()
 """
 
 import collections as _collections
-import dataclasses as _dataclasses
-import re
 import sys as _sys
 import types as _types
 from io import StringIO as _StringIO
 
+__all__ = ["pprint", "pformat", "isreadable", "isrecursive", "saferepr", "PrettyPrinter", "pp"]
 
 def pprint(object, stream=None, indent=1, width=80, depth=None, *, compact=False, sort_dicts=True, underscore_numbers=False):
     """Pretty-print a Python object to a stream [default is sys.stdout]."""
@@ -974,31 +945,27 @@ def pprint(object, stream=None, indent=1, width=80, depth=None, *, compact=False
     )
     printer.pprint(object)
 
-
 def pformat(object, indent=1, width=80, depth=None, *, compact=False, sort_dicts=True, underscore_numbers=False):
     """Format a Python object into a pretty-printed representation."""
-    return PrettyPrinter(indent=indent, width=width, depth=depth, compact=compact, sort_dicts=sort_dicts, underscore_numbers=underscore_numbers).pformat(object)
-
+    return PrettyPrinter(indent=indent, width=width, depth=depth, compact=compact, sort_dicts=sort_dicts, underscore_numbers=underscore_numbers).pformat(
+        object
+    )
 
 def pp(object, *args, sort_dicts=False, **kwargs):
     """Pretty-print a Python object"""
     pprint(object, *args, sort_dicts=sort_dicts, **kwargs)
 
-
 def saferepr(object):
     """Version of repr() which can handle recursive data structures."""
     return PrettyPrinter()._safe_repr(object, {}, None, 0)[0]
-
 
 def isreadable(object):
     """Determine if saferepr(object) is readable by eval()."""
     return PrettyPrinter()._safe_repr(object, {}, None, 0)[1]
 
-
 def isrecursive(object):
     """Determine if object requires a recursive representation."""
     return PrettyPrinter()._safe_repr(object, {}, None, 0)[2]
-
 
 class _safe_key:
     """Helper function for key functions when sorting unorderable objects.
@@ -1021,11 +988,9 @@ class _safe_key:
         except TypeError:
             return (str(type(self.obj)), id(self.obj)) < (str(type(other.obj)), id(other.obj))
 
-
 def _safe_tuple(t):
     "Helper function for comparing 2-tuples"
     return _safe_key(t[0]), _safe_key(t[1])
-
 
 class PrettyPrinter:
     def __init__(self, indent=1, width=80, depth=None, stream=None, *, compact=False, sort_dicts=True, underscore_numbers=False):
@@ -1050,6 +1015,9 @@ class PrettyPrinter:
 
         sort_dicts
             If true, dict keys are sorted.
+
+        underscore_numbers
+            If true, digit groups are separated with underscores.
 
         """
         indent = int(indent)
@@ -1099,13 +1067,16 @@ class PrettyPrinter:
         max_width = self._width - indent - allowance
         if len(rep) > max_width:
             p = self._dispatch.get(type(object).__repr__, None)
+            # Lazy import to improve module import time
+            from dataclasses import is_dataclass
+
             if p is not None:
                 context[objid] = 1
                 p(self, object, stream, indent, allowance, context, level + 1)
                 del context[objid]
                 return
             elif (
-                _dataclasses.is_dataclass(object)
+                is_dataclass(object)
                 and not isinstance(object, type)
                 and object.__dataclass_params__.repr
                 and
@@ -1120,9 +1091,12 @@ class PrettyPrinter:
         stream.write(rep)
 
     def _pprint_dataclass(self, object, stream, indent, allowance, context, level):
+        # Lazy import to improve module import time
+        from dataclasses import fields as dataclass_fields
+
         cls_name = object.__class__.__name__
         indent += len(cls_name) + 1
-        items = [(f.name, getattr(object, f.name)) for f in _dataclasses.fields(object) if f.repr]
+        items = [(f.name, getattr(object, f.name)) for f in dataclass_fields(object) if f.repr]
         stream.write(cls_name + "(")
         self._format_namespace_items(items, stream, indent, allowance, context, level)
         stream.write(")")
@@ -1208,6 +1182,9 @@ class PrettyPrinter:
             if len(rep) <= max_width1:
                 chunks.append(rep)
             else:
+                # Lazy import to improve module import time
+                import re
+
                 # A list of alternating (non-space, space) strings
                 parts = re.findall(r"\S*\s*", line)
                 assert parts
@@ -1531,13 +1508,10 @@ class PrettyPrinter:
         rep = repr(object)
         return rep, (rep and not rep.startswith("<")), False
 
-
 _builtin_scalars = frozenset({str, bytes, bytearray, float, complex, bool, type(None)})
-
 
 def _recursion(object):
     return "<Recursion on %s with id=%s>" % (type(object).__name__, id(object))
-
 
 def _wrap_bytes_repr(object, width, allowance):
     current = b""
@@ -1555,10 +1529,3 @@ def _wrap_bytes_repr(object, width, allowance):
             current = candidate
     if current:
         yield repr(current)
-        # end of source of pprint (3.10)
-
-
-if PY2:
-    import pprint
-
-    pformat = pprint.pformat

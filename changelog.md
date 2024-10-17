@@ -1,4 +1,9 @@
-### changelog | salabim | discrete event simulation
+### changelog | ycecream | sweeter debugging and benchmarking
+
+#### version 1.3.19  2024-10-17
+
+* Python 2.7 is not supported anymore.
+* Now uses pprint from Python 3.13, which uses lazy importing of the dataclasses and re packages.
 
 #### version 1.3.18  2024-10-16
 

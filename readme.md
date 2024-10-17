@@ -306,11 +306,11 @@ show_delta              sd              False
 show_enter              se              True
 show_exit               sx              True
 show_traceback          stb             False
-sort_dicts *)           sdi             False
-underscore_numbers *)   un              False
+sort_dicts              sdi             False
+underscore_numbers      un              False
 enabled                 e               True
 line_length             ll              80
-compact *)              c               False
+compact                 c               False
 indent                  i               1
 depth                   de              1000000
 wrap_indent             wi              "     "   
@@ -325,7 +325,6 @@ decorator               d               False
 context_manager         cm              False
 delta                   dl              0
 ------------------------------------------------------
-*) ignored under Python 2.7
 ```
 It is perfectly ok to set/get any of these attributes directly, like
 ```
@@ -645,7 +644,6 @@ y|
         ['0123456789', '0123456789', '0123456789', '0123456789', '0123456789',
          '0123456789', '0123456789', '0123456789', '0123456789']
 ```
-Note that `compact` is ignored under Python 2.7.
 
 ## indent / i
 This attribute is used to specify the indent parameter for `pformat` (see the pprint documentation
@@ -755,7 +753,6 @@ y| world: {'EN': 'world', 'NL': 'wereld', 'FR': 'monde', 'DE': 'Welt'}
 y| world: {'EN': 'world', 'NL': 'wereld', 'FR': 'monde', 'DE': 'Welt'}
 y| world: {'DE': 'Welt', 'EN': 'world', 'FR': 'monde', 'NL': 'wereld'}
 ```
-Note that `sort_dicts` is ignored under Python 2.7, i.e. dicts are always sorted.
 
 ## underscore_numbers / un
 By default, ycecream does not add underscores in big numberss (printed by pprint). However, it is possible to get the
@@ -773,7 +770,6 @@ y| numbers: {'one': 1, 'thousand': 1000, 'million': 1000000, 'x1234567890': 1234
 y| numbers: {'one': 1, 'thousand': 1_000, 'million': 1_000_000, 'x1234567890': 1_234_567_890}
 y| numbers: {'one': 1, 'thousand': 1000, 'million': 1000000, 'x1234567890': 1234567890}
 ```
-Note that `underscore_numbers` is ignored under Python 2.7, i.e. numbers are never underscored.
 
 ## separator / sep
 By default, pairs (on one line) are separated by `, `.
@@ -1271,8 +1267,7 @@ It is not possible to use ycecream:
 Although not important for using the package, here are some implementation details:
 * ycecream.py contains the complete source of the asttokens and executing packages, in
    order to offer the required source lookups, without any dependencies
-* ycecream.py contains the complete source of pprint as of Python 3.8 in order to support the sort_dicts and underscore_numbers parameter, Under Python 2.7 these are ignored and the pprint module
-from the standard library is used.
+* ycecream.py contains the complete source of pprint as of Python 3.13 in order to support the sort_dicts and underscore_numbers parameter
 * in order to support using y() as a decorator and a context manager, ycecream caches the complete source of
 any source file that uses y()
 
@@ -1292,7 +1287,6 @@ The ycecream module was originally a fork of IceCream, but has many differences:
 ----------------------------------------------------------------------------------------
 characteristic                    ycecream                 IceCream
 ----------------------------------------------------------------------------------------
-platform                          Python 2.7, >=3.6, PyPy  Python 2.7, >=3.5, PyPy
 default name                      y (or yc)                ic
 dependencies                      none                     many
 number of files                   1                        several
@@ -1315,11 +1309,9 @@ forking and cloning               yes                      no
 test script                       pytest                   unittest
 colourize                         no                       yes (can be disabled)
 ----------------------------------------------------------------------------------------
-*) sort_dicts, compact and underscore_numbers are ignored under Python 2.7
 ```
 ![PyPI](https://img.shields.io/pypi/v/ycecream) ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/ycecream) ![PyPI - Implementation](https://img.shields.io/pypi/implementation/ycecream)
 
 ![PyPI - License](https://img.shields.io/pypi/l/ycecream) ![Black](https://img.shields.io/badge/code%20style-black-000000.svg) 
- ![GitHub last commit](https://img.shields.io/github/last-commit/salabim/ycecream)
+![GitHub last commit](https://img.shields.io/github/last-commit/salabim/ycecream)
 
-If you like ycecream <a href="https://www.buymeacoffee.com/ruudvanderham" target="_blank"><img src="https://cdn.buymeacoffee.com/buttons/default-red.png" alt="Buy Me A Coffee" height="25" width="120"></a>
