@@ -1,5 +1,10 @@
 ### changelog | ycecream | sweeter debugging and benchmarking
 
+#### version 1.3.20  2024-10-21
+
+* serious bug (`__all__` incorrectly defined) in 1.3.19 made that nothing worked properly. Fixed
+* test of f-strings now works properly
+
 #### version 1.3.19  2024-10-17
 
 * Python 2.7 is not supported anymore.
@@ -11,7 +16,7 @@
 * Complete  project structure overhaul, including pyproject.toml
 * embedder now works on an embedded version as well, so no more need for an unembedded version.
 * GitHub update
- 
+
 
 #### Older versions
 ```

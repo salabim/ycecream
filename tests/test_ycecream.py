@@ -1,10 +1,6 @@
 from __future__ import print_function
 from __future__ import division
 
-#  In order to tun under Python 2.7, the following packages have to be pip-installed:
-#      pathlib
-#      backports.tempfile
-
 import sys
 import datetime
 import time
@@ -1125,46 +1121,45 @@ yyy|
     )
 
 
-@pytest.mark.skipif(sys.version_info < (3, 6), reason="f-strings require Python >= 3.6")
 def test_fstrings(capsys):
-    test_code = """\
-hello='world'
-with y.preserve():
-    y('hello, world')
-    y(hello)
-    y(f'hello={hello}')
+    hello='world'
 
-with y.preserve():
-    y.values_only = True
-    y('hello, world')
-    y(hello)
-    y(f'hello={hello}')
+    with y.preserve():
+        y('hello, world')
+        y(hello)
+        y(f'hello={hello}')
 
-with y.preserve():
-    y.values_only_for_fstrings=True
-    y('hello, world')
-    y(hello)
-    y(f'hello={hello}')
+    with y.preserve():
+        y.values_only = True
+        y('hello, world')
+        y(hello)
+        y(f'hello={hello}')
 
-with y.preserve():
-    y.voff=True
-    y.vo=True
-    y('hello, world')
-    y(hello)
-    y(f'hello={hello}')"""
-    exec(test_code)
+    with y.preserve():
+        y.values_only_for_fstrings=True
+        y('hello, world')
+        y(hello)
+        y(f'hello={hello}')
+
+    with y.preserve():
+        y.voff=True
+        y.vo=True
+        y('hello, world')
+        y(hello)
+        y(f'hello={hello}')
+
     out, err = capsys.readouterr()
     assert (
         err
         == """\
 y| 'hello, world'
-y| 'world'
-y| 'hello=world'
+y| hello: 'world'
+y| f'hello={hello}': 'hello=world'
 y| 'hello, world'
 y| 'world'
 y| 'hello=world'
 y| 'hello, world'
-y| 'world'
+y| hello: 'world'
 y| 'hello=world'
 y| 'hello, world'
 y| 'world'

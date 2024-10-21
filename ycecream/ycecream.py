@@ -1,12 +1,10 @@
-from __future__ import print_function
-
 #   _   _   ___   ___   ___  _ __   ___   __ _  _ __ ___
 #  | | | | / __| / _ \ / __|| '__| / _ \ / _` || '_ ` _ \
 #   \__, || (__ |  __/| (__ | |   |  __/| (_| || | | | | |
 #   |___/  \___| \___| \___||_|    \___| \__,_||_| |_| |_|
 #                       sweeter debugging and benchmarking
 
-__version__ = "1.3.19"
+__version__ = "1.3.20"
 
 """
 See https://github.com/salabim/ycecream for details
@@ -133,10 +131,13 @@ import executing
 
 nv = object()
 
+
 def perf_counter():
     return time.perf_counter() if _fixed_perf_counter is None else _fixed_perf_counter
 
+
 from pathlib import Path
+
 
 def ycecream_pformat(obj, width, compact, indent, depth, sort_dicts, underscore_numbers):
     return pformat(obj, width=width, compact=compact, indent=indent, depth=depth, sort_dicts=sort_dicts, underscore_numbers=underscore_numbers).replace(
@@ -316,7 +317,7 @@ class _Y(object):
         #     context_manager=nv,
         delta=nv,
         _parent=nv,
-        **kwargs
+        **kwargs,
     ):
         self._attributes = {}
         if _parent is nv:
@@ -717,7 +718,7 @@ class _Y(object):
         #        decorator=nv,
         #        context_manager=nv,
         delta=nv,
-        **kwargs
+        **kwargs,
     ):
         self.assign(kwargs, locals(), "configure()")
         self.check()
@@ -758,7 +759,7 @@ class _Y(object):
         #        decorator=nv,
         #        context_manager=nv,
         delta=nv,
-        **kwargs
+        **kwargs,
     ):
         this = _Y(_parent=self._parent)
         this.assign({}, self._attributes, func="clone()")
@@ -936,7 +937,6 @@ import sys as _sys
 import types as _types
 from io import StringIO as _StringIO
 
-__all__ = ["pprint", "pformat", "isreadable", "isrecursive", "saferepr", "PrettyPrinter", "pp"]
 
 def pprint(object, stream=None, indent=1, width=80, depth=None, *, compact=False, sort_dicts=True, underscore_numbers=False):
     """Pretty-print a Python object to a stream [default is sys.stdout]."""
@@ -945,27 +945,31 @@ def pprint(object, stream=None, indent=1, width=80, depth=None, *, compact=False
     )
     printer.pprint(object)
 
+
 def pformat(object, indent=1, width=80, depth=None, *, compact=False, sort_dicts=True, underscore_numbers=False):
     """Format a Python object into a pretty-printed representation."""
-    return PrettyPrinter(indent=indent, width=width, depth=depth, compact=compact, sort_dicts=sort_dicts, underscore_numbers=underscore_numbers).pformat(
-        object
-    )
+    return PrettyPrinter(indent=indent, width=width, depth=depth, compact=compact, sort_dicts=sort_dicts, underscore_numbers=underscore_numbers).pformat(object)
+
 
 def pp(object, *args, sort_dicts=False, **kwargs):
     """Pretty-print a Python object"""
     pprint(object, *args, sort_dicts=sort_dicts, **kwargs)
 
+
 def saferepr(object):
     """Version of repr() which can handle recursive data structures."""
     return PrettyPrinter()._safe_repr(object, {}, None, 0)[0]
+
 
 def isreadable(object):
     """Determine if saferepr(object) is readable by eval()."""
     return PrettyPrinter()._safe_repr(object, {}, None, 0)[1]
 
+
 def isrecursive(object):
     """Determine if object requires a recursive representation."""
     return PrettyPrinter()._safe_repr(object, {}, None, 0)[2]
+
 
 class _safe_key:
     """Helper function for key functions when sorting unorderable objects.
@@ -988,9 +992,11 @@ class _safe_key:
         except TypeError:
             return (str(type(self.obj)), id(self.obj)) < (str(type(other.obj)), id(other.obj))
 
+
 def _safe_tuple(t):
     "Helper function for comparing 2-tuples"
     return _safe_key(t[0]), _safe_key(t[1])
+
 
 class PrettyPrinter:
     def __init__(self, indent=1, width=80, depth=None, stream=None, *, compact=False, sort_dicts=True, underscore_numbers=False):
@@ -1508,10 +1514,13 @@ class PrettyPrinter:
         rep = repr(object)
         return rep, (rep and not rep.startswith("<")), False
 
+
 _builtin_scalars = frozenset({str, bytes, bytearray, float, complex, bool, type(None)})
+
 
 def _recursion(object):
     return "<Recursion on %s with id=%s>" % (type(object).__name__, id(object))
+
 
 def _wrap_bytes_repr(object, width, allowance):
     current = b""
@@ -1529,3 +1538,4 @@ def _wrap_bytes_repr(object, width, allowance):
             current = candidate
     if current:
         yield repr(current)
+
