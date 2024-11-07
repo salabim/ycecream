@@ -1,5 +1,19 @@
 ### changelog | ycecream | sweeter debugging and benchmarking
 
+#### 2024-11-07
+
+This package is not maintained anymore.
+
+It is now called (with slightly different functionality) **peek** and can be found here:
+
+https://pypi.org/project/peek-python/
+
+https://github.com/salabim/peek
+
+https://salabim.org/peek/
+
+
+
 #### version 1.3.20  2024-10-21
 
 * serious bug (`__all__` incorrectly defined) in 1.3.19 made that nothing worked properly. Fixed

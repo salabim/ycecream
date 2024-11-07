@@ -1,4 +1,22 @@
- <img src="https://www.salabim.org/ycecream/ycecream_logo.png">
+This package is not maintained anymore.
+
+It is now called (with slightly different functionality) **peek** and can be found here:
+
+https://pypi.org/project/peek-python/
+
+https://github.com/salabim/peek
+
+https://salabim.org/peek/
+
+<img src="https://www.salabim.org/peek/peek_logo1.png"> 
+
+
+
+------
+
+
+
+# <img src="https://www.salabim.org/ycecream/ycecream_logo.png">
 
 # Introduction
 
